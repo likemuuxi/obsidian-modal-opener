@@ -6,13 +6,14 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
-/* 插件打开的 modal 窗口中的 view-header 隐藏 */
 
-.plugin-modal-hidden-view-header {
+/* 插件打开的 modal 窗口中的 view-header 隐藏 */
+.plugin-modal .plugin-modal-hidden-view-header {
     display: none;
 }
 
-.markdown-preview-view.markdown-rendered.node-insert-event.is-readable-line-width.allow-fold-headings.show-indentation-guide.allow-fold-lists.show-properties {
+/* 插件 modal 窗口中的 markdown-preview-view 样式 */
+.plugin-modal .markdown-preview-view.markdown-rendered.node-insert-event.is-readable-line-width.allow-fold-headings.show-indentation-guide.allow-fold-lists.show-properties {
     scrollbar-width: none; /* For Firefox */
     -ms-overflow-style: none; /* For Internet Explorer and Edge */
 
@@ -20,7 +21,8 @@ If your plugin does not need CSS, delete this file.
     overflow: hidden;
 }
 
-.markdown-preview-sizer {
+/* 插件 modal 窗口中的 markdown-preview-sizer 样式 */
+.plugin-modal .markdown-preview-sizer {
     padding-bottom: 0 !important;
     min-height: auto; /* 或者设置为你认为合适的值 */
 }

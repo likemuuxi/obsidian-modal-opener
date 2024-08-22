@@ -56,7 +56,7 @@ export class LinkModal extends Modal {
             return;
         }
     
-        const containerEl = this.contentEl.createEl("div", { cls: "modal-file-container" });
+        const containerEl = this.contentEl.createEl("div", { cls: "modal-file-container plugin-modal" });
         containerEl.style.width = "100%";
         containerEl.style.height = "100%";
         containerEl.style.overflow = "auto";
@@ -75,6 +75,7 @@ export class LinkModal extends Modal {
         if (modal) {
             modal.classList.add(
                 'plugin-modal-hide-scrollbar',
+                'plugin-modal-markdown-preview-sizer',
                 'markdown-preview-view',
                 'markdown-rendered',
                 'node-insert-event',
@@ -105,21 +106,5 @@ export class LinkModal extends Modal {
         frame.setAttribute("frameborder", "0");
         frame.style.width = "100%";
         frame.style.height = "100%";
-        //frame.style.height = "calc(100% - 50px)"; // 减去按钮的高度
-    
-        // 创建一个容器来包裹按钮
-        // const buttonContainer = this.contentEl.createEl("div", { cls: "button-container" });
-        // buttonContainer.style.display = "flex";
-        // buttonContainer.style.justifyContent = "center";
-        // buttonContainer.style.alignItems = "center";
-        // buttonContainer.style.height = "30px"; // 设置按钮容器的高度
-    
-        // 创建按钮并添加容器中
-        // const button = buttonContainer.createEl("button", { text: "Open in Browser" });
-        // button.onclick = () => {
-        //     window.open(this.link);
-        //     this.close();
-        // };
-        // button.addClass("modal-button");
     }
 }
