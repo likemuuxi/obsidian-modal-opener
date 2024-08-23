@@ -3,6 +3,8 @@ import LinkOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
 import { LinkModal } from "./modal";
 import LinkOpenSettingTab from "./settings";
 
+export let globalLink = "";
+
 export default class LinkOpenPlugin extends Plugin {
 	settings: LinkOpenPluginSettings;
 	private modal: LinkModal | undefined;
