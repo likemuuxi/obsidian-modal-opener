@@ -1,4 +1,4 @@
-import { App, Modal, TFile, WorkspaceLeaf, MarkdownView, ViewState, View } from "obsidian";
+import { App, Modal, TFile, WorkspaceLeaf, MarkdownView } from "obsidian";
 import LinkOpenPlugin from "./main";
 
 export class LinkModal extends Modal {
