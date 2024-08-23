@@ -10,7 +10,7 @@ export class LinkView extends ItemView {
 	constructor(workspace: Workspace, leaf: WorkspaceLeaf, link: string) {
 		super(leaf);
 		this.workspace = workspace;
-		this.link = globalLink as unknown as string; // 确保 globalLink 是字符串类型
+		this.link = (globalLink as unknown as { link: string }).link;
 	}
 
 	getViewType() {
