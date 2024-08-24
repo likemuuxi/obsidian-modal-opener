@@ -55,10 +55,13 @@ export class LinkModal extends Modal {
             console.error("contentEl 在 displayFileContent 中未定义");
             return;
         }
-    
+        const modalContainer = this.containerEl.lastChild as HTMLElement;
+		modalContainer.style.width = this.width;
+		modalContainer.style.height = this.height;
+
         const containerEl = this.contentEl.createEl("div", { cls: "modal-file-container plugin-modal" });
         containerEl.style.width = "100%";
-        containerEl.style.height = "100%";
+        containerEl.style.height = "92%";
         containerEl.style.overflow = "auto";
     
         // 获取一个新的 leaf
@@ -105,6 +108,6 @@ export class LinkModal extends Modal {
         frame.src = this.link;
         frame.setAttribute("frameborder", "0");
         frame.style.width = "100%";
-        frame.style.height = "100%";
+        frame.style.height = "92%";
     }
 }
