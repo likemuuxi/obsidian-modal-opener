@@ -1,37 +1,35 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import LinkOpenPlugin from "./main";
+import ModalOpenPlugin from "./main";
 
-export interface LinkOpenPluginSettings {
-	openMethod: string;
+export interface ModalOpenPluginSettings {
+	openMethod: "drag" | "middle" | "both";
 	modalWidth: string;
 	modalHeight: string;
+	dragThreshold: number; // 添加拖拽时间阈值设置
 }
 
-export const DEFAULT_SETTINGS: LinkOpenPluginSettings = {
-	openMethod: "modal",
-	modalWidth: "80vw",
-	modalHeight: "80vh",
+export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
+	openMethod: "drag",
+	modalWidth: "76vw",
+	modalHeight: "86vh",
+	dragThreshold: 100, // 默认拖拽时间阈值
 };
 
-const openMethods = {
-	browser: "Browser",
-	modal: "Obsidian Modal",
-	tab: "Obsidian Tab",
-};
-
-export default class LinkOpenSettingTab extends PluginSettingTab {
-	plugin: LinkOpenPlugin;
+export default class ModalOpenSettingTab extends PluginSettingTab {
+	plugin: ModalOpenPlugin;
 	openMethod: string;
 	modalWidth: string;
 	modalHeight: string;
+	dragThreshold: number; // 添加拖拽时间阈值设置
 
-	constructor(app: App, plugin: LinkOpenPlugin) {
+	constructor(app: App, plugin: ModalOpenPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 		// Initialize settings with default values or plugin settings
 		this.openMethod = this.plugin.settings.openMethod;
 		this.modalWidth = this.plugin.settings.modalWidth;
 		this.modalHeight = this.plugin.settings.modalHeight;
+		this.dragThreshold = this.plugin.settings.dragThreshold;
 	}
 
 	display(): void {
@@ -39,22 +37,41 @@ export default class LinkOpenSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h1", { text: "Link Opener Settings" });
+		containerEl.createEl("h1", { text: "Modal Opener Settings" });
 
 		new Setting(containerEl)
-			.setName("Open external links with")
-			.addDropdown((dd) =>
-				dd
-					.addOptions(openMethods)
-					.setValue(this.openMethod) // Use instance property
+		.setName("Open modal window with")
+		.addDropdown((dd) =>
+			dd
+				.addOption("drag", "drag and drop")
+				.addOption("middle", "mouse middle")
+				.addOption("both", "both")
+				.setValue(this.plugin.settings.openMethod)
+				.onChange(async (value: "drag" | "middle" | "both") => {
+					this.plugin.settings.openMethod = value;
+					await this.plugin.saveSettings();
+					this.display(); // 重新渲染设置页面
+				})
+		);
+
+		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
+			new Setting(containerEl)
+			.setName("Drag and drop time threshold")
+			.setDesc("Set the minimum drag and drop time (in milliseconds) to trigger the link to open. When set to 0, it will trigger immediately.")
+			.addText((text) =>
+				text
+					.setValue(String(this.plugin.settings.dragThreshold))
 					.onChange(async (value) => {
-						this.plugin.settings.openMethod = value;
-						this.openMethod = value; // Update instance property
-						await this.plugin.saveSettings();
+						const numValue = Number(value);
+						if (!isNaN(numValue) && numValue >= 0) {
+							this.plugin.settings.dragThreshold = numValue;
+							await this.plugin.saveSettings();
+						}
 					})
 			);
+		}
 
-		containerEl.createEl("h3", { text: "Modal Settings" });
+		containerEl.createEl("h1", { text: "Modal Window Settings" });
 
 		new Setting(containerEl)
 			.setName("Modal width")

@@ -6,23 +6,57 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+/* 模态框容器的动画 */
+.modal-container:has(.link-modal), 
+.modal-container:has(.file-modal) {
+    backdrop-filter: blur(10px);
+    background-color: rgba(var(--background-primary-rgb), 0.8);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
 
-/* 插件打开的 modal 窗口中的 view-header 隐藏 */
-.plugin-modal .plugin-modal-hidden-view-header {
+.modal-container[class*="mod-"]:has(.link-modal), 
+.modal-container[class*="mod-"]:has(.file-modal) {
+    opacity: 1;
+}
+
+/* 模态框本身的动画 */
+.modal:has(.link-modal), 
+.modal:has(.file-modal) {
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--background-primary);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.modal[class*="mod-"] .link-modal,
+.modal[class*="mod-"] .file-modal {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* .modal:has(.link-modal) .modal-close-button,
+.modal:has(.file-modal) .modal-close-button {
+    display: none;
+} */
+.modal-close-button {
+    position: absolute;
+    top: 10px; /* 根据需要调整数值 */
+    right: 10px; /* 根据需要调整数值 */
+    z-index: 1000; /* 确保关闭按钮在最上层 */
+}
+
+.file-modal,
+.link-modal  {
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative; /* 添加这行 */
+}
+
+/* file-modal */
+.file-modal-container .view-header {
     display: none;
 }
 
-/* 插件 modal 窗口中的 markdown-preview-view 样式 */
-.plugin-modal .markdown-preview-view.markdown-rendered.node-insert-event.is-readable-line-width.allow-fold-headings.show-indentation-guide.allow-fold-lists.show-properties {
-    scrollbar-width: none; /* For Firefox */
-    -ms-overflow-style: none; /* For Internet Explorer and Edge */
-
-    /* For WebKit-based browsers */
-    overflow: hidden;
-}
-
-/* 插件 modal 窗口中的 markdown-preview-sizer 样式 */
-.plugin-modal .markdown-preview-sizer {
-    padding-bottom: 0 !important;
-    min-height: auto; /* 或者设置为你认为合适的值 */
-}
