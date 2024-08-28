@@ -7,30 +7,30 @@ If your plugin does not need CSS, delete this file.
 
 */
 /* 模态框容器的动画 */
-.modal-container:has(.link-modal), 
-.modal-container:has(.file-modal) {
+.modal-animation-enabled .modal-container:has(.link-modal), 
+.modal-animation-enabled .modal-container:has(.file-modal) {
     backdrop-filter: blur(10px);
     background-color: rgba(var(--background-primary-rgb), 0.8);
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
 }
 
-.modal-container[class*="mod-"]:has(.link-modal), 
-.modal-container[class*="mod-"]:has(.file-modal) {
+.modal-animation-enabled .modal-container[class*="mod-"]:has(.link-modal), 
+.modal-animation-enabled .modal-container[class*="mod-"]:has(.file-modal) {
     opacity: 1;
 }
 
 /* 模态框本身的动画 */
-.modal:has(.link-modal), 
-.modal:has(.file-modal) {
+.modal-animation-enabled .modal:has(.link-modal), 
+.modal-animation-enabled .modal:has(.file-modal) {
     border: 1px solid var(--background-modifier-border);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     background-color: var(--background-primary);
     transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
 }
 
-.modal[class*="mod-"] .link-modal,
-.modal[class*="mod-"] .file-modal {
+.modal-animation-enabled .modal[class*="mod-"] .link-modal,
+.modal-animation-enabled .modal[class*="mod-"] .file-modal {
     transform: scale(1);
     opacity: 1;
 }
