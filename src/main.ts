@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
@@ -11,12 +11,19 @@ export default class ModalOpenPlugin extends Plugin {
     private dragHandler: (() => void) | undefined;
     private middleClickHandler: ((evt: MouseEvent) => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
+    private contextMenuListener: ((event: MouseEvent) => void) | undefined;
+    private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
     private currentAnchor: string | null = null;
 
 	async onload() {
 		await this.loadSettings();
+        
 		this.registerOpenHandler();
-		this.registerContextMenuHandler();
+        this.registerContextMenuHandler();
+        this.setupHoverListener();
+        this.setupContextMenuListener();
+
+ 
 		this.addSettingTab(new ModalOpenSettingTab(this.app, this));
 
 		// 初始化时应用样式
@@ -28,8 +35,6 @@ export default class ModalOpenPlugin extends Plugin {
 				this.applyModalStyle();
 			})
 		);
-
-        this.setupClickListener();
 	}
 
 	onunload() {
@@ -50,30 +55,39 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     private removeEventListeners() {
-        // 确保在移除事件监听器之前检查是否已注册
         if (this.dragHandler) {
             console.log("Removing drag event handlers");
             document.removeEventListener('dragstart', this.dragHandler);
             document.removeEventListener('dragend', this.dragHandler);
-            this.dragHandler = undefined; // 清除引用
+            this.dragHandler = undefined; // Clear reference
         }
         if (this.middleClickHandler) {
             console.log("Removing middle click event handler");
             document.removeEventListener('auxclick', this.middleClickHandler, { capture: true });
-            this.middleClickHandler = undefined; // 清除引用
+            this.middleClickHandler = undefined; // Clear reference
         }
         if (this.altClickHandler) {
             console.log("Removing alt click event handler");
             document.removeEventListener('click', this.altClickHandler, { capture: true });
-            this.altClickHandler = undefined; // 清除引用
+            this.altClickHandler = undefined; // Clear reference
+        }
+        if (this.contextMenuListener) {
+            console.log("Removing context menu event handler");
+            document.removeEventListener('contextmenu', this.contextMenuListener);
+            this.contextMenuListener = undefined; // Clear reference
+        }
+        if (this.mouseHoverListener) {
+            console.log("Removing mouse hover event handler");
+            document.removeEventListener('mouseover', this.mouseHoverListener);
+            this.mouseHoverListener = undefined; // Clear reference
         }
     }
 
     private registerOpenHandler() {
-        // 移除之前的事件监听器
+        // Remove previous event listeners
 		this.removeEventListeners();
 
-        // 根据设置的打开方式注册相应的事件处理器
+        // Register new event handlers based on settings
         if (this.settings.openMethod === "drag" || this.settings.openMethod === "both") {
             this.registerDragHandler();
         }
@@ -84,22 +98,40 @@ export default class ModalOpenPlugin extends Plugin {
             this.registerAltClickHandler();
         }
     }
+    
+    private setupHoverListener() {
+        // Create a hover listener
+        this.mouseHoverListener = (event: MouseEvent) => {
+            // Get the hovered target element
+            const target = event.target as HTMLElement;
 
-    private setupClickListener() {
-        document.addEventListener('auxclick', (event: MouseEvent) => {
-            // 查找最近的含有 data-href 属性的元素
-            const target = (event.target as HTMLElement).closest('[data-href]');
+            // Check if the target element is a link with the cm-underline class
+            if (target.matches('.cm-underline')) {
+                // Get the link text content
+                const linkText = target.innerText;
+                this.currentAnchor = linkText;
+                console.log("Hovered link text:", this.currentAnchor);
+            }
+        };
+
+        document.addEventListener('mouseover', this.mouseHoverListener);
+    }
+
+    private setupContextMenuListener() {
+        // Create a context menu listener
+        this.contextMenuListener = (event: MouseEvent) => {
+            const target = (event.target as HTMLElement).closest('a[data-href]');
             if (target) {
-                // 获取 data-href 属性的值
-                this.currentAnchor = target.getAttribute('data-href');
-                console.log("Clicked anchor:", this.currentAnchor);
+                this.currentAnchor = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                console.log("Right-clicked anchor:", this.currentAnchor);
             } else {
                 this.currentAnchor = null;
             }
-        });
+        };
+
+        document.addEventListener('contextmenu', this.contextMenuListener);
     }
-    
-	
+
     private registerDragHandler() {
         this.dragHandler = () => {
             this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => {
@@ -148,7 +180,7 @@ export default class ModalOpenPlugin extends Plugin {
             }
         };
 
-        console.log("Adding middle click event handler");
+        // console.log("Adding middle click event handler");
         document.addEventListener('auxclick', this.middleClickHandler, { capture: true });
     }
 
@@ -165,19 +197,19 @@ export default class ModalOpenPlugin extends Plugin {
             }
         };
 
-        console.log("Adding alt click event handler");
+        // console.log("Adding alt click event handler");
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
 	private registerContextMenuHandler() {
-		// 处理文件菜单
+		// Handle file menu
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
 				this.addFloatPreviewMenuItem(menu, file.path);
 			})
 		);
 
-		// 处理 URL 菜单（包括 Markdown 链接）
+		// Handle URL menu (including Markdown links)
 		this.registerEvent(
 			this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
 				this.addFloatPreviewMenuItem(menu, link);
@@ -202,11 +234,12 @@ export default class ModalOpenPlugin extends Plugin {
                 })
         );
     }
-    
+
     private async openInFloatPreview(link: string) {
         try {
+            console.log("OpenLink:", link);
+            
             const [fileName, fragment] = link.split(/[#]/);
-            console.log("link:", link);
             // console.log("Original fileName:", fileName);
             // console.log("Fragment:", fragment);
             
@@ -222,6 +255,7 @@ export default class ModalOpenPlugin extends Plugin {
                 this.settings.modalHeight
             );
             this.modal.open();
+            this.currentAnchor = null;
         } catch (error) {
             console.error("Open in modal window error:", error);
             new Notice("Open in modal window error");

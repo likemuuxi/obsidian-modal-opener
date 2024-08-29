@@ -1,6 +1,5 @@
 import { Modal, TFile, WorkspaceLeaf , MarkdownView } from "obsidian";
 import ModalOpenPlugin from "./main";
-import { log } from "console";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenPlugin;
@@ -106,7 +105,9 @@ export class ModalWindow extends Modal {
                 console.error("No activate file");
             }
     
-            this.app.workspace.openLinkText(filePath, file.path, false);
+            setTimeout(() => {
+                this.app.workspace.openLinkText(filePath, file.path, false);
+            }, 150);
     
             // 查找新打开的leaf
             const view = this.app.workspace.getActiveViewOfType(MarkdownView);  // 注意这里添加了括号来调用方法
