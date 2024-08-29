@@ -106,7 +106,7 @@ export default class ModalOpenPlugin extends Plugin {
             const target = event.target as HTMLElement;
 
             // Check if the target element is a link with the cm-underline class
-            if (target.matches('.cm-underline')) {
+            if (target.matches('.cm-underline, .cm-hmd-internal-link')) {
                 // Get the link text content
                 const linkText = target.innerText;
                 this.currentAnchor = linkText;
@@ -205,19 +205,19 @@ export default class ModalOpenPlugin extends Plugin {
 		// Handle file menu
 		this.registerEvent(
 			this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
-				this.addFloatPreviewMenuItem(menu, file.path);
+				this.addFileFloatMenuItem(menu, file.path);
 			})
 		);
 
 		// Handle URL menu (including Markdown links)
 		this.registerEvent(
 			this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
-				this.addFloatPreviewMenuItem(menu, link);
+				this.addLinkFloatMenuItem(menu, link);
 			})
 		);
 	}
 
-    private addFloatPreviewMenuItem(menu: Menu, link?: string) {
+    private addFileFloatMenuItem(menu: Menu, link?: string) {
         menu.addItem((item) =>
             item
                 .setTitle("Open in Modal Window")
@@ -230,6 +230,20 @@ export default class ModalOpenPlugin extends Plugin {
                         } else {
                             this.openInFloatPreview(link);
                         }
+                    }
+                })
+        );
+    }
+
+    private addLinkFloatMenuItem(menu: Menu, link?: string) {
+        menu.addItem((item) =>
+            item
+                .setTitle("Open in Modal Window")
+                .setIcon("popup-open")
+                .setSection("open")
+                .onClick(() => {
+                    if (link) {
+                        this.openInFloatPreview(link);
                     }
                 })
         );
