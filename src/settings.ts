@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import ModalOpenPlugin from "./main";
+import { t } from "./lang/helpers"
 
 export interface ModalOpenPluginSettings {
 	openMethod: "drag" | "middle" | "altClick" | "both";
@@ -65,13 +66,13 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName("Open modal window with")
+			.setName(t("Open modal window with"))
 			.addDropdown((dd) =>
 				dd
-					.addOption("drag", "Drag and Drop")
-					.addOption("altClick", "Alt & Left Click")
-					.addOption("middle", "Middle Mouse Button")
-					.addOption("both", "Both")
+					.addOption("drag", t("Drag and Drop"))
+					.addOption("altClick", t("Alt & Left Click"))
+					.addOption("middle", t("Middle Mouse Button"))
+					.addOption("both", t("Both"))
 					.setValue(this.plugin.settings.openMethod)
 					.onChange(async (value: "drag" | "middle" | "altClick" | "both") => { // 更新类型
 						this.plugin.settings.openMethod = value;
@@ -81,12 +82,12 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 
 		new Setting(containerEl)
-			.setName('Default editing mode')
-			.setDesc('Select the default mode for opening files in the modal window')
+			.setName(t('Default editing mode'))
+			.setDesc(t('Select the default mode for opening files in the modal window'))
 			.addDropdown(dropdown => dropdown
-				.addOption('current', 'Current File')
-				.addOption('source', 'Edit')
-				.addOption('preview', 'Preview')
+				.addOption('current', t('Current File'))
+				.addOption('source', t('Edit'))
+				.addOption('preview', t('Preview'))
 				.setValue(this.plugin.settings.fileOpenMode)
 				.onChange(async (value) => {
 					this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
@@ -95,8 +96,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
-				.setName("Drag and drop time threshold")
-				.setDesc("Set the minimum drag and drop time (in milliseconds) to trigger the link to open.")
+				.setName(t("Drag and drop time threshold"))
+				.setDesc(t("Set the minimum drag and drop time (in milliseconds) to trigger the link to open."))
 				.addText((text) => text
 					.setValue(String(this.plugin.settings.dragThreshold))
 					.onChange(async (value) => {
@@ -108,11 +109,11 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		containerEl.createEl("h2", { text: "Window Settings" });
+		containerEl.createEl("h2", { text: t("Window Settings") });
 
 		new Setting(containerEl)
-			.setName("Modal width")
-			.setDesc("Enter any valid CSS unit")
+			.setName(t("Modal width"))
+			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
 				.setValue(this.modalWidth) // Use instance property
 				.onChange(async (value) => {
@@ -122,8 +123,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName("Modal height")
-			.setDesc("Enter any valid CSS unit")
+			.setName(t("Modal height"))
+			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
 				.setValue(this.modalHeight) // Use instance property
 				.onChange(async (value) => {
@@ -132,11 +133,11 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		containerEl.createEl("h2", { text: "Style Settings" });
+		containerEl.createEl("h2", { text: t("Style Settings") });
 
 		new Setting(containerEl)
-			.setName('Enable Animation and Blur')
-			.setDesc('Toggle to enable or disable animation and blur effects.')
+			.setName(t('Enable Animation and Blur'))
+			.setDesc(t('Toggle to enable or disable animation and blur effects.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableAnimation)
 				.onChange(async (value) => {

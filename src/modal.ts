@@ -9,6 +9,7 @@ export class ModalWindow extends Modal {
     fragment: string
     width: string;
     height: string;
+    private associatedLeaf?: WorkspaceLeaf;
 
     constructor(plugin: ModalOpenPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -47,16 +48,13 @@ export class ModalWindow extends Modal {
             this.leaf.detach();
             this.leaf = undefined;
         }
-        if (this.fragment)
-        {
-            const leaves = this.app.workspace.getLeavesOfType('markdown');
-            if (leaves.length > 0) {
-                const latestLeaf = leaves[leaves.length - 1];
-                latestLeaf.detach(); // 关闭最新的标签页
-            } else {
-                console.error("No open tab");
-            }
+
+        // 检查并关闭关联的标签页
+        if (this.associatedLeaf) {
+            this.associatedLeaf.detach();
+            this.associatedLeaf = undefined;
         }
+
         const { contentEl } = this;
         contentEl.empty();
     }
@@ -66,16 +64,15 @@ export class ModalWindow extends Modal {
             console.error("contentEl is undefined in displayFileContent.");
             return;
         }
-    
+
         this.contentEl.empty();
         this.contentEl.addClass("file-modal");
-    
-        // 创建文件内容容器
+
         const fileContainer = this.contentEl.createEl("div", { cls: "file-modal-container" });
         fileContainer.style.flexGrow = "1";
         fileContainer.style.position = "relative";
         fileContainer.style.overflow = "auto";
-    
+
         let mode: 'source' | 'preview';
         switch (this.plugin.settings.fileOpenMode) {
             case 'source':
@@ -92,39 +89,34 @@ export class ModalWindow extends Modal {
         if (fragment) {
             const filePath = `${file.path}#${fragment}`;
             console.log("filePath", filePath);
-            // 获取当前标签页的文件
+
             const currentLeaf = this.app.workspace.getLeaf();
             const activeFile = this.app.workspace.getActiveFile();
-            if (activeFile) {
-                if (currentLeaf) {
-                    // 使用 duplicateLeaf 复制当前标签页
-                    const newLeaf = await this.app.workspace.duplicateLeaf(currentLeaf, 'tab');
-                    await newLeaf.openFile(activeFile);
-                }
+            if (activeFile && currentLeaf) {
+                const newLeaf = await this.app.workspace.duplicateLeaf(currentLeaf, 'tab');
+                await newLeaf.openFile(activeFile);
+
+                // 保存关联的标签页
+                this.associatedLeaf = newLeaf;
             } else {
-                console.error("No activate file");
+                console.error("No active file");
             }
-    
+
             setTimeout(() => {
                 this.app.workspace.openLinkText(filePath, file.path, false);
             }, 150);
-    
-            // 查找新打开的leaf
-            const view = this.app.workspace.getActiveViewOfType(MarkdownView);  // 注意这里添加了括号来调用方法
+
+            const view = this.app.workspace.getActiveViewOfType(MarkdownView);
             if (view && view instanceof MarkdownView) {
-                // 获取当前的 view 状态
                 const currentState = view.getState();
-                // 更新模式
                 currentState.mode = mode;
-                // 更新视图状态
                 view.setState(currentState, { history: false });
-                // 将新打开的view嵌入到modal中
                 fileContainer.appendChild(view.containerEl);
                 this.contentEl.addEventListener('keydown', (event: KeyboardEvent) => {
                     if (event.ctrlKey && event.key === 'e') {
                         event.preventDefault();
                         (view as any).toggleMode();
-                    }   
+                    }
                 });
             }
         } else {
@@ -140,11 +132,14 @@ export class ModalWindow extends Modal {
                     }
                 });
             }
-            // 隐藏标签页
-            // (leaf as any).tabHeaderEl.style.display = 'none';
+
             fileContainer.appendChild(leaf.view.containerEl);
             this.leaf = leaf;
+
+            // 保存关联的标签页
+            this.associatedLeaf = leaf;
         }
+
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
     }

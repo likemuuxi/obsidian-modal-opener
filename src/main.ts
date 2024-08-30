@@ -113,7 +113,17 @@ export default class ModalOpenPlugin extends Plugin {
                 console.log("Hovered link text:", this.currentAnchor);
             }
         };
-
+        // if (target.matches('.cm-hmd-internal-link.cm-link-alias')) { 
+        //     // Get the link text content from cm-hmd-internal-link.cm-link-alias
+        //     const linkText = target.innerText;
+        //     this.currentAnchor = linkText;
+        //     console.log("Hovered link text:", this.currentAnchor);
+        // } else if (target.matches('.cm-underline, .cm-hmd-internal-link')) { 
+        //     // Get the link text content from cm-underline or cm-hmd-internal-link
+        //     const linkText = target.innerText;
+        //     this.currentAnchor = linkText;
+        //     console.log("Hovered link text:", this.currentAnchor);
+        // }
         document.addEventListener('mouseover', this.mouseHoverListener);
     }
 
