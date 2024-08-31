@@ -148,6 +148,11 @@ export default class ModalOpenPlugin extends Plugin {
                 const target = evt.target as HTMLElement;
                 if (target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))) {
                     this.draggedLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    if (this.draggedLink?.startsWith('#')) {
+                        const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                        console.log("currentFilePath", currentFilePath)
+                        this.draggedLink = currentFilePath + this.draggedLink;
+                    }
                     this.dragStartTime = Date.now();
                     console.log("Drag started on link:", this.draggedLink);
                 }
