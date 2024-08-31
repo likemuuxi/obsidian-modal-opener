@@ -142,17 +142,16 @@ export default class ModalOpenPlugin extends Plugin {
         document.addEventListener('contextmenu', this.contextMenuListener);
     }
 
+    private isLinkElement(target: HTMLElement): boolean {
+        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) || target.classList.contains('auto-card-link-card');
+    }
+
     private registerDragHandler() {
         this.dragHandler = () => {
-            this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => {
+            this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => { 
                 const target = evt.target as HTMLElement;
-                if (target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))) {
+                if (this.isLinkElement(target)) {
                     this.draggedLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
-                    if (this.draggedLink?.startsWith('#')) {
-                        const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
-                        console.log("currentFilePath", currentFilePath)
-                        this.draggedLink = currentFilePath + this.draggedLink;
-                    }
                     this.dragStartTime = Date.now();
                     console.log("Drag started on link:", this.draggedLink);
                 }
@@ -186,11 +185,12 @@ export default class ModalOpenPlugin extends Plugin {
         this.middleClickHandler = (evt: MouseEvent) => {
             if (evt.button === 1) { // Check for middle mouse button click
                 const target = evt.target as HTMLElement;
-                if (target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))) {
+                if (this.isLinkElement(target)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const link = target.getAttribute('data-href') || target.getAttribute('href') || '';
-                    this.openInFloatPreview(link);
+                    const middleLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    console.log("middleLink",middleLink );
+                    this.openInFloatPreview(middleLink);
                 }
             }
         };
@@ -206,8 +206,8 @@ export default class ModalOpenPlugin extends Plugin {
                 if (target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const link = target.getAttribute('data-href') || target.getAttribute('href') || '';
-                    this.openInFloatPreview(link);
+                    const altLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    this.openInFloatPreview(altLink);
                 }
             }
         };
@@ -266,6 +266,11 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async openInFloatPreview(link: string) {
         try {
+            if (link?.startsWith('#')) {
+                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                link = currentFilePath + link;
+            }
+
             console.log("OpenLink:", link);
             
             const [fileName, fragment] = link.split(/[#]/);
