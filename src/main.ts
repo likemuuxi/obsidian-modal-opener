@@ -143,7 +143,12 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     private isLinkElement(target: HTMLElement): boolean {
-        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) || target.classList.contains('auto-card-link-card');
+        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) 
+        || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content');
+    }
+
+    private getLinkFromTarget(target: HTMLElement): string {
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.textContent?.trim() || '';
     }
 
     private registerDragHandler() {
@@ -151,7 +156,7 @@ export default class ModalOpenPlugin extends Plugin {
             this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => { 
                 const target = evt.target as HTMLElement;
                 if (this.isLinkElement(target)) {
-                    this.draggedLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    this.draggedLink = this.getLinkFromTarget(target);
                     this.dragStartTime = Date.now();
                     console.log("Drag started on link:", this.draggedLink);
                 }
@@ -160,16 +165,16 @@ export default class ModalOpenPlugin extends Plugin {
             this.registerDomEvent(document, 'dragend', (evt: DragEvent) => {
                 if (this.draggedLink) {
                     if (this.settings.dragThreshold === 0) {
-                        console.log("Opening link immediately:", this.draggedLink);
+                        // console.log("Opening link immediately:", this.draggedLink);
                         this.openInFloatPreview(this.draggedLink);
                     } else if (this.dragStartTime) {
                         const dragDuration = Date.now() - this.dragStartTime;
-                        console.log("Drag ended, duration:", dragDuration);
+                        // console.log("Drag ended, duration:", dragDuration);
                         if (dragDuration >= this.settings.dragThreshold) {
                             console.log("Opening link:", this.draggedLink);
                             this.openInFloatPreview(this.draggedLink);
                         } else {
-                            console.log("Drag duration too short, not opening link");
+                            // console.log("Drag duration too short, not opening link");
                         }
                     }
                     this.draggedLink = null;
@@ -177,7 +182,6 @@ export default class ModalOpenPlugin extends Plugin {
                 }
             });
         };
-
         this.dragHandler();
     }
 
@@ -188,13 +192,12 @@ export default class ModalOpenPlugin extends Plugin {
                 if (this.isLinkElement(target)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const middleLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    const middleLink = this.getLinkFromTarget(target);
                     console.log("middleLink",middleLink );
                     this.openInFloatPreview(middleLink);
                 }
             }
         };
-
         // console.log("Adding middle click event handler");
         document.addEventListener('auxclick', this.middleClickHandler, { capture: true });
     }
@@ -203,15 +206,14 @@ export default class ModalOpenPlugin extends Plugin {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) { // Check for Alt + Left mouse button click
                 const target = evt.target as HTMLElement;
-                if (target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))) {
+                if (this.isLinkElement(target)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const altLink = target.getAttribute('data-href') || target.getAttribute('href') || '';
+                    const altLink = this.getLinkFromTarget(target);
                     this.openInFloatPreview(altLink);
                 }
             }
         };
-
         // console.log("Adding alt click event handler");
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
