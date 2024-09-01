@@ -14,7 +14,7 @@ export default {
     'Preview':'阅读模式',
 
     "Drag and drop time threshold":'拖拽时间阈值',
-    "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'设置触发链接打开的最小拖放时间（以毫秒为单位）。',
+    "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'设置触发链接打开的最小拖放时间（以毫秒为单位）',
     'Disable external click Close':'禁用外部点击关闭',
     'Use only the "Close" button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
 
@@ -25,7 +25,7 @@ export default {
 
     "Style Settings":'样式设置',
     'Enable Animation and Blur':'启用动画和模糊',
-    'Toggle to enable or disable animation and blur effects.':'切换以启用或禁用动画和模糊效果。',
+    'Toggle to enable or disable animation and blur effects.':'切换以启用或禁用动画和模糊效果',
     
     'Custom Commands':'自定义命令',
     'Add Custom Command':'添加自定义命令',
