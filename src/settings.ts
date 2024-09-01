@@ -1,14 +1,22 @@
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import ModalOpenPlugin from "./main";
 import { t } from "./lang/helpers"
 
 export interface ModalOpenPluginSettings {
-	openMethod: "drag" | "middle" | "altClick" | "both";
+	openMethod: "drag" | "middle" | "altclick" | "both";
 	fileOpenMode: 'current' | 'source' | 'preview';
 	modalWidth: string;
 	modalHeight: string;
-	dragThreshold: number; // 添加拖拽时间阈值设置
-	enableAnimation: boolean; // 添加这一行
+	dragThreshold: number;
+	enableAnimation: boolean;
+	onlyCloseButton: boolean;
+	customCommands: CustomCommand[];
+}
+
+interface CustomCommand {
+	id: string;
+	name: string;
+	command: string;
 }
 
 export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
@@ -16,8 +24,10 @@ export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	fileOpenMode: 'current',
 	modalWidth: "76vw",
 	modalHeight: "86vh",
-	dragThreshold: 200, // 默认拖拽时间阈值
-	enableAnimation: true, // 添加这一行
+	dragThreshold: 200,
+	enableAnimation: true,
+	onlyCloseButton: false,
+	customCommands: [],
 };
 
 export default class ModalOpenSettingTab extends PluginSettingTab {
@@ -26,8 +36,10 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	fileOpenMode: string;
 	modalWidth: string;
 	modalHeight: string;
-	dragThreshold: number; // 添加拖拽时间阈值设置
-	enableAnimation: boolean; // 添加这一行
+	dragThreshold: number;
+	enableAnimation: boolean;
+	onlyCloseButton: boolean;
+	customCommands: CustomCommand[];
 
 	constructor(app: App, plugin: ModalOpenPlugin) {
 		super(app, plugin);
@@ -38,7 +50,9 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		this.modalWidth = this.plugin.settings.modalWidth;
 		this.modalHeight = this.plugin.settings.modalHeight;
 		this.dragThreshold = this.plugin.settings.dragThreshold;
-		this.enableAnimation = this.plugin.settings.enableAnimation; // 添加这一行
+		this.enableAnimation = this.plugin.settings.enableAnimation;
+		this.onlyCloseButton = this.plugin.settings.onlyCloseButton;
+		this.customCommands = this.plugin.settings.customCommands;
 	}
 
 	async reloadPlugin() {
@@ -66,20 +80,30 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName(t("Open modal window with"))
+			.setName(t("Open with"))
 			.addDropdown((dd) =>
 				dd
-					.addOption("drag", t("Drag and Drop"))
-					.addOption("altClick", t("Alt & Left Click"))
-					.addOption("middle", t("Middle Mouse Button"))
 					.addOption("both", t("Both"))
+					.addOption("drag", t("Drag & Drop"))
+					.addOption("middle", t("Middle Mouse Button"))
+					.addOption("altclick", t("Alt & Left Click"))
 					.setValue(this.plugin.settings.openMethod)
-					.onChange(async (value: "drag" | "middle" | "altClick" | "both") => { // 更新类型
+					.onChange(async (value: "drag" | "middle" | "altclick" | "both") => { // 更新类型
 						this.plugin.settings.openMethod = value;
 						await this.plugin.saveSettings();
-						await this.reloadPlugin(); // 调用重启插件的方法
-						this.display(); // 重新渲染设置页面
+						await this.reloadPlugin();
+						this.display();
 					}));
+
+		new Setting(containerEl)
+			.setName(t('Disable external click Close'))
+			.setDesc(t('Use only the "Close" button and Esc to close.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.onlyCloseButton)
+				.onChange(async (value) => {
+					this.plugin.settings.onlyCloseButton = value;
+					await this.plugin.saveSettings();
+			}));
 
 		new Setting(containerEl)
 			.setName(t('Default editing mode'))
@@ -109,16 +133,16 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		containerEl.createEl("h2", { text: t("Window Settings") });
+		containerEl.createEl("h2", { text: t("Style Settings") });
 
 		new Setting(containerEl)
 			.setName(t("Modal width"))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.modalWidth) // Use instance property
+				.setValue(this.modalWidth)
 				.onChange(async (value) => {
 					this.plugin.settings.modalWidth = value;
-					this.modalWidth = value; // Update instance property
+					this.modalWidth = value;
 					await this.plugin.saveSettings();
 				}));
 
@@ -126,14 +150,12 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 			.setName(t("Modal height"))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.modalHeight) // Use instance property
+				.setValue(this.modalHeight)
 				.onChange(async (value) => {
 					this.plugin.settings.modalHeight = value;
-					this.modalHeight = value; // Update instance property
+					this.modalHeight = value;
 					await this.plugin.saveSettings();
 				}));
-
-		containerEl.createEl("h2", { text: t("Style Settings") });
 
 		new Setting(containerEl)
 			.setName(t('Enable Animation and Blur'))
@@ -144,5 +166,66 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					this.plugin.settings.enableAnimation = value;
 					await this.plugin.saveSettings();
 				}));
+
+		containerEl.createEl("h2", { text: t("Custom Commands") });
+
+		new Setting(containerEl)
+			.setName(t("Add Custom Command"))
+			.setDesc(t("Add a new custom command"))
+			.addButton((button) => button
+				.setButtonText(t("Add"))
+				.onClick(() => {
+					this.addCustomCommand();
+				}));
+
+		// 显示现有的自定义命令
+		const customCommandsContainer = containerEl.createDiv("custom-commands-container");
+		this.plugin.settings.customCommands.forEach((command, index) => {
+			this.createCustomCommandSetting(customCommandsContainer, command, index);
+		});
+	}
+
+	addCustomCommand() {
+		const newCommand: CustomCommand = {
+			id: String(Date.now()),
+			name: t("New Command"),
+			command: ""
+		};
+		this.plugin.settings.customCommands.push(newCommand);
+		this.plugin.saveSettings();
+		this.display();
+	}
+
+	createCustomCommandSetting(containerEl: HTMLElement, command: CustomCommand, index: number) {
+		const setting = new Setting(containerEl)
+			.setName(t("Command") + ` #${index + 1}`)
+			.addText((text) => text
+				.setValue(command.name)
+				.onChange(async (value) => {
+					command.name = value;
+					await this.plugin.saveSettings();
+				}))
+			.addText((text) => text
+				.setPlaceholder(t("Description"))
+				.setValue(command.command)
+				.onChange(async (value) => {
+					command.command = value;
+					await this.plugin.saveSettings();
+				}))
+			.addExtraButton((button) => button
+				.setIcon("cross")
+				.setTooltip(t("Delete"))
+				.onClick(() => {
+					this.deleteCustomCommand(index);
+				}));
+
+		return setting;
+	}
+
+	deleteCustomCommand(index: number): void {
+		this.plugin.settings.customCommands.splice(index, 1);
+		this.plugin.saveSettings();
+		this.reloadPlugin();
+		this.display();
 	}
 }

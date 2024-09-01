@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
@@ -14,6 +14,7 @@ export default class ModalOpenPlugin extends Plugin {
     private contextMenuListener: ((event: MouseEvent) => void) | undefined;
     private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
     private currentAnchor: string | null = null;
+    // private currentSrcText: string | null = null;
 
 	async onload() {
 		await this.loadSettings();
@@ -22,12 +23,7 @@ export default class ModalOpenPlugin extends Plugin {
         this.registerContextMenuHandler();
         this.setupHoverListener();
         this.setupContextMenuListener();
-
- 
-		this.addSettingTab(new ModalOpenSettingTab(this.app, this));
-
-		// 初始化时应用样式
-		this.applyModalStyle();
+		this.applyModalStyle();		// 初始化时应用样式
 
 		// 监听设置变化
 		this.registerEvent(
@@ -35,7 +31,14 @@ export default class ModalOpenPlugin extends Plugin {
 				this.applyModalStyle();
 			})
 		);
+
+        this.addSettingTab(new ModalOpenSettingTab(this.app, this));
+        this.registerCustomCommands();
 	}
+
+	applyModalStyle() {
+        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+    }
 
 	onunload() {
 		this.removeEventListeners();
@@ -48,10 +51,35 @@ export default class ModalOpenPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		this.registerOpenHandler();
+        this.registerCustomCommands();
 	}
 
-	applyModalStyle() {
-        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+    registerCustomCommands() {
+		// 重新注册所有自定义命令
+		this.settings.customCommands.forEach(command => {
+			this.addCommand({
+				id: `modal-open-custom-${command.id}`,
+				name: command.name,
+				callback: () => this.executeCustomCommand(command.command)
+			});
+		});
+	}
+    
+    executeCustomCommand(command: string) {
+        // 判断字符串是否是链接
+        if (this.isValidURL(command)) {
+            console.log("Executing link:", command);
+            // 实现打开链接的逻辑
+            this.openInFloatPreview(command);
+        } else {
+            if (command.includes('.canvas') || command.includes('.md') || command.includes('.excalidraw')) {
+                console.log("Executing file path:", command);
+                this.openInFloatPreview(command);
+            } else {
+                console.log("Unsupported file or link format:", command);
+                new Notice("Unsupported file or link format");
+            }
+        }
     }
 
     private removeEventListeners() {
@@ -111,21 +139,19 @@ export default class ModalOpenPlugin extends Plugin {
                 const linkText = target.innerText;
                 this.currentAnchor = linkText;
                 console.log("Hovered link text:", this.currentAnchor);
-            }
+            } /* else if (target.matches('.image-embed')) {
+                const srcText = this.getSrcFromSpan(target);
+                this.currentSrcText = srcText;
+                console.log("Hovered src text:", this.currentSrcText);
+            } */
         };
-        // if (target.matches('.cm-hmd-internal-link.cm-link-alias')) { 
-        //     // Get the link text content from cm-hmd-internal-link.cm-link-alias
-        //     const linkText = target.innerText;
-        //     this.currentAnchor = linkText;
-        //     console.log("Hovered link text:", this.currentAnchor);
-        // } else if (target.matches('.cm-underline, .cm-hmd-internal-link')) { 
-        //     // Get the link text content from cm-underline or cm-hmd-internal-link
-        //     const linkText = target.innerText;
-        //     this.currentAnchor = linkText;
-        //     console.log("Hovered link text:", this.currentAnchor);
-        // }
+
         document.addEventListener('mouseover', this.mouseHoverListener);
     }
+
+    // private getSrcFromSpan(target: HTMLElement): string | null {
+    //     return target.getAttribute('src') || null; // 返回 src 属性内容
+    // }
 
     private setupContextMenuListener() {
         // Create a context menu listener
@@ -142,26 +168,20 @@ export default class ModalOpenPlugin extends Plugin {
         document.addEventListener('contextmenu', this.contextMenuListener);
     }
 
-    private isLinkElement(target: HTMLElement): boolean {
-        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) 
-        || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content');
-    }
-
-    private getLinkFromTarget(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.textContent?.trim() || '';
-    }
-
     private registerDragHandler() {
         this.dragHandler = () => {
             this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => { 
                 const target = evt.target as HTMLElement;
-                if (this.isLinkElement(target)) {
-                    this.draggedLink = this.getLinkFromTarget(target);
-                    this.dragStartTime = Date.now();
-                    console.log("Drag started on link:", this.draggedLink);
+                if (this.isSupportElement(target)) {
+                    // Check if the target has 'nav-folder-children' or 'nav-folder' class
+                    if (!target.closest('.nav-folder-children') && !target.closest('.nav-folder')) {
+                        this.draggedLink = this.getLinkFromTarget(target);
+                        this.dragStartTime = Date.now();
+                        // console.log("Drag started on link:", this.draggedLink);
+                    }
                 }
             });
-
+    
             this.registerDomEvent(document, 'dragend', (evt: DragEvent) => {
                 if (this.draggedLink) {
                     if (this.settings.dragThreshold === 0) {
@@ -174,7 +194,7 @@ export default class ModalOpenPlugin extends Plugin {
                             console.log("Opening link:", this.draggedLink);
                             this.openInFloatPreview(this.draggedLink);
                         } else {
-                            // console.log("Drag duration too short, not opening link");
+                            console.log("Drag duration too short, not opening link");
                         }
                     }
                     this.draggedLink = null;
@@ -184,12 +204,13 @@ export default class ModalOpenPlugin extends Plugin {
         };
         this.dragHandler();
     }
+    
 
     private registerMouseMiddleClickHandler() {
         this.middleClickHandler = (evt: MouseEvent) => {
             if (evt.button === 1) { // Check for middle mouse button click
                 const target = evt.target as HTMLElement;
-                if (this.isLinkElement(target)) {
+                if (this.isSupportElement(target)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
                     const middleLink = this.getLinkFromTarget(target);
@@ -206,11 +227,17 @@ export default class ModalOpenPlugin extends Plugin {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) { // Check for Alt + Left mouse button click
                 const target = evt.target as HTMLElement;
-                if (this.isLinkElement(target)) {
+                if (this.isSupportElement(target)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
                     const altLink = this.getLinkFromTarget(target);
-                    this.openInFloatPreview(altLink);
+                    const app = this.app as any;
+                    const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
+                    if (!folderIsInstalled) {
+                        this.openInFloatPreview(altLink);
+                    } else {
+                        this.folderNoteOpenInFloatPreview(altLink);
+                    }
                 }
             }
         };
@@ -218,21 +245,41 @@ export default class ModalOpenPlugin extends Plugin {
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
-	private registerContextMenuHandler() {
-		// Handle file menu
-		this.registerEvent(
-			this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
-				this.addFileFloatMenuItem(menu, file.path);
-			})
-		);
+    private registerContextMenuHandler() {
+        // Handle file menu
+        this.registerEvent(
+            this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
+                const fileTarget = this.getFileElement(file.path); // 通过 file.path 获取对应的 DOM 元素
+                const folderTarget = this.getFolderElement(file.path); // 通过 file.path 获取对应的 DOM 元素
+                const app = this.app as any;
+                const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
+                if (!folderIsInstalled) {
+                    if (fileTarget && fileTarget.classList.contains('nav-file-title')) {
+                        this.addFileFloatMenuItem(menu, file.path);
+                    }
+                } else {
+                    if ((fileTarget && fileTarget.classList.contains('nav-file-title')) || (folderTarget && folderTarget.classList.contains('has-folder-note'))) {
+                        this.addFolderFloatMenuItem(menu, file.path);
+                    }
+                }
+            })
+        );
+    
+        // Handle URL menu (including Markdown links)
+        this.registerEvent(
+            this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
+                this.addLinkFloatMenuItem(menu, link);
+            })
+        );
+    }
+    
+    private getFileElement(filePath: string): HTMLElement | null {
+        return document.querySelector(`.nav-file-title[data-path="${filePath}"]`);
+    }
 
-		// Handle URL menu (including Markdown links)
-		this.registerEvent(
-			this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
-				this.addLinkFloatMenuItem(menu, link);
-			})
-		);
-	}
+    private getFolderElement(filePath: string): HTMLElement | null {
+        return document.querySelector(`.nav-folder-title[data-path="${filePath}"]`);
+    }
 
     private addFileFloatMenuItem(menu: Menu, link?: string) {
         menu.addItem((item) =>
@@ -247,6 +294,34 @@ export default class ModalOpenPlugin extends Plugin {
                         } else {
                             this.openInFloatPreview(link);
                         }
+                        // console.log("link", link);
+                        // if (this.currentSrcText)
+                        // {
+                        //     console.log("this.currentSrcText", this.currentSrcText);
+                        //     const app = this.app as any;
+                        //     const DiagramPlugin = app.plugins["obsidian-diagrams-net"];
+                        //     console.log("DiagramPlugin", DiagramPlugin);
+                        //     if (DiagramPlugin) {
+                        //         // 调用该插件的公开方法或访问属性
+                        //         DiagramPlugin.attemptEditDiagram(this.currentSrcText);
+                        //     } else {
+                        //         console.error("插件未加载");
+                        //     }
+                        // }
+                    }
+                })
+        );
+    }
+
+    private addFolderFloatMenuItem(menu: Menu, link?: string) {
+        menu.addItem((item) =>
+            item
+                .setTitle("Open in Modal Window")
+                .setIcon("popup-open")
+                .setSection("open")
+                .onClick(() => {
+                    if (link) {
+                        this.folderNoteOpenInFloatPreview(link);
                     }
                 })
         );
@@ -268,24 +343,28 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async openInFloatPreview(link: string) {
         try {
+            if (this.modal) {
+                this.modal.close();
+            }
+            // 适配 auto content tco
             if (link?.startsWith('#')) {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
                 link = currentFilePath + link;
             }
-
+    
             console.log("OpenLink:", link);
+ 
+            let file: TFile | undefined;
+            const [filePath, fragment] = link.split(/[#]/); // 分离路径和片段
+            // const fileNameOnly = filePath.split(/[/\\]/).pop() || filePath; // 获取文件名部分
+
+            file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
             
-            const [fileName, fragment] = link.split(/[#]/);
-            // console.log("Original fileName:", fileName);
-            // console.log("Fragment:", fragment);
-            
-            const file = this.app.metadataCache.getFirstLinkpathDest(fileName, "");
-            // console.log("File from metadata cache:", file);
-            
+            // 处理网络链接
             this.modal = new ModalWindow(
                 this,
-                file ? "" : link,
-                file ?? undefined,
+                this.isValidURL(link) ? link : "",
+                file,
                 fragment ?? "",
                 this.settings.modalWidth,
                 this.settings.modalHeight
@@ -297,4 +376,64 @@ export default class ModalOpenPlugin extends Plugin {
             new Notice("Open in modal window error");
         }
     }
+
+    private async folderNoteOpenInFloatPreview(link: string) {
+        try {
+            if (this.modal) {
+                this.modal.close();
+            }
+    
+            console.log("OpenLink:", link);
+ 
+            let file: TFile | undefined;
+
+            const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
+
+            // 尝试使用组合路径查找 .md 文件
+            let folderFilePath = `${link}/${fileNameOnly}.md`;
+            file = this.app.vault.getAbstractFileByPath(folderFilePath) as TFile;
+    
+            if (!(file instanceof TFile)) {
+                // 如果找不到 .md 文件，尝试查找 .canvas 文件
+                folderFilePath = `${link}/${fileNameOnly}.canvas`;
+                file = this.app.vault.getAbstractFileByPath(folderFilePath) as TFile;
+    
+                if (!(file instanceof TFile)) {
+                    console.log("File not found by getAbstractFileByPath. Trying getFirstLinkpathDest...");
+                    file = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "") as TFile;
+                } else {
+                    console.log("File found with .canvas extension:", file.path);
+                }
+            } else {
+                console.log("File found with .md extension:", file.path);
+            }
+    
+            // 处理网络链接
+            this.modal = new ModalWindow(
+                this,
+                "",
+                file,
+                "",
+                this.settings.modalWidth,
+                this.settings.modalHeight
+            );
+            this.modal.open();
+        } catch (error) {
+            console.error("Open in modal window error:", error);
+            new Notice("Open in modal window error");
+        }
+    }
+    
+    private isSupportElement(target: HTMLElement): boolean {
+        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) 
+        || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content')
+        || target.classList.contains('has-folder-note');
+    }
+
+    private getLinkFromTarget(target: HTMLElement): string {
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+    }
+
+    private isValidURL = (url: string) =>
+        url.startsWith('http://') || url.startsWith('https://') || url.startsWith('www.') || url.startsWith('192.') || url.startsWith('127.');
 }
