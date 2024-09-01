@@ -214,8 +214,14 @@ export default class ModalOpenPlugin extends Plugin {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
                     const middleLink = this.getLinkFromTarget(target);
+                    const app = this.app as any;
+                    const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
                     console.log("middleLink",middleLink );
-                    this.openInFloatPreview(middleLink);
+                    if (!folderIsInstalled) {
+                        this.openInFloatPreview(middleLink);
+                    } else {
+                        this.folderNoteOpenInFloatPreview(middleLink);
+                    }
                 }
             }
         };
