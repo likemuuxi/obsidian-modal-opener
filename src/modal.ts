@@ -55,7 +55,7 @@ export class ModalWindow extends Modal {
             } else {
                 console.log('associatedLeaf is null');
             }
-        }, 100);
+        }, 200);
     }
 
     isValidURL(url: string): boolean {

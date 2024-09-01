@@ -216,11 +216,16 @@ export default class ModalOpenPlugin extends Plugin {
                     const middleLink = this.getLinkFromTarget(target);
                     const app = this.app as any;
                     const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
-                    console.log("middleLink",middleLink );
+                    console.log("middleLink", middleLink );
                     if (!folderIsInstalled) {
                         this.openInFloatPreview(middleLink);
                     } else {
-                        this.folderNoteOpenInFloatPreview(middleLink);
+                        if (this.isValidURL(middleLink) || middleLink.startsWith('#'))
+                        {
+                            this.openInFloatPreview(middleLink);
+                        } else {
+                            this.folderNoteOpenInFloatPreview(middleLink);
+                        }
                     }
                 }
             }
@@ -242,7 +247,12 @@ export default class ModalOpenPlugin extends Plugin {
                     if (!folderIsInstalled) {
                         this.openInFloatPreview(altLink);
                     } else {
-                        this.folderNoteOpenInFloatPreview(altLink);
+                        if (this.isValidURL(altLink) || altLink.startsWith('#'))
+                        {
+                            this.openInFloatPreview(altLink);
+                        } else {
+                            this.folderNoteOpenInFloatPreview(altLink);
+                        }
                     }
                 }
             }
@@ -389,7 +399,7 @@ export default class ModalOpenPlugin extends Plugin {
                 this.modal.close();
             }
     
-            console.log("OpenLink:", link);
+            console.log("folderOpenLink:", link);
  
             let file: TFile | undefined;
 
