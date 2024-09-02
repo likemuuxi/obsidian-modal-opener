@@ -22,24 +22,43 @@
 
 
 
-## How to use
+# Feature
+
+- Markdown file support title link, block link anchor jump and switch edit mode
+
+- Double-click the border to restore
+
+- Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
+
+# How to use
 
 - Reading mode 
-  - Right-click menu options 
-  - Drag and drop to open 
-  - middle mouse button to open 
-  - 'alt + Left button' 
+  - Right-click menu
+  - Drag and drop
+  - middle mouse button
+  - alt + Left Click
 
 - Edit mode 
   - Right-click menu
 
+# How to install
 
+## Manually installing the plugin
 
+- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
 
-## Compatibility
+## Installation via BRAT
+
+1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat).
+2. Add "Modal Plugin" to BRAT:
+   1. Open "Obsidian42 - BRAT" via Settings → Community Plugins
+   2. Click "Add Beta plugin"
+   3. Use the repository address `https://github.com/likemuuxi/obsidian-modal-plugin`
+3. Enable "Modal Plugin" under Settings → Options → Community Plugins
+
+# Compatibility
 
 Compatible plugins
-- Markdown(SSupport title link, block link anchor jump and edit mode)
 - Excel
 - Sheet Plus
 - Surfing
@@ -52,26 +71,7 @@ Compatible plugins
 - Component（💰pay）
 - ...
 
-## Feature
-
-- Double-click the border to restore
-
-- Support setting sidebar ICONS, one click to open files or links (Can be used with the Command plugin)
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
-
-## Installation via BRAT (for pre-releases or betas)
-
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat).
-2. Add "Mononote" to BRAT:
-   1. Open "Obsidian42 - BRAT" via Settings → Community Plugins
-   2. Click "Add Beta plugin"
-   3. Use the repository address `czottmann/obsidian-mononote`
-3. Enable "Mononote" under Settings → Options → Community Plugins
-
-# Conflict plugins
+## Conflict plugins
 
 Currently known plugins with conflicts.
 

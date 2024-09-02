@@ -177,7 +177,7 @@ export default class ModalOpenPlugin extends Plugin {
                     if (!target.closest('.nav-folder-children') && !target.closest('.nav-folder')) {
                         this.draggedLink = this.getLinkFromTarget(target);
                         this.dragStartTime = Date.now();
-                        // console.log("Drag started on link:", this.draggedLink);
+                        console.log("Drag started on link:", this.draggedLink);
                     }
                 }
             });
