@@ -55,7 +55,27 @@ If your plugin does not need CSS, delete this file.
     position: relative; /* 添加这行 */
 }
 
+.modal {
+    overflow: hidden; /* 父级容器不允许滚动 */
+}
+
+.modal-content:has(.components--Component), .file-modal:has(.components--Component) {
+    --file-line-width: 90%;
+    padding: 0;
+}
+
 /* file-modal */
+
 .file-modal-container .view-header {
     display: none;
+}
+
+.file-modal .markdown-rendered
+{
+    overflow-x: hidden; /* 禁止横向和纵向滚动 */
+    padding: 0;
+}
+
+.file-modal .metadata-container {
+    display: none !important;
 }

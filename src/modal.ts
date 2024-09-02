@@ -174,6 +174,12 @@ export class ModalWindow extends Modal {
         fileContainer.style.flexGrow = "1";
         fileContainer.style.position = "relative";
         fileContainer.style.overflow = "auto";
+        const modalHeightSetting = this.plugin.settings.modalHeight;
+        const heightValue = parseInt(modalHeightSetting, 10) - 1;
+        const adjustedModalHeight = `${heightValue}vh`;
+        fileContainer.style.minHeight = adjustedModalHeight;
+        fileContainer.style.maxHeight = adjustedModalHeight;
+        fileContainer.style.padding = "0";
 
         let mode: 'source' | 'preview';
         switch (this.plugin.settings.fileOpenMode) {
@@ -204,7 +210,7 @@ export class ModalWindow extends Modal {
 
             setTimeout(() => {
                 this.app.workspace.openLinkText(filePath, file.path, false);
-            }, 100);
+            }, 150);
 
             const view = this.app.workspace.getActiveViewOfType(MarkdownView);
             if (view && view instanceof MarkdownView) {
@@ -264,7 +270,7 @@ export class ModalWindow extends Modal {
                             currentState.mode = mode;
                             view.setState(currentState, { history: false });
                         }
-                    }, 100);
+                    }, 150);
                 }
             });
         } else {
@@ -311,8 +317,8 @@ export class ModalWindow extends Modal {
                 if (this.openedLink)
                 {
                     const app = this.plugin.app as any;
-                    const surfIsInstalled = app.plugins.enabledPlugins.has('surfing');
-                    if (surfIsInstalled) {
+                    const surfPlugin = app.plugins.plugins["surfing"];
+                    if (surfPlugin) {
                         this.close();
                         window.open(this.openedLink);
                     } else {

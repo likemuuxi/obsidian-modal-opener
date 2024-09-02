@@ -214,17 +214,18 @@ export default class ModalOpenPlugin extends Plugin {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
                     const middleLink = this.getLinkFromTarget(target);
+                    const isFolderLink = target.classList.contains('has-folder-note');
                     const app = this.app as any;
-                    const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
+                    const folderPlugin = app.plugins.plugins["folder-notes"];
                     console.log("middleLink", middleLink );
-                    if (!folderIsInstalled) {
+                    if (!folderPlugin) {
                         this.openInFloatPreview(middleLink);
                     } else {
-                        if (this.isValidURL(middleLink) || middleLink.startsWith('#'))
+                        if (isFolderLink)
                         {
-                            this.openInFloatPreview(middleLink);
-                        } else {
                             this.folderNoteOpenInFloatPreview(middleLink);
+                        } else {
+                            this.openInFloatPreview(middleLink);
                         }
                     }
                 }
@@ -242,16 +243,18 @@ export default class ModalOpenPlugin extends Plugin {
                     evt.preventDefault();
                     evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
                     const altLink = this.getLinkFromTarget(target);
+                    const isFolderLink = target.classList.contains('has-folder-note');
                     const app = this.app as any;
-                    const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
-                    if (!folderIsInstalled) {
+                    const folderPlugin = app.plugins.plugins["folder-notes"];
+                    console.log("altLink", altLink );
+                    if (!folderPlugin) {
                         this.openInFloatPreview(altLink);
                     } else {
-                        if (this.isValidURL(altLink) || altLink.startsWith('#'))
+                        if (isFolderLink)
                         {
-                            this.openInFloatPreview(altLink);
-                        } else {
                             this.folderNoteOpenInFloatPreview(altLink);
+                        } else {
+                            this.openInFloatPreview(altLink);
                         }
                     }
                 }
@@ -268,8 +271,8 @@ export default class ModalOpenPlugin extends Plugin {
                 const fileTarget = this.getFileElement(file.path); // 通过 file.path 获取对应的 DOM 元素
                 const folderTarget = this.getFolderElement(file.path); // 通过 file.path 获取对应的 DOM 元素
                 const app = this.app as any;
-                const folderIsInstalled = app.plugins.enabledPlugins.has('folder-notes');
-                if (!folderIsInstalled) {
+                const folderPlugin = app.plugins.plugins["folder-notes"];
+                if (!folderPlugin) {
                     if (fileTarget && fileTarget.classList.contains('nav-file-title')) {
                         this.addFileFloatMenuItem(menu, file.path);
                     }
