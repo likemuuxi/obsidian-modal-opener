@@ -34,11 +34,10 @@ export class ModalWindow extends Modal {
         } catch (error) {
             return false;
         }
-    }    
+    }  
 
     handleFileClick(filePath: string) {
         console.log("filePath", filePath);
-
         // 使用 setTimeout 延时操作
         setTimeout(() => {
             if (this.associatedLeaf) {
@@ -46,7 +45,6 @@ export class ModalWindow extends Modal {
                 console.log("containerEl", containerEl);
                 const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
                 if (containerEl) {
-                    fileContainer.innerHTML = '';  // 使用 innerHTML 清空内容
                     fileContainer.appendChild(containerEl);
                     this.openedLink = filePath;
                 } else {
@@ -55,7 +53,87 @@ export class ModalWindow extends Modal {
             } else {
                 console.log('associatedLeaf is null');
             }
-        }, 200);
+        }, 150);
+    }
+
+    handleExcalidrawFileClick(filePath: string) {
+        console.log("filePath", filePath);
+        const leaf = this.app.workspace.getLeaf(true);
+        const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
+        leaf.openFile(excalidrawFile);
+        (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
+        // 使用 setTimeout 延时操作
+        setTimeout(() => {
+            if (leaf) {
+                const containerEl = leaf.view.containerEl;
+                console.log("containerEl", containerEl);
+                const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
+                if (containerEl) {
+                    fileContainer.empty();
+                    fileContainer.appendChild(containerEl); 
+                    this.openedLink = filePath;
+                    this.associatedLeaf = leaf;
+                } else {
+                    console.log('containerEl is null');
+                }
+            } else {
+                console.log('associatedLeaf is null');
+            }
+        }, 150);
+    }
+
+    handleFileModalClick(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+    
+        // 如果点击的是 canvas-minimap 元素
+        if (target.classList.contains('canvas-minimap')) {
+            const parentElement = target.closest('.internal-embed.canvas-embed.inline-embed.is-loaded') as HTMLElement;
+            if (parentElement) {
+                const srcPath = parentElement.getAttribute('src');
+                console.log("srcPath", srcPath);
+                if (srcPath) {
+                    this.handleFileClick(srcPath);
+                    return;
+                }
+            }
+        }
+
+        // 如果点击的是 excalidraw 元素
+        if (target.classList.contains('excalidraw-canvas-immersive')) {
+            const filesource = target.getAttribute('filesource');
+            console.log("filesource", filesource);
+            if (filesource) {
+                this.handleExcalidrawFileClick(filesource);
+                return;
+            }
+        }
+
+        // 如果点击的是 auto content toc
+        if (target.classList.contains('internal-link')) {
+            const parentElement = target.closest('.block-language-table-of-contents') as HTMLElement;
+            if (parentElement) {
+                const headingPath = target.getAttribute('href');
+                console.log("headingPath", headingPath);
+                if (headingPath) {
+                    const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                    const filePath = `${currentFilePath}${headingPath}`;
+                    console.log("filePath", filePath);
+                    this.app.workspace.openLinkText(filePath, "", false);
+                    return;
+                }
+            }
+        }
+    
+        const webLink = target.getAttribute('aria-label');
+        const filePath = target.getAttribute('href');
+    
+        if (webLink && this.isValidURL(webLink)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            this.displayLinkContent(webLink);
+        } else if (filePath) {
+            this.handleFileClick(filePath);
+        }
     }
 
     isValidURL(url: string): boolean {
@@ -92,39 +170,28 @@ export class ModalWindow extends Modal {
             }, true); // 使用捕获阶段
         }
 
+        // 解决在modal窗口中点击canvas、excalidraw链接和不在modal中显示的问题
+        const observer = new MutationObserver((mutationsList, observer) => {
+            for (const mutation of mutationsList) {
+                if (mutation.type === 'childList') {
+                    const fileModalElement = document.querySelector(".file-modal-container") as HTMLElement;
+                    if (fileModalElement) {
+                        fileModalElement.addEventListener('click', this.handleFileModalClick.bind(this), true);
+                        observer.disconnect(); // 事件绑定成功后停止观察
+                        break; // 只需处理一次
+                    }
+                }
+            }
+        });
+        
+        observer.observe(document.body, { childList: true, subtree: true });  
+
         // Modal Size
         const modalContainer = this.containerEl.lastChild as HTMLElement;
         if (modalContainer) {
             modalContainer.style.width = this.width;
             modalContainer.style.height = this.height;
         }
-
-        const observer = new MutationObserver((mutationsList, observer) => {
-            for (const mutation of mutationsList) {
-                if (mutation.type === 'childList') {
-                    const fileModalElement = document.querySelector(".file-modal-container") as HTMLElement;
-                    if (fileModalElement) {
-                        fileModalElement.addEventListener('click', (event: MouseEvent) => {
-                            const target = event.target as HTMLElement;
-                            const webLink = target.getAttribute('aria-label');
-                            if (webLink && this.isValidURL(webLink)) {
-                                event.preventDefault();
-                                event.stopImmediatePropagation();
-                                this.displayLinkContent(webLink);
-                            } else {
-                                const filePath = target.getAttribute('href');
-                                if (filePath) {
-                                    this.handleFileClick(filePath);
-                                }
-                            }
-                        }, true);
-                        observer.disconnect(); // 事件绑定成功后停止观察
-                    }
-                }
-            }
-        });
-        
-        observer.observe(document.body, { childList: true, subtree: true });        
 
         // Display content based on file or link
         if (this.file) {
@@ -199,7 +266,8 @@ export class ModalWindow extends Modal {
             const currentLeaf = this.app.workspace.getLeaf();
             const activeFile = this.app.workspace.getActiveFile();
             if (activeFile && currentLeaf) {
-                const newLeaf = await this.app.workspace.duplicateLeaf(currentLeaf, 'tab');
+                // const newLeaf = await this.app.workspace.duplicateLeaf(currentLeaf, 'tab');
+                const newLeaf = this.app.workspace.getLeaf('tab');
                 await newLeaf.openFile(activeFile);
                 (newLeaf as any).tabHeaderEl.style.display = 'none';
                 this.associatedLeaf = newLeaf;
@@ -226,7 +294,6 @@ export class ModalWindow extends Modal {
                     }
                 });
             }
-            
         } else {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file, { state: { mode } });

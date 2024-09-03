@@ -18,12 +18,12 @@ export default {
     'Disable external click Close':'禁用外部点击关闭',
     'Use only the "Close" button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
 
-    "Window Settings":'窗口设置',
+    "Window Settings":'窗口',
     "Modal width":'窗口宽度',
     "Modal height":'窗口高度',
     "Enter any valid CSS unit":'输入任何有效的CSS单位',
 
-    "Style Settings":'样式设置',
+    "Style Settings":'样式',
     'Enable Animation and Blur':'启用动画和模糊',
     'Toggle to enable or disable animation and blur effects.':'切换以启用或禁用动画和模糊效果',
     

@@ -18,12 +18,12 @@ export default {
   'Disable external click Close':'Disable external click Close',
   'Use only the "Close" button and Esc to close.':'Use only the "Close" button and Esc to close',
 
-  "Window Settings":'Window Settings',
+  "Window Settings":'Window',
   "Modal width":'Modal width',
   "Modal height":'Modal height',
   "Enter any valid CSS unit":'Enter any valid CSS unit',
 
-  "Style Settings":'Style Settings',
+  "Style Settings":'Style',
   'Enable Animation and Blur':'Enable Animation and Blur',
   'Toggle to enable or disable animation and blur effects.':'Toggle to enable or disable animation and blur effects',
 
