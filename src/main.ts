@@ -44,6 +44,9 @@ export default class ModalOpenPlugin extends Plugin {
                 const app = this.app as any;
                 const surfPlugin = app.plugins.plugins["surfing"];
                 const activeLeaf = this.app.workspace.getLeaf(false);
+                // const lastFilePath = this.app.workspace.getLastOpenFiles();
+                // this.app.workspace.openLinkText(lastFilePath[0], "", false);
+
                 if (!activeLeaf) {
                     console.log("No active leaf found");
                     return;
@@ -66,7 +69,6 @@ export default class ModalOpenPlugin extends Plugin {
                         console.log("iframe element not found in the current tab.");
                     }
                 }
-                // 如果需要在 Modal 中使用这个 src，可以在这里传递
                 new ModalWindow(
                     this,
                     linkValue,

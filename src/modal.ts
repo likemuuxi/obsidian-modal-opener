@@ -61,7 +61,7 @@ export class ModalWindow extends Modal {
         const leaf = this.app.workspace.getLeaf(true);
         const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
         leaf.openFile(excalidrawFile);
-        // (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
+        (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
         // 使用 setTimeout 延时操作
         setTimeout(() => {
             if (leaf) {
@@ -317,7 +317,7 @@ export class ModalWindow extends Modal {
             fileContainer.appendChild(leaf.view.containerEl);
             this.leaf = leaf;
             // 隐藏标签页
-            // (leaf as any).tabHeaderEl.style.display = 'none';
+            (leaf as any).tabHeaderEl.style.display = 'none';
             this.openedLink = file.path;
             this.associatedLeaf = leaf;
         }
