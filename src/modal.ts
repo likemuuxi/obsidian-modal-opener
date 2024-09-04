@@ -61,7 +61,7 @@ export class ModalWindow extends Modal {
         const leaf = this.app.workspace.getLeaf(true);
         const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
         leaf.openFile(excalidrawFile);
-        (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
+        // (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
         // 使用 setTimeout 延时操作
         setTimeout(() => {
             if (leaf) {
@@ -242,7 +242,14 @@ export class ModalWindow extends Modal {
         fileContainer.style.position = "relative";
         fileContainer.style.overflow = "auto";
         const modalHeightSetting = this.plugin.settings.modalHeight;
-        const heightValue = parseInt(modalHeightSetting, 10) - 1;
+        const app = this.app as any;
+        const editingPlugin = app.plugins.plugins["editing-toolbar"];
+        let heightValue: number;
+        if (editingPlugin) {
+            heightValue = parseInt(modalHeightSetting, 10) - 2;
+        } else {
+            heightValue = parseInt(modalHeightSetting, 10) - 1;
+        }
         const adjustedModalHeight = `${heightValue}vh`;
         fileContainer.style.minHeight = adjustedModalHeight;
         fileContainer.style.maxHeight = adjustedModalHeight;
@@ -310,7 +317,7 @@ export class ModalWindow extends Modal {
             fileContainer.appendChild(leaf.view.containerEl);
             this.leaf = leaf;
             // 隐藏标签页
-            (leaf as any).tabHeaderEl.style.display = 'none';
+            // (leaf as any).tabHeaderEl.style.display = 'none';
             this.openedLink = file.path;
             this.associatedLeaf = leaf;
         }
@@ -398,7 +405,7 @@ export class ModalWindow extends Modal {
                         frame.setAttribute("frameborder", "0");
                         frame.style.width = "100%";
                         frame.style.height = "100%";
-                        this.app.workspace.revealLeaf(newLeaf);
+                        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
                     }
                 }
             });

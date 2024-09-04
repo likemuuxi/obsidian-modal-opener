@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile, MarkdownView } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
@@ -32,25 +32,51 @@ export default class ModalOpenPlugin extends Plugin {
             })
         );
 
-        this.addSettingTab(new ModalOpenSettingTab(this.app, this));
         this.registerCustomCommands();
+        this.addSettingTab(new ModalOpenSettingTab(this.app, this));
 
         this.addCommand({
-			id: 'open-sample-modal-window',
-			name: 'Open current file in modal',
-			callback: () => {
+            id: 'open-in-modal-window',
+            name: 'Open current file in modal',
+            callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile) as TFile;
-				new ModalWindow(
+                const app = this.app as any;
+                const surfPlugin = app.plugins.plugins["surfing"];
+                const activeLeaf = this.app.workspace.getLeaf(false);
+                if (!activeLeaf) {
+                    console.log("No active leaf found");
+                    return;
+                }
+                let linkValue: string = ""; // 初始化为 ""
+                if (surfPlugin) {
+                    const wbFrameElement = activeLeaf.view.containerEl.querySelector('.wb-frame') as HTMLIFrameElement;
+                    if (wbFrameElement) {
+                        linkValue = wbFrameElement.src;
+                        console.log("Found wb-frame src:", linkValue);
+                    } else {
+                        console.log("wb-frame element not found in the current tab.");
+                    }
+                } else {
+                    const iframeElement = activeLeaf.view.containerEl.querySelector('iframe') as HTMLIFrameElement;
+                    if (iframeElement) {
+                        linkValue = iframeElement.src;
+                        console.log("Found iframe src:", linkValue);
+                    } else {
+                        console.log("iframe element not found in the current tab.");
+                    }
+                }
+                // 如果需要在 Modal 中使用这个 src，可以在这里传递
+                new ModalWindow(
                     this,
-                    "",
+                    linkValue,
                     file,
                     "",
                     this.settings.modalWidth,
                     this.settings.modalHeight
                 ).open();
-			}
-		});
+            }
+        });
     }
 
     applyModalStyle() {
@@ -149,22 +175,32 @@ export default class ModalOpenPlugin extends Plugin {
         this.mouseHoverListener = (event: MouseEvent) => {
             // Get the hovered target element
             const target = event.target as HTMLElement;
-
-            // Check if the target element is a link with the cm-underline class
-            if (target.matches('.cm-underline, .cm-hmd-internal-link')) {
-                // Get the link text content
-                const linkText = target.innerText;
+            // Check if the target element is part of a link or an alias
+            if (target.matches('.cn-hmd-internal-link, .cm-hmd-internal-link, .cm-link-alias, .cm-link-alias-pipe')) {
+                // Initialize a variable to collect the full link text
+                let linkText = '';
+                let currentElement: HTMLElement | null = target;
+                // Traverse backward to collect the text from the start of the link
+                while (currentElement && 
+                       (currentElement.matches('.cn-hmd-internal-link') ||
+                        currentElement.matches('.cm-hmd-internal-link') ||
+                        currentElement.matches('.cm-link-alias-pipe') ||
+                        currentElement.matches('.cm-link-alias'))) {
+                    linkText = currentElement.innerText + linkText;
+                    currentElement = currentElement.previousElementSibling as HTMLElement;
+                }
+                // Exclude the alias part if it exists
+                if (linkText.includes('|')) {
+                    linkText = linkText.split('|')[0];
+                }
                 this.currentAnchor = linkText;
                 console.log("Hovered link text:", this.currentAnchor);
-            } /* else if (target.matches('.image-embed')) {
-                const srcText = this.getSrcFromSpan(target);
-                this.currentSrcText = srcText;
-                console.log("Hovered src text:", this.currentSrcText);
-            } */
+            }
         };
-
+    
         document.addEventListener('mouseover', this.mouseHoverListener);
     }
+    
 
     // private getSrcFromSpan(target: HTMLElement): string | null {
     //     return target.getAttribute('src') || null; // 返回 src 属性内容
@@ -385,10 +421,16 @@ export default class ModalOpenPlugin extends Plugin {
             console.log("OpenLink:", link);
 
             let file: TFile | undefined;
-            const [filePath, fragment] = link.split(/[#]/); // 分离路径和片段
-            // const fileNameOnly = filePath.split(/[/\\]/).pop() || filePath; // 获取文件名部分
+            const [filePath, fragment] = link.split(/[#]/);
+            // const fileNameOnly = filePath.split(/[/\\]/).pop() || filePath;
 
             file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
+            
+            // 检测文件是否存在
+            if (!file && !this.isValidURL(link)) {
+                new Notice("The file does not exist: " + filePath);
+                return;
+            }
 
             // 处理网络链接
             this.modal = new ModalWindow(
