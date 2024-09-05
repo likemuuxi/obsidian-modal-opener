@@ -70,7 +70,7 @@
 - Sheet Plus
 - Surfing
 - Canvas
-- Markmind
+- Markmind（💰pay）
 - Excalidraw
 - Folder Note
 - Auto Content Toc
