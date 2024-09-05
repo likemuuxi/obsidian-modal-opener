@@ -2,32 +2,36 @@
 
 
 
-> This is a plugin that uses the Obsidian modal window to open files and links. It can be combined with other plug-ins to easily read and edit various types of files
+> This is a plugin that uses the Obsidian modal window to open files and links.
+> It can be combined with other plug-ins to easily read and edit various types of files, block various interferences for you.
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/%E3%80%90Obsidian%E3%80%91modal-plugin-240830.png)
+![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286701987.png)
+![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286740563.png)
+![image](https://github.com/user-attachments/assets/c4784538-03d7-4ad2-bd91-8bdb8d07461b)
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286899323.png)
+![image](https://github.com/user-attachments/assets/9c9a4099-45e8-42c6-af70-3f0d3a6de41a)
+
+
+
+![image](https://github.com/user-attachments/assets/c3999325-1531-4ec2-b2b7-07c974240711)
 
 
 
 # Feature
 
 - Markdown file support title link, block link anchor jump and switch edit mode
-
 - Double-click the border to restore
-
+- Support the use of shortcut keys to open the current file and link
 - Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
 
 # How to use
@@ -58,16 +62,17 @@
 
 # Compatibility
 
-Compatible plugins
+## Compatible plugins
+
 - Excel
 - Sheet Plus
 - Surfing
 - Canvas
-- Markmind
 - Excalidraw
 - Folder Note
 - Auto Content Toc
 - VSCode Editor
+- Markmind（💰pay）
 - Component（💰pay）
 - ...
 
@@ -78,8 +83,6 @@ Currently known plugins with conflicts.
 - `no dupe leave`
 - `mononote`
 - `float search`
-
-
 
 # Special Thanks
 
