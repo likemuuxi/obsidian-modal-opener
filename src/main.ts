@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile, MarkdownView } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
@@ -38,15 +38,19 @@ export default class ModalOpenPlugin extends Plugin {
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current file in modal',
+            hotkeys: [
+                {
+                    modifiers: ["Mod", "Shift"], // 例如 Ctrl+Shift
+                    key: "W"
+                }
+            ],
             callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile) as TFile;
                 const app = this.app as any;
                 const surfPlugin = app.plugins.plugins["surfing"];
                 const activeLeaf = this.app.workspace.getLeaf(false);
-                // const lastFilePath = this.app.workspace.getLastOpenFiles();
-                // this.app.workspace.openLinkText(lastFilePath[0], "", false);
-
+                
                 if (!activeLeaf) {
                     console.log("No active leaf found");
                     return;

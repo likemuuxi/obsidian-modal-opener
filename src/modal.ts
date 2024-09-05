@@ -321,6 +321,42 @@ export class ModalWindow extends Modal {
             this.openedLink = file.path;
             this.associatedLeaf = leaf;
         }
+
+        this.doubleClickRestoreFile(file, mode);
+        this.contentEl.tabIndex = -1;
+        this.contentEl.focus();
+    }
+
+    displayLinkContent(link:string) {
+        if (!this.contentEl) {
+            console.error("contentEl is undefined in displayLinkContent.");
+            return;
+        }
+        this.contentEl.empty();
+        this.contentEl.addClass("link-modal");
+        const linkContainer = this.contentEl.createEl("div", { cls: "link-modal-container" });
+        linkContainer.style.flexGrow = "1";
+        linkContainer.style.position = "relative";
+        linkContainer.style.overflow = "auto";
+    
+        const app = this.plugin.app as any;
+        const surfPlugin = app.plugins.plugins["surfing"];
+        const frame = linkContainer.createEl("iframe");
+        frame.src = link;
+        frame.style.width = "100%";
+        frame.style.height = "100%";
+        frame.style.border = "none";
+        frame.style.position = "absolute";
+        frame.style.top = "0";
+        frame.style.left = "0";
+
+        this.openedLink = link;
+        this.doubleClickRestoreLink();
+    }
+
+    
+    doubleClickRestoreFile(file: TFile, mode:String)
+    {
         // 双击还原
         this.modalEl = document.querySelector('.modal') as HTMLElement;
         // 确保 modal 容器不为空
@@ -350,34 +386,10 @@ export class ModalWindow extends Modal {
         } else {
             console.error("Modal element not found.");
         }
-
-        this.contentEl.tabIndex = -1;
-        this.contentEl.focus();
     }
 
-    displayLinkContent(link:string) {
-        if (!this.contentEl) {
-            console.error("contentEl is undefined in displayLinkContent.");
-            return;
-        }
-        this.contentEl.empty();
-        this.contentEl.addClass("link-modal");
-        const linkContainer = this.contentEl.createEl("div", { cls: "link-modal-container" });
-        linkContainer.style.flexGrow = "1";
-        linkContainer.style.position = "relative";
-        linkContainer.style.overflow = "auto";
-    
-        const frame = linkContainer.createEl("iframe");
-        frame.src = link;
-        frame.style.width = "100%";
-        frame.style.height = "100%";
-        frame.style.border = "none";
-        frame.style.position = "absolute";
-        frame.style.top = "0";
-        frame.style.left = "0";
-
-        this.openedLink = link;
-
+    doubleClickRestoreLink()
+    {
         this.modalEl = document.querySelector('.modal') as HTMLElement;
         // 确保 modal 容器不为空
         if (this.modalEl) {
