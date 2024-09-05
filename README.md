@@ -64,7 +64,8 @@
 
 # Compatibility
 
-Compatible plugins
+## Compatible plugins
+
 - Excel
 - Sheet Plus
 - Surfing
