@@ -40,7 +40,7 @@ export default class ModalOpenPlugin extends Plugin {
             name: 'Open current file in modal',
             hotkeys: [
                 {
-                    modifiers: ["Mod", "Shift"], // 例如 Ctrl+Shift
+                    modifiers: ["Alt", "Shift"], // 例如 Ctrl+Shift
                     key: "W"
                 }
             ],
