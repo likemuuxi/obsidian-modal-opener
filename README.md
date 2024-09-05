@@ -2,7 +2,8 @@
 
 
 
-> This is a plugin that uses the Obsidian modal window to open files and links. It can be combined with other plug-ins to easily read and edit various types of files
+> This is a plugin that uses the Obsidian modal window to open files and links.
+> It can be combined with other plug-ins to easily read and edit various types of files, block various interferences for you.
 
 
 
