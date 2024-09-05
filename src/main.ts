@@ -505,7 +505,7 @@ export default class ModalOpenPlugin extends Plugin {
     private isSupportElement(target: HTMLElement): boolean {
         return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content')
-            || target.classList.contains('has-folder-note');
+            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button");
     }
 
     private getLinkFromTarget(target: HTMLElement): string {
