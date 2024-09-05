@@ -22,6 +22,9 @@
 
 
 
+![image](https://github.com/user-attachments/assets/c3999325-1531-4ec2-b2b7-07c974240711)
+
+
 
 # Feature
 
@@ -29,9 +32,9 @@
 
 - Double-click the border to restore
 
-- Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
-
 - Support the use of shortcut keys to open the current file and link
+
+- Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
 
 # How to use
 
