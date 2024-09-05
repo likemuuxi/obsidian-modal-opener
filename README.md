@@ -30,11 +30,8 @@
 # Feature
 
 - Markdown file support title link, block link anchor jump and switch edit mode
-
 - Double-click the border to restore
-
 - Support the use of shortcut keys to open the current file and link
-
 - Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
 
 # How to use
@@ -71,11 +68,11 @@
 - Sheet Plus
 - Surfing
 - Canvas
-- Markmind（💰pay）
 - Excalidraw
 - Folder Note
 - Auto Content Toc
 - VSCode Editor
+- Markmind（💰pay）
 - Component（💰pay）
 - ...
 
@@ -86,8 +83,6 @@ Currently known plugins with conflicts.
 - `no dupe leave`
 - `mononote`
 - `float search`
-
-
 
 # Special Thanks
 
