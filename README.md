@@ -6,7 +6,7 @@
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/%E3%80%90Obsidian%E3%80%91modal-plugin-240830.png)
+![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
 
 
 
@@ -14,15 +14,12 @@
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286701987.png)
+![image](https://github.com/user-attachments/assets/c4784538-03d7-4ad2-bd91-8bdb8d07461b)
 
 
 
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286740563.png)
+![image](https://github.com/user-attachments/assets/9c9a4099-45e8-42c6-af70-3f0d3a6de41a)
 
-
-
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1725286899323.png)
 
 
 
@@ -33,6 +30,8 @@
 - Double-click the border to restore
 
 - Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
+
+- Support the use of shortcut keys to open the current file and link
 
 # How to use
 
