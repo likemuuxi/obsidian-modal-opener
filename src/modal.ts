@@ -11,6 +11,8 @@ export class ModalWindow extends Modal {
     height: string;
     private associatedLeaf?: WorkspaceLeaf;
     private openedLink?: string;
+    private debounceTimeout: NodeJS.Timeout | null = null;
+    private debounceDelay = 150; // 防抖延迟时间
 
     constructor(plugin: ModalOpenPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -25,6 +27,7 @@ export class ModalWindow extends Modal {
     close() {
         super.close(); // 调用父类的关闭方法
         // 这里可以添加其他关闭时的逻辑
+        this.app.workspace.off('active-leaf-change', this.activeLeafChangeHandler);
     }
 
     private async checkURLReachability(url: string): Promise<boolean> {
@@ -155,7 +158,6 @@ export class ModalWindow extends Modal {
         if (modalBgElement) {
             modalBgElement.addEventListener("click", (event) => {
                 console.log("Click event on modal background detected");
-                // 只在点击 modal 背景区域时阻止默认行为
                 if (this.plugin.settings.onlyCloseButton) {
                     if (event.target === modalBgElement) {
                         event.stopImmediatePropagation();
@@ -163,11 +165,10 @@ export class ModalWindow extends Modal {
                         console.log("Modal background click event handled");
                     }
                 } else {
-                    // 如果设置允许背景点击关闭 modal，处理此逻辑
                     console.log("Modal background click allowed");
                     this.close();
                 }
-            }, true); // 使用捕获阶段
+            }, true);
         }
 
         // 解决在modal窗口中点击canvas、excalidraw链接和不在modal中显示的问题
@@ -177,8 +178,8 @@ export class ModalWindow extends Modal {
                     const fileModalElement = document.querySelector(".file-modal-container") as HTMLElement;
                     if (fileModalElement) {
                         fileModalElement.addEventListener('click', this.handleFileModalClick.bind(this), true);
-                        observer.disconnect(); // 事件绑定成功后停止观察
-                        break; // 只需处理一次
+                        observer.disconnect();
+                        break;
                     }
                 }
             }
@@ -227,6 +228,44 @@ export class ModalWindow extends Modal {
         const { contentEl } = this;
         contentEl.empty();
     }
+
+    private activeLeafChangeHandler = () => {
+        if (this.debounceTimeout) {
+            clearTimeout(this.debounceTimeout);
+        }
+        const linkModalContainer = document.querySelector('.link-modal-container');
+        const surfingLeaves = this.app.workspace.getLeavesOfType('surfing-view');
+        if (linkModalContainer) {
+            if (surfingLeaves.length > 0) {
+                const latestSurfingLeaf = surfingLeaves[1];
+                (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
+
+                this.debounceTimeout = setTimeout(() => {
+                    if (this.associatedLeaf) {
+                        this.associatedLeaf.detach();
+                        this.associatedLeaf = undefined;
+                    }
+                    this.associatedLeaf = latestSurfingLeaf;
+
+                    linkModalContainer.empty();
+                    linkModalContainer.appendChild(latestSurfingLeaf.view.containerEl);
+
+                    // 获取 wb-frame 的 src 属性
+                    const wbFrame = latestSurfingLeaf.view.containerEl.querySelector('.wb-frame');
+                    if (wbFrame) {
+                        const src = wbFrame.getAttribute('src');
+                        if (src) {
+                            this.openedLink = src;
+                            console.log('wb-frame src:', src);
+                        }
+                    }
+                    console.log('Latest surfing view:', latestSurfingLeaf);
+                }, this.debounceDelay);
+            } else {
+                console.log('No surfing view open');
+            }
+        }
+    };
 
     async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
@@ -304,6 +343,8 @@ export class ModalWindow extends Modal {
         } else {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file, { state: { mode } });
+            // 隐藏标签页
+            (leaf as any).tabHeaderEl.style.display = 'none';
 
             if (leaf.view instanceof MarkdownView) {
                 const view = leaf.view;
@@ -316,8 +357,6 @@ export class ModalWindow extends Modal {
             }
             fileContainer.appendChild(leaf.view.containerEl);
             this.leaf = leaf;
-            // 隐藏标签页
-            (leaf as any).tabHeaderEl.style.display = 'none';
             this.openedLink = file.path;
             this.associatedLeaf = leaf;
         }
@@ -341,16 +380,29 @@ export class ModalWindow extends Modal {
     
         const app = this.plugin.app as any;
         const surfPlugin = app.plugins.plugins["surfing"];
-        const frame = linkContainer.createEl("iframe");
-        frame.src = link;
-        frame.style.width = "100%";
-        frame.style.height = "100%";
-        frame.style.border = "none";
-        frame.style.position = "absolute";
-        frame.style.top = "0";
-        frame.style.left = "0";
+        if (surfPlugin) {
+            window.open(link);
+            this.openedLink = link;
+            setTimeout(() => {
+                const currentLeaf = this.app.workspace.getLeaf(false);
+                (currentLeaf as any).tabHeaderEl.style.display = 'none';
+                linkContainer.appendChild(currentLeaf.view.containerEl);
+                this.associatedLeaf = currentLeaf;
+                this.app.workspace.on('active-leaf-change', this.activeLeafChangeHandler);
+            }, 150);
 
-        this.openedLink = link;
+        } else {
+            const frame = linkContainer.createEl("iframe");
+            frame.src = link;
+            frame.style.width = "100%";
+            frame.style.height = "100%";
+            frame.style.border = "none";
+            frame.style.position = "absolute";
+            frame.style.top = "0";
+            frame.style.left = "0";
+            this.openedLink = link;
+        }
+
         this.doubleClickRestoreLink();
     }
 

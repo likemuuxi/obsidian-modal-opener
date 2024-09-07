@@ -188,7 +188,7 @@ export default class ModalOpenPlugin extends Plugin {
                 let currentElement: HTMLElement | null = target;
                 // Traverse backward to collect the text from the start of the link
                 while (currentElement && 
-                       (currentElement.matches('.cn-hmd-internal-link') ||
+                        (currentElement.matches('.cn-hmd-internal-link') ||
                         currentElement.matches('.cm-hmd-internal-link') ||
                         currentElement.matches('.cm-link-alias-pipe') ||
                         currentElement.matches('.cm-link-alias'))) {
