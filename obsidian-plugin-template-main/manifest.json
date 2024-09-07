@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-plugin-template",
+  "name": "Obsidian Template Plugin",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Obsidian Template Plugin",
+  "author": "Nolebase",
+  "authorUrl": "https://github.com/nolebase",
+  "isDesktopOnly": false
+}

@@ -23,12 +23,12 @@ export default class ModalOpenPlugin extends Plugin {
         this.registerContextMenuHandler();
         this.setupHoverListener();
         this.setupContextMenuListener();
-        this.applyModalStyle();		// 初始化时应用样式
+        this.applyStyles();
 
         // 监听设置变化
         this.registerEvent(
             this.app.workspace.on('layout-change', () => {
-                this.applyModalStyle();
+                this.applyStyles();
             })
         );
 
@@ -85,8 +85,9 @@ export default class ModalOpenPlugin extends Plugin {
         });
     }
 
-    applyModalStyle() {
-        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+    applyStyles() {
+        document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
+        document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
     }
 
     onunload() {
@@ -264,59 +265,38 @@ export default class ModalOpenPlugin extends Plugin {
         this.dragHandler();
     }
 
+    private handleLinkClick(evt: MouseEvent, linkGetter: (target: HTMLElement) => string) {
+        const target = evt.target as HTMLElement;
+        if (this.isSupportElement(target)) {
+            evt.preventDefault();
+            evt.stopImmediatePropagation();
+            const link = linkGetter(target);
+            const isFolderLink = target.classList.contains('has-folder-note');
+            const app = this.app as any;
+            const folderPlugin = app.plugins.plugins["folder-notes"];
+            
+            if (!folderPlugin || !isFolderLink) {
+                this.openInFloatPreview(link);
+            } else {
+                this.folderNoteOpenInFloatPreview(link);
+            }
+        }
+    }
     private registerMouseMiddleClickHandler() {
         this.middleClickHandler = (evt: MouseEvent) => {
-            if (evt.button === 1) { // Check for middle mouse button click
-                const target = evt.target as HTMLElement;
-                if (this.isSupportElement(target)) {
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const middleLink = this.getLinkFromTarget(target);
-                    const isFolderLink = target.classList.contains('has-folder-note');
-                    const app = this.app as any;
-                    const folderPlugin = app.plugins.plugins["folder-notes"];
-                    console.log("middleLink", middleLink);
-                    if (!folderPlugin) {
-                        this.openInFloatPreview(middleLink);
-                    } else {
-                        if (isFolderLink) {
-                            this.folderNoteOpenInFloatPreview(middleLink);
-                        } else {
-                            this.openInFloatPreview(middleLink);
-                        }
-                    }
-                }
+            if (evt.button === 1) {
+                this.handleLinkClick(evt, this.getLinkFromTarget);
             }
         };
-        // console.log("Adding middle click event handler");
         document.addEventListener('auxclick', this.middleClickHandler, { capture: true });
     }
-
+    
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
-            if (evt.altKey && evt.button === 0) { // Check for Alt + Left mouse button click
-                const target = evt.target as HTMLElement;
-                if (this.isSupportElement(target)) {
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation(); // Prevent default behavior and stop propagation
-                    const altLink = this.getLinkFromTarget(target);
-                    const isFolderLink = target.classList.contains('has-folder-note');
-                    const app = this.app as any;
-                    const folderPlugin = app.plugins.plugins["folder-notes"];
-                    console.log("altLink", altLink);
-                    if (!folderPlugin) {
-                        this.openInFloatPreview(altLink);
-                    } else {
-                        if (isFolderLink) {
-                            this.folderNoteOpenInFloatPreview(altLink);
-                        } else {
-                            this.openInFloatPreview(altLink);
-                        }
-                    }
-                }
+            if (evt.altKey && evt.button === 0) {
+                this.handleLinkClick(evt, this.getLinkFromTarget);
             }
         };
-        // console.log("Adding alt click event handler");
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
@@ -349,68 +329,42 @@ export default class ModalOpenPlugin extends Plugin {
         );
     }
 
+    private addFloatMenuItem(menu: Menu, link: string, title: string, onClick: () => void) {
+        menu.addItem((item) =>
+            item
+                .setTitle(title)
+                .setIcon("popup-open")
+                .setSection("open")
+                .onClick(onClick)
+        );
+    }
+
     private getFolderElement(filePath: string): HTMLElement | null {
         return document.querySelector(`.nav-folder-title[data-path="${filePath}"]`);
     }
 
     private addFileFloatMenuItem(menu: Menu, link?: string) {
-        menu.addItem((item) =>
-            item
-                .setTitle("Open in Modal Window")
-                .setIcon("popup-open")
-                .setSection("open")
-                .onClick(() => {
-                    if (link) {
-                        if (this.currentAnchor) {
-                            this.openInFloatPreview(this.currentAnchor);
-                        } else {
-                            this.openInFloatPreview(link);
-                        }
-                        // console.log("link", link);
-                        // if (this.currentSrcText)
-                        // {
-                        //     console.log("this.currentSrcText", this.currentSrcText);
-                        //     const app = this.app as any;
-                        //     const DiagramPlugin = app.plugins["obsidian-diagrams-net"];
-                        //     console.log("DiagramPlugin", DiagramPlugin);
-                        //     if (DiagramPlugin) {
-                        //         // 调用该插件的公开方法或访问属性
-                        //         DiagramPlugin.attemptEditDiagram(this.currentSrcText);
-                        //     } else {
-                        //         console.error("插件未加载");
-                        //     }
-                        // }
-                    }
-                })
-        );
+        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+            if (link) {
+                this.openInFloatPreview(this.currentAnchor || link);
+            }
+        });
     }
-
+    
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
-        menu.addItem((item) =>
-            item
-                .setTitle("Open in Modal Window")
-                .setIcon("popup-open")
-                .setSection("open")
-                .onClick(() => {
-                    if (link) {
-                        this.folderNoteOpenInFloatPreview(link);
-                    }
-                })
-        );
+        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+            if (link) {
+                this.folderNoteOpenInFloatPreview(link);
+            }
+        });
     }
-
+    
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
-        menu.addItem((item) =>
-            item
-                .setTitle("Open in Modal Window")
-                .setIcon("popup-open")
-                .setSection("open")
-                .onClick(() => {
-                    if (link) {
-                        this.openInFloatPreview(link);
-                    }
-                })
-        );
+        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+            if (link) {
+                this.openInFloatPreview(link);
+            }
+        });
     }
 
     private async openInFloatPreview(link: string) {
@@ -428,7 +382,6 @@ export default class ModalOpenPlugin extends Plugin {
 
             let file: TFile | undefined;
             const [filePath, fragment] = link.split(/[#]/);
-            // const fileNameOnly = filePath.split(/[/\\]/).pop() || filePath;
 
             file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
             
@@ -512,6 +465,6 @@ export default class ModalOpenPlugin extends Plugin {
         return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
     }
 
-    private isValidURL = (url: string) =>
-        url.startsWith('http://') || url.startsWith('https://') || url.startsWith('www.') || url.startsWith('192.') || url.startsWith('127.');
+    private isValidURL = (url: string) => 
+        ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
 }

@@ -24,6 +24,10 @@ export default {
     "Enter any valid CSS unit":'输入任何有效的CSS单位',
     'Enable Animation and Blur':'启用动画和模糊',
     'Toggle to enable or disable animation and blur effects.':'切换以启用或禁用动画和模糊效果',
+    'Show File View Header':'显示文件视图头部',
+    'Show Link View Header':'显示链接视图头部',
+    'Show the header of the file view in the modal window':'在模态窗口中显示文件视图的头部',
+    'Show the header of the link view in the modal window':'在模态窗口中显示链接视图的头部',
     
     'Custom Commands':'自定义命令',
     'Add Custom Command':'添加自定义命令',

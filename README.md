@@ -1,6 +1,6 @@
-# Obsidian Modal Plugin
+# 🎉Obsidian Modal Plugin
 
-
+[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README-ZH.md) ｜ [English Doc](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README.md)
 
 > This is a plugin that uses the Obsidian modal window to open files and links.
 > It can be combined with other plug-ins to easily read and edit various types of files, block various interferences for you.
@@ -27,42 +27,43 @@
 
 
 
-# Feature
+# ✨Feature
 
-- Markdown file support title link, block link anchor jump and switch edit mode
-- Double-click the border to restore
-- Support the use of shortcut keys to open the current file and link
-- Support add custom command, one click to open files or links (Can be used with the Command plugin to add icon)
+- 支持Markdown文件标题，块链接锚跳转
+- 支持切换编辑模式
+- 双击模态边框进行恢复到标签页
+- 支持使设置快捷键打开当前文件和链接
+- 支持添加自定义命令，一键打开文件或链接(可以搭配 Command 插件添加图标)
 
-# How to use
+# 🎯How to use
 
-- Reading mode 
-  - Right-click menu
-  - Drag and drop
-  - middle mouse button
-  - alt + Left Click
+- 阅读模式
+  - 右键菜单
+  - 拖拽链接
+  - 鼠标中键
+  - `alt` + 鼠标左键
 
-- Edit mode 
-  - Right-click menu
+- 编辑模式
+  - 右键菜单
 
-# How to install
+# 🪒如何安装
 
-## Manually installing the plugin
+## 手动安装
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
+复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径`VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
 
-## Installation via BRAT
+## 通过 BRAT 安装
 
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat).
-2. Add "Modal Plugin" to BRAT:
-   1. Open "Obsidian42 - BRAT" via Settings → Community Plugins
-   2. Click "Add Beta plugin"
-   3. Use the repository address `https://github.com/likemuuxi/obsidian-modal-plugin`
-3. Enable "Modal Plugin" under Settings → Options → Community Plugins
+1. 安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件. 
+2. 添加 "Modal Plugin" 到 BRAT:
+   1. 打开 "BRAT" 的社区插件部分
+   2. 点击 "Add Beta plugin"
+   3. 粘贴如下链接`https://github.com/likemuuxi/obsidian-modal-plugin`
+3. 安装后启用插件即可使用
 
-# Compatibility
+# 🚧兼容性
 
-## Compatible plugins
+## 兼容插件
 
 - Excel
 - Sheet Plus
@@ -76,19 +77,20 @@
 - Component（💰pay）
 - ...
 
-## Conflict plugins
+## 冲突插件
 
-Currently known plugins with conflicts.
+当前已知的有冲突的插件
 
 - `no dupe leave`
 - `mononote`
 - `float search`
 
-# Special Thanks
+# 🥰特别感谢
 
-Special thanks to these amazing plugins! I used these plugins as a reference for developing my first public plugin. The plugin basic structure is mainly based on the [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener). I referred to other plugins and completed the display of files in the modal window and plugin restart function.
+特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和插件重启功能。
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Float-Search](https://github.com/Quorafind/Obsidian-Float-Search) by Quorafind
 - [obsidian-copilot](https://github.com/logancyang/obsidian-copilot) by logancyang
 - [Cursor](https://www.cursor.com/) 、[ChatGPT](https://chatgpt.com/)
+

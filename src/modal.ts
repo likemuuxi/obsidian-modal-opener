@@ -25,8 +25,7 @@ export class ModalWindow extends Modal {
     }
     
     close() {
-        super.close(); // 调用父类的关闭方法
-        // 这里可以添加其他关闭时的逻辑
+        super.close();
         this.app.workspace.off('active-leaf-change', this.activeLeafChangeHandler);
     }
 
@@ -39,48 +38,35 @@ export class ModalWindow extends Modal {
         }
     }  
 
-    handleFileClick(filePath: string) {
+    private handleFileOpen(filePath: string, isExcalidraw: boolean = false) {
         console.log("filePath", filePath);
-        // 使用 setTimeout 延时操作
-        setTimeout(() => {
-            if (this.associatedLeaf) {
-                const containerEl = this.associatedLeaf.view.containerEl;
-                console.log("containerEl", containerEl);
-                const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
-                if (containerEl) {
-                    fileContainer.appendChild(containerEl);
-                    this.openedLink = filePath;
-                } else {
-                    console.log('containerEl is null');
-                }
-            } else {
-                console.log('associatedLeaf is null');
-            }
-        }, 150);
-    }
+        const leaf = isExcalidraw ? this.app.workspace.getLeaf(true) : this.associatedLeaf;
+        
+        if (isExcalidraw) {
+            const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
+            leaf?.openFile(excalidrawFile);
+            (leaf as any).tabHeaderEl.style.display = 'none';
+        }
 
-    handleExcalidrawFileClick(filePath: string) {
-        console.log("filePath", filePath);
-        const leaf = this.app.workspace.getLeaf(true);
-        const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
-        leaf.openFile(excalidrawFile);
-        (leaf as any).tabHeaderEl.style.display = 'none'; // 隐藏标签页
-        // 使用 setTimeout 延时操作
         setTimeout(() => {
             if (leaf) {
                 const containerEl = leaf.view.containerEl;
                 console.log("containerEl", containerEl);
                 const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
-                if (containerEl) {
-                    fileContainer.empty();
-                    fileContainer.appendChild(containerEl); 
+                if (containerEl && fileContainer) {
+                    if (isExcalidraw) fileContainer.empty();
+                    fileContainer.appendChild(containerEl);
                     this.openedLink = filePath;
+                    if(this.associatedLeaf) {
+                        this.associatedLeaf.detach();
+                        this.associatedLeaf = undefined;
+                    }
                     this.associatedLeaf = leaf;
                 } else {
-                    console.log('containerEl is null');
+                    console.log('containerEl or fileContainer is null');
                 }
             } else {
-                console.log('associatedLeaf is null');
+                console.log('Leaf is null');
             }
         }, 150);
     }
@@ -95,7 +81,7 @@ export class ModalWindow extends Modal {
                 const srcPath = parentElement.getAttribute('src');
                 console.log("srcPath", srcPath);
                 if (srcPath) {
-                    this.handleFileClick(srcPath);
+                    this.handleFileOpen(srcPath);
                     return;
                 }
             }
@@ -106,7 +92,7 @@ export class ModalWindow extends Modal {
             const filesource = target.getAttribute('filesource');
             console.log("filesource", filesource);
             if (filesource) {
-                this.handleExcalidrawFileClick(filesource);
+                this.handleFileOpen(filesource, true);
                 return;
             }
         }
@@ -135,7 +121,7 @@ export class ModalWindow extends Modal {
             event.stopImmediatePropagation();
             this.displayLinkContent(webLink);
         } else if (filePath) {
-            this.handleFileClick(filePath);
+            this.handleFileOpen(filePath);
         }
     }
 
@@ -267,6 +253,26 @@ export class ModalWindow extends Modal {
         }
     };
 
+    private setContainerHeight(container: HTMLElement) {
+        const modalHeightSetting = this.plugin.settings.modalHeight;
+        const app = this.app as any;
+        const editingPlugin = app.plugins.plugins["editing-toolbar"];
+        let adjustedModalHeight;
+        if (!this.plugin.settings.showFileViewHeader) {
+            const heightValue = parseInt(modalHeightSetting, 10) - (editingPlugin ? 2 : 1);
+            adjustedModalHeight = `${heightValue}vh`;
+        } else {
+            adjustedModalHeight = '81vh';
+        }
+        
+        container.style.minHeight = adjustedModalHeight;
+        container.style.maxHeight = adjustedModalHeight;
+        container.style.flexGrow = "1";
+        container.style.position = "relative";
+        container.style.overflow = "auto";
+        container.style.padding = "0";
+    }
+
     async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
             console.error("contentEl is undefined in displayFileContent.");
@@ -277,22 +283,7 @@ export class ModalWindow extends Modal {
         this.contentEl.addClass("file-modal");
 
         const fileContainer = this.contentEl.createEl("div", { cls: "file-modal-container" });
-        fileContainer.style.flexGrow = "1";
-        fileContainer.style.position = "relative";
-        fileContainer.style.overflow = "auto";
-        const modalHeightSetting = this.plugin.settings.modalHeight;
-        const app = this.app as any;
-        const editingPlugin = app.plugins.plugins["editing-toolbar"];
-        let heightValue: number;
-        if (editingPlugin) {
-            heightValue = parseInt(modalHeightSetting, 10) - 2;
-        } else {
-            heightValue = parseInt(modalHeightSetting, 10) - 1;
-        }
-        const adjustedModalHeight = `${heightValue}vh`;
-        fileContainer.style.minHeight = adjustedModalHeight;
-        fileContainer.style.maxHeight = adjustedModalHeight;
-        fileContainer.style.padding = "0";
+        this.setContainerHeight(fileContainer);
 
         let mode: 'source' | 'preview';
         switch (this.plugin.settings.fileOpenMode) {
@@ -361,7 +352,7 @@ export class ModalWindow extends Modal {
             this.associatedLeaf = leaf;
         }
 
-        this.doubleClickRestoreFile(file, mode);
+        this.setupDoubleClickHandler(file, mode);
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
     }
@@ -374,9 +365,7 @@ export class ModalWindow extends Modal {
         this.contentEl.empty();
         this.contentEl.addClass("link-modal");
         const linkContainer = this.contentEl.createEl("div", { cls: "link-modal-container" });
-        linkContainer.style.flexGrow = "1";
-        linkContainer.style.position = "relative";
-        linkContainer.style.overflow = "auto";
+        this.setContainerHeight(linkContainer);
     
         const app = this.plugin.app as any;
         const surfPlugin = app.plugins.plugins["surfing"];
@@ -403,78 +392,72 @@ export class ModalWindow extends Modal {
             this.openedLink = link;
         }
 
-        this.doubleClickRestoreLink();
+        this.setupDoubleClickHandler();
     }
 
-    
-    doubleClickRestoreFile(file: TFile, mode:String)
-    {
-        // 双击还原
+    private setupDoubleClickHandler(file?: TFile, mode?: string) {
         this.modalEl = document.querySelector('.modal') as HTMLElement;
-        // 确保 modal 容器不为空
         if (this.modalEl) {
             this.modalEl.addEventListener('dblclick', (event: MouseEvent) => {
-                // 排除内容区域的双击事件
-                if (this.contentEl && this.contentEl.contains(event.target as Node)) {
+                if (this.contentEl?.contains(event.target as Node)) {
                     console.log("Double-click detected on content area, ignoring.");
                     return;
                 }
                 console.log("Double-click detected on modal.");
 
-                if (this.openedLink && !this.isValidURL(this.openedLink))
-                {
+                if (this.openedLink) {
                     this.close();
-                    this.app.workspace.openLinkText(this.openedLink, file.path, true);
-                    setTimeout(() => {
-                        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-                        if (view && view instanceof MarkdownView) {
-                            const currentState = view.getState();
-                            currentState.mode = mode;
-                            view.setState(currentState, { history: false });
-                        }
-                    }, 150);
-                }
-            });
-        } else {
-            console.error("Modal element not found.");
-        }
-    }
-
-    doubleClickRestoreLink()
-    {
-        this.modalEl = document.querySelector('.modal') as HTMLElement;
-        // 确保 modal 容器不为空
-        if (this.modalEl) {
-            this.modalEl.addEventListener('dblclick', (event: MouseEvent) => {
-                // 排除内容区域的双击事件
-                if (this.contentEl && this.contentEl.contains(event.target as Node)) {
-                    console.log("Double-click detected on content area, ignoring.");
-                    return;
-                }
-                console.log("Double-click detected on modal.");
-                if (this.openedLink)
-                {
-                    const app = this.plugin.app as any;
-                    const surfPlugin = app.plugins.plugins["surfing"];
-                    if (surfPlugin) {
-                        this.close();
-                        window.open(this.openedLink);
-                    } else {
-                        this.close();
-                        const newLeaf = this.app.workspace.getLeaf("tab");
-                        const container = newLeaf.view.containerEl;
-                        container.empty();
-                        const frame = container.createEl("iframe");
-                        frame.src = this.openedLink;
-                        frame.setAttribute("frameborder", "0");
-                        frame.style.width = "100%";
-                        frame.style.height = "100%";
-                        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
+                    if (this.isValidURL(this.openedLink)) {
+                        this.openExternalLink(this.openedLink);
+                    } else if (file) {
+                        this.openInternalLink(this.openedLink, file.path, mode);
                     }
                 }
             });
         } else {
             console.error("Modal element not found.");
         }
+    }
+
+    private openExternalLink(link: string) {
+        const surfPlugin = this.getPlugin("surfing");
+        if (surfPlugin) {
+            window.open(link);
+        } else {
+            this.openInNewLeaf(link);
+        }
+    }
+
+    private openInternalLink(link: string, filePath: string, mode?: string) {
+        this.app.workspace.openLinkText(link, filePath, true);
+        if (mode) {
+            setTimeout(() => this.setViewMode(mode), 150);
+        }
+    }
+
+    private openInNewLeaf(link: string) {
+        const newLeaf = this.app.workspace.getLeaf("tab");
+        const container = newLeaf.view.containerEl;
+        container.empty();
+        const frame = container.createEl("iframe");
+        frame.src = link;
+        frame.setAttribute("frameborder", "0");
+        frame.style.width = "100%";
+        frame.style.height = "100%";
+        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
+    }
+
+    private setViewMode(mode: string) {
+        const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (view instanceof MarkdownView) {
+            const currentState = view.getState();
+            currentState.mode = mode;
+            view.setState(currentState, { history: false });
+        }
+    }
+
+    private getPlugin(pluginId: string) {
+        const app = this.plugin.app as any;
+        return app.plugins.plugins[pluginId];
     }
 }

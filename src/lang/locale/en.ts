@@ -24,6 +24,10 @@ export default {
   "Enter any valid CSS unit":'Enter any valid CSS unit',
   'Enable Animation and Blur':'Enable Animation and Blur',
   'Toggle to enable or disable animation and blur effects.':'Toggle to enable or disable animation and blur effects',
+  'Show File View Header':'Show File View Header',
+  'Show Link View Header':'Show Link View Header',
+  'Show the header of the file view in the modal window':'Show the header of the file view in the modal window',
+  'Show the header of the link view in the modal window':'Show the header of the link view in the modal window',
 
   'Custom Commands':'Custom Commands',
   'Add Custom Command':'Add Custom Command',

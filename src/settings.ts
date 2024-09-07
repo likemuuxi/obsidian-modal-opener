@@ -11,6 +11,8 @@ export interface ModalOpenPluginSettings {
 	enableAnimation: boolean;
 	onlyCloseButton: boolean;
 	customCommands: CustomCommand[];
+	showFileViewHeader: boolean;
+	showLinkViewHeader: boolean;
 }
 
 interface CustomCommand {
@@ -28,6 +30,8 @@ export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	enableAnimation: true,
 	onlyCloseButton: false,
 	customCommands: [],
+	showFileViewHeader: false,
+	showLinkViewHeader: false,
 };
 
 export default class ModalOpenSettingTab extends PluginSettingTab {
@@ -40,6 +44,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	enableAnimation: boolean;
 	onlyCloseButton: boolean;
 	customCommands: CustomCommand[];
+	showFileViewHeader: boolean;
+	showLinkViewHeader: boolean;
 
 	constructor(app: App, plugin: ModalOpenPlugin) {
 		super(app, plugin);
@@ -53,6 +59,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		this.enableAnimation = this.plugin.settings.enableAnimation;
 		this.onlyCloseButton = this.plugin.settings.onlyCloseButton;
 		this.customCommands = this.plugin.settings.customCommands;
+		this.showFileViewHeader = this.plugin.settings.showFileViewHeader;
+		this.showLinkViewHeader = this.plugin.settings.showLinkViewHeader;
 	}
 
 	async reloadPlugin() {
@@ -165,6 +173,28 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.enableAnimation = value;
 					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName(t('Show File View Header'))
+			.setDesc(t('Show the header of the file view in the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showFileViewHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.showFileViewHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				}));
+
+		new Setting(containerEl)
+			.setName(t('Show Link View Header'))
+			.setDesc(t('Show the header of the link view in the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showLinkViewHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.showLinkViewHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
 				}));
 
 		containerEl.createEl("h2", { text: t("Custom Commands") });

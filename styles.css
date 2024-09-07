@@ -46,6 +46,8 @@ If your plugin does not need CSS, delete this file.
     z-index: 1000; /* 确保关闭按钮在最上层 */
 }
 
+
+
 .file-modal,
 .link-modal  {
     padding-top: 16px;
@@ -66,7 +68,11 @@ If your plugin does not need CSS, delete this file.
 
 /* file-modal */
 
-.file-modal-container .view-header {
+body:not(.show-file-view-header) .file-modal-container .view-header {
+    display: none;
+}
+
+body:not(.show-link-view-header) .link-modal-container .view-header {
     display: none;
 }
 
@@ -79,3 +85,5 @@ If your plugin does not need CSS, delete this file.
 .file-modal .metadata-container {
     display: none !important;
 }
+
+

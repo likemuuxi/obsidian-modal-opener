@@ -1,0 +1,13 @@
+version: "0.2"
+ignorePaths: []
+dictionaryDefinitions: []
+dictionaries: []
+words:
+  - antfu
+  - codemirror
+  - nolebase
+  - Nólëbase
+  - ofetch
+  - vueuse
+ignoreWords: []
+import: []
