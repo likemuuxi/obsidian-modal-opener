@@ -1,7 +1,7 @@
 {
 	"id": "modal-plugin",
 	"name": "Modal Plugin",
-	"version": "0.4.4",
+	"version": "0.4.5",
 	"minAppVersion": "1.0.0",
 	"description": "Uses modal windows to open file and link in Obsidian.",
 	"author": "Muuxi",
