@@ -38,7 +38,7 @@ export class ModalWindow extends Modal {
         }
     }  
 
-    private handleFileOpen(filePath: string, isExcalidraw: boolean = false) {
+    private handleFileOpen(filePath: string, isExcalidraw = false) {
         console.log("filePath", filePath);
         const leaf = isExcalidraw ? this.app.workspace.getLeaf(true) : this.associatedLeaf;
         
@@ -284,6 +284,7 @@ export class ModalWindow extends Modal {
         this.setContainerHeight(fileContainer);
 
         let mode: 'source' | 'preview';
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         switch (this.plugin.settings.fileOpenMode) {
             case 'source':
                 mode = 'source';
@@ -292,7 +293,6 @@ export class ModalWindow extends Modal {
                 mode = 'preview';
                 break;
             default:
-                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 mode = activeView?.getMode() === 'source' ? 'source' : 'preview';
         }
 
@@ -300,6 +300,7 @@ export class ModalWindow extends Modal {
             const filePath = `${file.path}#${fragment}`;
             const newLeaf = this.app.workspace.getLeaf('tab');
             await newLeaf.openFile(file);
+            (newLeaf as any).tabHeaderEl.style.display = 'none';
             this.openedLink = filePath;
             this.associatedLeaf = newLeaf;
 

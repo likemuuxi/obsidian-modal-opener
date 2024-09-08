@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
@@ -47,7 +47,7 @@ export default class ModalOpenPlugin extends Plugin {
             callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile) as TFile;
-                const app = this.app as any;
+                const app = this.app as unknown as App & { plugins: { plugins: Record<string, any> } };
                 const surfPlugin = app.plugins.plugins["surfing"];
                 const activeLeaf = this.app.workspace.getLeaf(false);
                 
@@ -55,7 +55,7 @@ export default class ModalOpenPlugin extends Plugin {
                     console.log("No active leaf found");
                     return;
                 }
-                let linkValue: string = ""; // 初始化为 ""
+                let linkValue = ""; // 初始化为空字符串
                 if (surfPlugin) {
                     const wbFrameElement = activeLeaf.view.containerEl.querySelector('.wb-frame') as HTMLIFrameElement;
                     if (wbFrameElement) {
@@ -242,7 +242,7 @@ export default class ModalOpenPlugin extends Plugin {
                 }
             });
 
-            this.registerDomEvent(document, 'dragend', (evt: DragEvent) => {
+            this.registerDomEvent(document, 'dragend', (_evt: DragEvent) => {
                 if (this.draggedLink) {
                     if (this.settings.dragThreshold === 0) {
                         // console.log("Opening link immediately:", this.draggedLink);
@@ -380,10 +380,10 @@ export default class ModalOpenPlugin extends Plugin {
 
             console.log("OpenLink:", link);
 
-            let file: TFile | undefined;
+            // let file: TFile | undefined;
             const [filePath, fragment] = link.split(/[#]/);
 
-            file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
+            const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
             
             // 检测文件是否存在
             if (!file && !this.isValidURL(link)) {
