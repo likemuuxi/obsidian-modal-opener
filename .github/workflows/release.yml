@@ -22,7 +22,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install -D @antfu/eslint-config
+        run: npm install --legacy-peer-deps
 
       - name: Build
         id: build
