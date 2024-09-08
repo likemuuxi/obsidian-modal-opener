@@ -54,13 +54,13 @@ export class ModalWindow extends Modal {
                 console.log("containerEl", containerEl);
                 const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
                 if (containerEl && fileContainer) {
-                    if (isExcalidraw) fileContainer.empty();
-                    fileContainer.appendChild(containerEl);
-                    this.openedLink = filePath;
-                    if(this.associatedLeaf) {
+                    fileContainer.empty();
+                    if (isExcalidraw && this.associatedLeaf) {
                         this.associatedLeaf.detach();
                         this.associatedLeaf = undefined;
                     }
+                    fileContainer.appendChild(containerEl);
+                    this.openedLink = filePath;
                     this.associatedLeaf = leaf;
                 } else {
                     console.log('containerEl or fileContainer is null');
@@ -221,35 +221,33 @@ export class ModalWindow extends Modal {
         }
         const linkModalContainer = document.querySelector('.link-modal-container');
         const surfingLeaves = this.app.workspace.getLeavesOfType('surfing-view');
-        if (linkModalContainer) {
-            if (surfingLeaves.length > 0) {
-                const latestSurfingLeaf = surfingLeaves[1];
-                (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
-
-                this.debounceTimeout = setTimeout(() => {
-                    if (this.associatedLeaf) {
-                        this.associatedLeaf.detach();
-                        this.associatedLeaf = undefined;
+        if (linkModalContainer && surfingLeaves.length > 0) {
+            const latestSurfingLeaf = surfingLeaves.length > 1 ? surfingLeaves[1] : surfingLeaves[0];
+            (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
+    
+            this.debounceTimeout = setTimeout(() => {
+                if (this.associatedLeaf) {
+                    this.associatedLeaf.detach();
+                    this.associatedLeaf = undefined;
+                }
+                this.associatedLeaf = latestSurfingLeaf;
+    
+                linkModalContainer.empty();
+                linkModalContainer.appendChild(latestSurfingLeaf.view.containerEl);
+    
+                // 获取 wb-frame 的 src 属性
+                const wbFrame = latestSurfingLeaf.view.containerEl.querySelector('.wb-frame');
+                if (wbFrame) {
+                    const src = wbFrame.getAttribute('src');
+                    if (src) {
+                        this.openedLink = src;
+                        console.log('wb-frame src:', src);
                     }
-                    this.associatedLeaf = latestSurfingLeaf;
-
-                    linkModalContainer.empty();
-                    linkModalContainer.appendChild(latestSurfingLeaf.view.containerEl);
-
-                    // 获取 wb-frame 的 src 属性
-                    const wbFrame = latestSurfingLeaf.view.containerEl.querySelector('.wb-frame');
-                    if (wbFrame) {
-                        const src = wbFrame.getAttribute('src');
-                        if (src) {
-                            this.openedLink = src;
-                            console.log('wb-frame src:', src);
-                        }
-                    }
-                    console.log('Latest surfing view:', latestSurfingLeaf);
-                }, this.debounceDelay);
-            } else {
-                console.log('No surfing view open');
-            }
+                }
+                console.log('Latest surfing view:', latestSurfingLeaf);
+            }, this.debounceDelay);
+        } else {
+            console.log('No surfing view open');
         }
     };
 
@@ -300,25 +298,17 @@ export class ModalWindow extends Modal {
 
         if (fragment) {
             const filePath = `${file.path}#${fragment}`;
-            const currentLeaf = this.app.workspace.getLeaf();
-            const activeFile = this.app.workspace.getActiveFile();
-            if (activeFile && currentLeaf) {
-                // const newLeaf = await this.app.workspace.duplicateLeaf(currentLeaf, 'tab');
-                const newLeaf = this.app.workspace.getLeaf('tab');
-                await newLeaf.openFile(activeFile);
-                (newLeaf as any).tabHeaderEl.style.display = 'none';
-                this.associatedLeaf = newLeaf;
-                this.openedLink = filePath;
-            } else {
-                console.error("No active file");
-            }
+            const newLeaf = this.app.workspace.getLeaf('tab');
+            await newLeaf.openFile(file);
+            this.openedLink = filePath;
+            this.associatedLeaf = newLeaf;
 
             setTimeout(() => {
                 this.app.workspace.openLinkText(filePath, file.path, false);
             }, 150);
 
-            const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-            if (view && view instanceof MarkdownView) {
+            const view = newLeaf.view as MarkdownView;
+            if (view instanceof MarkdownView) {
                 const currentState = view.getState();
                 currentState.mode = mode;
                 view.setState(currentState, { history: false });
@@ -376,6 +366,10 @@ export class ModalWindow extends Modal {
                 const currentLeaf = this.app.workspace.getLeaf(false);
                 (currentLeaf as any).tabHeaderEl.style.display = 'none';
                 linkContainer.appendChild(currentLeaf.view.containerEl);
+                if (this.associatedLeaf) {
+                    this.associatedLeaf.detach();
+                    this.associatedLeaf = undefined;
+                }
                 this.associatedLeaf = currentLeaf;
                 this.app.workspace.on('active-leaf-change', this.activeLeafChangeHandler);
             }, 150);
