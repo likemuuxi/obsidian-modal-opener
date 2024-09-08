@@ -86,6 +86,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     applyStyles() {
+        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
         document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
         document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
     }

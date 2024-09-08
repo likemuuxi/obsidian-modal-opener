@@ -251,16 +251,26 @@ export class ModalWindow extends Modal {
         }
     };
 
-    private setContainerHeight(container: HTMLElement) {
-        const modalHeightSetting = this.plugin.settings.modalHeight;
-        const app = this.app as any;
-        const editingPlugin = app.plugins.plugins["editing-toolbar"];
-        let adjustedModalHeight;
-        if (!this.plugin.settings.showFileViewHeader) {
-            const heightValue = parseInt(modalHeightSetting, 10) - (editingPlugin ? 2 : 1);
-            adjustedModalHeight = `${heightValue}vh`;
+    private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
+        let adjustedModalHeight: string;
+        if (isLinkView) {
+            // 链接视图的高度设置
+            if (!this.plugin.settings.showLinkViewHeader) {
+                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) + 1;
+                adjustedModalHeight = `${heightValue}vh`;
+            } else {
+                adjustedModalHeight = '81vh';
+            }
         } else {
-            adjustedModalHeight = '81vh';
+            // 文件视图的高度设置
+            const app = this.app as any;
+            const editingPlugin = app.plugins.plugins["editing-toolbar"];
+            if (!this.plugin.settings.showFileViewHeader) {
+                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) - (editingPlugin ? 2 : 1);
+                adjustedModalHeight = `${heightValue}vh`;
+            } else {
+                adjustedModalHeight = '81vh';
+            }
         }
         
         container.style.minHeight = adjustedModalHeight;
@@ -281,7 +291,7 @@ export class ModalWindow extends Modal {
         this.contentEl.addClass("file-modal");
 
         const fileContainer = this.contentEl.createEl("div", { cls: "file-modal-container" });
-        this.setContainerHeight(fileContainer);
+        this.setContainerHeight(fileContainer, false);
 
         let mode: 'source' | 'preview';
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -356,7 +366,7 @@ export class ModalWindow extends Modal {
         this.contentEl.empty();
         this.contentEl.addClass("link-modal");
         const linkContainer = this.contentEl.createEl("div", { cls: "link-modal-container" });
-        this.setContainerHeight(linkContainer);
+        this.setContainerHeight(linkContainer, true);
     
         const app = this.plugin.app as any;
         const surfPlugin = app.plugins.plugins["surfing"];

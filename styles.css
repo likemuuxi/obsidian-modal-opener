@@ -72,7 +72,8 @@ body:not(.show-file-view-header) .file-modal-container .view-header {
     display: none;
 }
 
-body:not(.show-link-view-header) .link-modal-container .view-header {
+body:not(.show-link-view-header) .link-modal-container .view-header ,
+body:not(.show-link-view-header) .link-modal-container .wb-bookmark-bar {
     display: none;
 }
 
