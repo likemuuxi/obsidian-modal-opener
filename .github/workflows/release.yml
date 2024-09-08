@@ -21,6 +21,9 @@ jobs:
           node-version: "20"
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm install -D @antfu/eslint-config
+
       - name: Build
         id: build
         run: |
