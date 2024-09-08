@@ -38,12 +38,6 @@ export default class ModalOpenPlugin extends Plugin {
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current file in modal',
-            hotkeys: [
-                {
-                    modifiers: ["Alt", "Shift"], // 例如 Ctrl+Shift
-                    key: "W"
-                }
-            ],
             callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile) as TFile;

@@ -213,6 +213,11 @@ export class ModalWindow extends Modal {
 
         const { contentEl } = this;
         contentEl.empty();
+
+        if (this.debounceTimeout) {
+            clearTimeout(this.debounceTimeout);
+            this.debounceTimeout = null;
+        }
     }
 
     private activeLeafChangeHandler = () => {

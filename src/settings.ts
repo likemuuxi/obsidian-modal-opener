@@ -141,8 +141,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		containerEl.createEl("h2", { text: t("Style Settings") });
-
+		new Setting(containerEl).setName('Styles').setHeading();
+		
 		new Setting(containerEl)
 			.setName(t("Modal width"))
 			.setDesc(t("Enter any valid CSS unit"))
@@ -197,7 +197,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					this.plugin.applyStyles();
 				}));
 
-		containerEl.createEl("h2", { text: t("Custom Commands") });
+		new Setting(containerEl).setName('Custom Commands').setHeading();
 
 		new Setting(containerEl)
 			.setName(t("Add Custom Command"))
