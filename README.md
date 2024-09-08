@@ -52,7 +52,7 @@
 
 - Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
 
-## 通过 BRAT 安装
+## Install by BRAT
 
 1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) Plugin. 
 2. Add "Modal Plugin" to BRAT:
