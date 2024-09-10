@@ -410,7 +410,7 @@ export class ModalWindow extends Modal {
 
         if (fragment) {
             const filePath = `${file.path}#${fragment}`;
-            const newLeaf = this.app.workspace.getLeaf('tab');
+            const newLeaf = this.app.workspace.getLeaf(true);
             await newLeaf.openFile(file);
             (newLeaf as any).tabHeaderEl.style.display = 'none';
             this.openedLink = filePath;
@@ -546,7 +546,7 @@ export class ModalWindow extends Modal {
     }
 
     private openInNewLeaf(link: string) {
-        const newLeaf = this.app.workspace.getLeaf("tab");
+        const newLeaf = this.app.workspace.getLeaf(true);
         const container = newLeaf.view.containerEl;
         container.empty();
         const frame = container.createEl("iframe");
