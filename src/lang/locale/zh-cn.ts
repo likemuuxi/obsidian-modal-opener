@@ -1,5 +1,6 @@
 // 简体中文
 export default {
+    "Open in Modal Window": "在模态窗口中打开",
     // General settings
     'Open with':'打开方式',
     'Drag & Drop':'拖拽',
@@ -33,7 +34,7 @@ export default {
     'Add Custom Command':'添加自定义命令',
     'Add a new custom command':'命令可以与其他插件搭配使用，例如 Command',
     'Add':'添加',
-    'New Command':'此处修改命令名称',
+    'Command Name':'输入命令名称',
     'Command':'命令',
     'Description':'输入文件路径或网页链接',
     'Delete':'删除',

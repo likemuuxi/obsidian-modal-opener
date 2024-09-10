@@ -1,5 +1,6 @@
 // English
 export default {
+  "Open in Modal Window": "Open in Modal Window",
   // General settings
   'Open with':'Open with',
   'Drag & Drop':'Drag & Drop',
@@ -33,7 +34,7 @@ export default {
   'Add Custom Command':'Add Custom Command',
   'Add a new custom command':'Commands can be used with other plug-ins, such as Command',
   'Add':'Add',
-  'New Command':'Change the command name here',
+  'Command Name':'Input the command name',
   'Command':'Command',
   'Description':'Enter File Path or Web Link',
   'Delete':'Delete',

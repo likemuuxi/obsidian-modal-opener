@@ -1,6 +1,7 @@
 import { App, Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
+import { t } from "./lang/helpers"
 import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
 
 export default class ModalOpenPlugin extends Plugin {
@@ -339,7 +340,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     private addFileFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
             if (link) {
                 this.openInFloatPreview(this.currentAnchor || link);
             }
@@ -347,7 +348,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
     
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
             if (link) {
                 this.folderNoteOpenInFloatPreview(link);
             }
@@ -355,7 +356,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
     
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', "Open in Modal Window", () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
             if (link) {
                 this.openInFloatPreview(link);
             }

@@ -113,19 +113,6 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 			}));
 
-		new Setting(containerEl)
-			.setName(t('Default editing mode'))
-			.setDesc(t('Select the default mode for opening files in the modal window'))
-			.addDropdown(dropdown => dropdown
-				.addOption('current', t('Current File'))
-				.addOption('source', t('Edit'))
-				.addOption('preview', t('Preview'))
-				.setValue(this.plugin.settings.fileOpenMode)
-				.onChange(async (value) => {
-					this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
-					await this.plugin.saveSettings();
-				}));
-
 		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
 				.setName(t("Drag and drop time threshold"))
@@ -140,6 +127,20 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 						}
 					}));
 		}
+
+		
+		new Setting(containerEl)
+		.setName(t('Default editing mode'))
+		.setDesc(t('Select the default mode for opening files in the modal window'))
+		.addDropdown(dropdown => dropdown
+			.addOption('current', t('Current File'))
+			.addOption('source', t('Edit'))
+			.addOption('preview', t('Preview'))
+			.setValue(this.plugin.settings.fileOpenMode)
+			.onChange(async (value) => {
+				this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
+				await this.plugin.saveSettings();
+			}));
 
 		new Setting(containerEl).setName('Styles').setHeading();
 		
@@ -218,7 +219,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	addCustomCommand() {
 		const newCommand: CustomCommand = {
 			id: String(Date.now()),
-			name: t("New Command"),
+			name: "",
 			command: ""
 		};
 		this.plugin.settings.customCommands.push(newCommand);
@@ -228,8 +229,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 	createCustomCommandSetting(containerEl: HTMLElement, command: CustomCommand, index: number) {
 		const setting = new Setting(containerEl)
-			.setName(t("Command") + ` #${index + 1}`)
 			.addText((text) => text
+				.setPlaceholder(t("Command Name"))
 				.setValue(command.name)
 				.onChange(async (value) => {
 					command.name = value;
@@ -243,12 +244,17 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}))
 			.addExtraButton((button) => button
-				.setIcon("cross")
+				.setIcon("trash")
 				.setTooltip(t("Delete"))
 				.onClick(() => {
 					this.deleteCustomCommand(index);
 				}));
 
+		const textInputs = setting.controlEl.querySelectorAll('.setting-item-control input');
+		textInputs.forEach((input: HTMLElement) => {
+			input.style.width = 'calc(50% - 12px)';
+		});
+	
 		return setting;
 	}
 
