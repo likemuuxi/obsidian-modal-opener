@@ -24,7 +24,7 @@ interface CustomCommand {
 export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	openMethod: "both",
 	fileOpenMode: 'current',
-	modalWidth: "76vw",
+	modalWidth: "86vw",
 	modalHeight: "86vh",
 	dragThreshold: 200,
 	enableAnimation: true,
@@ -128,7 +128,6 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		
 		new Setting(containerEl)
 		.setName(t('Default editing mode'))
 		.setDesc(t('Select the default mode for opening files in the modal window'))
@@ -141,7 +140,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
 				await this.plugin.saveSettings();
 			}));
-
+			
 		new Setting(containerEl).setName('Styles').setHeading();
 		
 		new Setting(containerEl)

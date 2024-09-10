@@ -78,6 +78,10 @@ export default class ModalOpenPlugin extends Plugin {
                 ).open();
             }
         });
+        this.addCommand({
+            id: 'open-modal-content-in-new-tab',
+            name: 'Open modal content in new tab',
+        });
     }
 
     applyStyles() {

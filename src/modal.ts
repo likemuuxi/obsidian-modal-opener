@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf , MarkdownView } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Modifier, Scope} from "obsidian";
 import ModalOpenPlugin from "./main";
 
 export class ModalWindow extends Modal {
@@ -9,6 +9,7 @@ export class ModalWindow extends Modal {
     fragment: string
     width: string;
     height: string;
+    public scope: Scope;
     private associatedLeaf?: WorkspaceLeaf;
     private openedLink?: string;
     private debounceTimeout: NodeJS.Timeout | null = null;
@@ -20,8 +21,9 @@ export class ModalWindow extends Modal {
         this.link = link;
         this.file = file;
         this.fragment = fragment || '';
-        this.width = width || '80%';
-        this.height = height || '80%';
+        this.width = width || `${this.plugin.settings.modalWidth}%`;
+        this.height = height || `${this.plugin.settings.modalHeight}%`;
+        this.scope = new Scope();
     }
     
     close() {
@@ -196,6 +198,8 @@ export class ModalWindow extends Modal {
             console.log("link", this.link);
             this.displayLinkContent(this.link);
         }
+
+        this.bindHotkey();
     }
 
     onClose() {
@@ -217,6 +221,96 @@ export class ModalWindow extends Modal {
         if (this.debounceTimeout) {
             clearTimeout(this.debounceTimeout);
             this.debounceTimeout = null;
+        }
+
+        this.app.keymap.popScope(this.scope);
+    }
+
+    private bindHotkey() {
+        const commandId = 'modal-opener:open-in-modal-window';
+        const command = (this.app as any).commands.commands[commandId];
+        console.log("Command:", command);
+    
+        // 检查 hotkeys.json 中的设置
+        const hotkeyManager = (this.app as any).hotkeyManager;
+        const savedHotkeys = hotkeyManager.getHotkeys(commandId);
+        console.log("Saved hotkeys:", savedHotkeys);
+    
+        let hotkey: {modifiers: Modifier[], key: string};
+    
+        if (savedHotkeys && savedHotkeys.length > 0) {
+            hotkey = savedHotkeys[0];
+            console.log("使用保存的快捷键:", hotkey);
+            this.scope.register(hotkey.modifiers, hotkey.key, this.handleModalHotkey.bind(this));
+        } else if (command && command.hotkeys && command.hotkeys.length > 0) {
+            hotkey = command.hotkeys[0];
+            console.log("使用命令快捷键:", hotkey);
+            this.scope.register(hotkey.modifiers, hotkey.key, this.handleModalHotkey.bind(this));
+        } else {
+            console.log("未找到快捷键，不设置默认快捷键");
+        }
+    
+        // 恢复 ESC 键的默认行为
+        this.scope.register([], 'Escape', (evt: KeyboardEvent) => {
+            evt.preventDefault();
+            this.close();
+        });
+    
+        this.app.keymap.pushScope(this.scope);
+        console.log("Hotkeys registered");
+    }
+    
+    private handleModalHotkey(evt: KeyboardEvent) {
+        console.log("Modal hotkey triggered");
+        evt.preventDefault();
+        this.openInNewTab();
+    }
+
+    private openInNewTab() {
+        console.log("openInNewTab triggered");
+        const fileContainer = this.contentEl.querySelector('.file-modal-container');
+        const linkContainer = this.contentEl.querySelector('.link-modal-container');
+        let src = '';
+    
+        if (fileContainer) {
+            src = fileContainer.getAttribute('data-src') || '';
+        } else if (linkContainer) {
+            src = linkContainer.getAttribute('data-src') || '';
+        }
+    
+        if (src) {
+            if (this.isValidURL(src)) {
+                window.open(src);
+                this.close();
+            } else {
+                const [filePath, fragment] = src.split('#');
+                const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+                if (file instanceof TFile) {
+                    this.plugin.app.workspace.openLinkText(src, filePath, 'tab').then(() => {
+                        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                        if (activeView instanceof MarkdownView) {
+                            let mode: 'source' | 'preview' = this.plugin.settings.fileOpenMode === 'source' ? 'source' : 'preview';
+                            
+                            activeView.setState({ 
+                                mode: mode, 
+                                source: activeView.getViewData() 
+                            }, { history: false });
+    
+                            // 处理 fragment
+                            if (fragment && mode === 'preview') {
+                                setTimeout(() => {
+                                    this.plugin.app.workspace.openLinkText(src, filePath, false);
+                                }, 100);
+                            }
+                        }
+                    });
+                    this.close();
+                } else {
+                    new Notice('文件未找到');
+                }
+            }
+        } else {
+            new Notice('没有可打开的内容');
         }
     }
 
@@ -295,7 +389,10 @@ export class ModalWindow extends Modal {
         this.contentEl.empty();
         this.contentEl.addClass("file-modal");
 
-        const fileContainer = this.contentEl.createEl("div", { cls: "file-modal-container" });
+        const fileContainer = this.contentEl.createEl("div", { 
+            cls: "file-modal-container",
+            attr: { 'data-src': file.path + (fragment ? '#' + fragment : '') }
+        });
         this.setContainerHeight(fileContainer, false);
 
         let mode: 'source' | 'preview';
@@ -370,7 +467,10 @@ export class ModalWindow extends Modal {
         }
         this.contentEl.empty();
         this.contentEl.addClass("link-modal");
-        const linkContainer = this.contentEl.createEl("div", { cls: "link-modal-container" });
+        const linkContainer = this.contentEl.createEl("div", { 
+            cls: "link-modal-container",
+            attr: { 'data-src': link }
+        });
         this.setContainerHeight(linkContainer, true);
     
         const app = this.plugin.app as any;
