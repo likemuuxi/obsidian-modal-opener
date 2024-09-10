@@ -85,6 +85,7 @@ Currently known plugins with conflicts.
 - `no dupe leave`
 - `mononote`
 - `float search`
+- `Templify`
 
 # 🥰Special thanks
 

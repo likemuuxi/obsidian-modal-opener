@@ -81,6 +81,7 @@
 - `no dupe leave`
 - `mononote`
 - `float search`
+- `Templify`
 
 # 🥰特别感谢
 
