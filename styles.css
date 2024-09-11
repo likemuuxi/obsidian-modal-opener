@@ -39,6 +39,7 @@ If your plugin does not need CSS, delete this file.
 .modal:has(.file-modal) .modal-close-button {
     display: none;
 } */
+
 .modal-close-button {
     position: absolute;
     top: 10px; /* 根据需要调整数值 */
@@ -46,7 +47,36 @@ If your plugin does not need CSS, delete this file.
     z-index: 1000; /* 确保关闭按钮在最上层 */
 }
 
+.modal-tab-header-hidden .workspace-tab-header {
+    display: none;
+}
 
+.file-modal {
+    width: var(--modal-width, auto);
+    height: var(--modal-height, auto);
+  }
+
+.modal-content-container {
+    min-height: var(--adjusted-modal-height, 81vh);
+    max-height: var(--adjusted-modal-height, 81vh);
+    flex-grow: 1;
+    position: relative;
+    overflow: auto;
+    padding: 0;
+}
+
+.modal-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.custom-command-input {
+    width: 220px !important;
+}
 
 .file-modal,
 .link-modal  {

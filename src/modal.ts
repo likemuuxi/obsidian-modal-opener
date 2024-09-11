@@ -41,19 +41,20 @@ export class ModalWindow extends Modal {
     }  
 
     private handleFileOpen(filePath: string, isExcalidraw = false) {
-        console.log("filePath", filePath);
+        // console.log("filePath", filePath);
         const leaf = isExcalidraw ? this.app.workspace.getLeaf(true) : this.associatedLeaf;
         
         if (isExcalidraw) {
-            const excalidrawFile = this.app.vault.getAbstractFileByPath(filePath) as TFile;
-            leaf?.openFile(excalidrawFile);
-            (leaf as any).tabHeaderEl.style.display = 'none';
+            const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
+            if (abstractFile instanceof TFile) {
+                const excalidrawFile = abstractFile;
+                leaf?.openFile(excalidrawFile);
+            }
         }
 
         setTimeout(() => {
             if (leaf) {
                 const containerEl = leaf.view.containerEl;
-                console.log("containerEl", containerEl);
                 const fileContainer = document.querySelector(".file-modal-container") as HTMLElement;
                 if (containerEl && fileContainer) {
                     fileContainer.empty();
@@ -64,11 +65,7 @@ export class ModalWindow extends Modal {
                     fileContainer.appendChild(containerEl);
                     this.openedLink = filePath;
                     this.associatedLeaf = leaf;
-                } else {
-                    console.log('containerEl or fileContainer is null');
                 }
-            } else {
-                console.log('Leaf is null');
             }
         }, 150);
     }
@@ -81,7 +78,6 @@ export class ModalWindow extends Modal {
             const parentElement = target.closest('.internal-embed.canvas-embed.inline-embed.is-loaded') as HTMLElement;
             if (parentElement) {
                 const srcPath = parentElement.getAttribute('src');
-                console.log("srcPath", srcPath);
                 if (srcPath) {
                     this.handleFileOpen(srcPath);
                     return;
@@ -92,7 +88,6 @@ export class ModalWindow extends Modal {
         // 如果点击的是 excalidraw 元素
         if (target.classList.contains('excalidraw-canvas-immersive')) {
             const filesource = target.getAttribute('filesource');
-            console.log("filesource", filesource);
             if (filesource) {
                 this.handleFileOpen(filesource, true);
                 return;
@@ -104,11 +99,9 @@ export class ModalWindow extends Modal {
             const parentElement = target.closest('.block-language-table-of-contents') as HTMLElement;
             if (parentElement) {
                 const headingPath = target.getAttribute('href');
-                console.log("headingPath", headingPath);
                 if (headingPath) {
                     const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
                     const filePath = `${currentFilePath}${headingPath}`;
-                    console.log("filePath", filePath);
                     this.app.workspace.openLinkText(filePath, "", false);
                     return;
                 }
@@ -145,15 +138,12 @@ export class ModalWindow extends Modal {
         const modalBgElement = document.querySelector(".modal-bg") as HTMLElement;
         if (modalBgElement) {
             modalBgElement.addEventListener("click", (event) => {
-                console.log("Click event on modal background detected");
                 if (this.plugin.settings.onlyCloseButton) {
                     if (event.target === modalBgElement) {
                         event.stopImmediatePropagation();
                         event.preventDefault();
-                        console.log("Modal background click event handled");
                     }
                 } else {
-                    console.log("Modal background click allowed");
                     this.close();
                 }
             }, true);
@@ -182,9 +172,8 @@ export class ModalWindow extends Modal {
             modalContainer.style.height = this.height;
         }
 
-        // Display content based on file or link
         if (this.file) {
-            console.log("file", this.file);
+            // console.log("file", this.file);
             await this.displayFileContent(this.file, this.fragment);
         } else {
             if (!this.link.startsWith('http://') && !this.link.startsWith('https://')) {
@@ -195,7 +184,7 @@ export class ModalWindow extends Modal {
                     this.link = `http://${this.link}`;
                 }
             }
-            console.log("link", this.link);
+            // console.log("link", this.link);
             this.displayLinkContent(this.link);
         }
 
@@ -224,30 +213,28 @@ export class ModalWindow extends Modal {
         }
 
         this.app.keymap.popScope(this.scope);
+
+        if (this.leaf instanceof WorkspaceLeaf) {
+            this.leaf.view.containerEl.removeClass('modal-tab-header-hidden');
+        }
     }
 
     private bindHotkey() {
-        const commandId = 'modal-opener:open-in-modal-window';
+        const commandId = 'modal-opener:open-modal-content-in-new-tab';
         const command = (this.app as any).commands.commands[commandId];
-        console.log("Command:", command);
     
         // 检查 hotkeys.json 中的设置
         const hotkeyManager = (this.app as any).hotkeyManager;
         const savedHotkeys = hotkeyManager.getHotkeys(commandId);
-        console.log("Saved hotkeys:", savedHotkeys);
     
         let hotkey: {modifiers: Modifier[], key: string};
     
         if (savedHotkeys && savedHotkeys.length > 0) {
             hotkey = savedHotkeys[0];
-            console.log("使用保存的快捷键:", hotkey);
             this.scope.register(hotkey.modifiers, hotkey.key, this.handleModalHotkey.bind(this));
         } else if (command && command.hotkeys && command.hotkeys.length > 0) {
             hotkey = command.hotkeys[0];
-            console.log("使用命令快捷键:", hotkey);
             this.scope.register(hotkey.modifiers, hotkey.key, this.handleModalHotkey.bind(this));
-        } else {
-            console.log("未找到快捷键，不设置默认快捷键");
         }
     
         // 恢复 ESC 键的默认行为
@@ -257,17 +244,14 @@ export class ModalWindow extends Modal {
         });
     
         this.app.keymap.pushScope(this.scope);
-        console.log("Hotkeys registered");
     }
     
     private handleModalHotkey(evt: KeyboardEvent) {
-        console.log("Modal hotkey triggered");
         evt.preventDefault();
         this.openInNewTab();
     }
 
     private openInNewTab() {
-        console.log("openInNewTab triggered");
         const fileContainer = this.contentEl.querySelector('.file-modal-container');
         const linkContainer = this.contentEl.querySelector('.link-modal-container');
         let src = '';
@@ -305,12 +289,8 @@ export class ModalWindow extends Modal {
                         }
                     });
                     this.close();
-                } else {
-                    new Notice('文件未找到');
-                }
+                } 
             }
-        } else {
-            new Notice('没有可打开的内容');
         }
     }
 
@@ -322,8 +302,9 @@ export class ModalWindow extends Modal {
         const surfingLeaves = this.app.workspace.getLeavesOfType('surfing-view');
         if (linkModalContainer && surfingLeaves.length > 0) {
             const latestSurfingLeaf = surfingLeaves.length > 1 ? surfingLeaves[1] : surfingLeaves[0];
-            (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
-    
+            if (latestSurfingLeaf.view && latestSurfingLeaf.view.containerEl) {
+                latestSurfingLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+            }
             this.debounceTimeout = setTimeout(() => {
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();
@@ -340,13 +321,9 @@ export class ModalWindow extends Modal {
                     const src = wbFrame.getAttribute('src');
                     if (src) {
                         this.openedLink = src;
-                        console.log('wb-frame src:', src);
                     }
                 }
-                console.log('Latest surfing view:', latestSurfingLeaf);
             }, this.debounceDelay);
-        } else {
-            console.log('No surfing view open');
         }
     };
 
@@ -372,12 +349,8 @@ export class ModalWindow extends Modal {
             }
         }
         
-        container.style.minHeight = adjustedModalHeight;
-        container.style.maxHeight = adjustedModalHeight;
-        container.style.flexGrow = "1";
-        container.style.position = "relative";
-        container.style.overflow = "auto";
-        container.style.padding = "0";
+        container.addClass('modal-content-container');
+        container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
     }
 
     async displayFileContent(file: TFile, fragment: string) {
@@ -412,7 +385,9 @@ export class ModalWindow extends Modal {
             const filePath = `${file.path}#${fragment}`;
             const newLeaf = this.app.workspace.getLeaf(true);
             await newLeaf.openFile(file);
-            (newLeaf as any).tabHeaderEl.style.display = 'none';
+            if (newLeaf.view && newLeaf.view.containerEl) {
+                newLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+            }
             this.openedLink = filePath;
             this.associatedLeaf = newLeaf;
 
@@ -437,8 +412,10 @@ export class ModalWindow extends Modal {
         } else {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file, { state: { mode } });
-            // 隐藏标签页
-            (leaf as any).tabHeaderEl.style.display = 'none';
+
+            if (leaf.view && leaf.view.containerEl) {
+                leaf.view.containerEl.addClass('modal-tab-header-hidden');
+            }
 
             if (leaf.view instanceof MarkdownView) {
                 const view = leaf.view;
@@ -462,7 +439,6 @@ export class ModalWindow extends Modal {
 
     displayLinkContent(link:string) {
         if (!this.contentEl) {
-            console.error("contentEl is undefined in displayLinkContent.");
             return;
         }
         this.contentEl.empty();
@@ -480,7 +456,9 @@ export class ModalWindow extends Modal {
             this.openedLink = link;
             setTimeout(() => {
                 const currentLeaf = this.app.workspace.getLeaf(false);
-                (currentLeaf as any).tabHeaderEl.style.display = 'none';
+                if (currentLeaf.view && currentLeaf.view.containerEl) {
+                    currentLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+                }
                 linkContainer.appendChild(currentLeaf.view.containerEl);
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();
@@ -491,14 +469,8 @@ export class ModalWindow extends Modal {
             }, 150);
 
         } else {
-            const frame = linkContainer.createEl("iframe");
+            const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
             frame.src = link;
-            frame.style.width = "100%";
-            frame.style.height = "100%";
-            frame.style.border = "none";
-            frame.style.position = "absolute";
-            frame.style.top = "0";
-            frame.style.left = "0";
             this.openedLink = link;
         }
 
@@ -513,8 +485,6 @@ export class ModalWindow extends Modal {
                     console.log("Double-click detected on content area, ignoring.");
                     return;
                 }
-                console.log("Double-click detected on modal.");
-
                 if (this.openedLink) {
                     this.close();
                     if (this.isValidURL(this.openedLink)) {
@@ -549,11 +519,8 @@ export class ModalWindow extends Modal {
         const newLeaf = this.app.workspace.getLeaf(true);
         const container = newLeaf.view.containerEl;
         container.empty();
-        const frame = container.createEl("iframe");
+        const frame = container.createEl("iframe", { cls: "modal-iframe" });
         frame.src = link;
-        frame.setAttribute("frameborder", "0");
-        frame.style.width = "100%";
-        frame.style.height = "100%";
         this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
     }
 

@@ -60,20 +60,6 @@
 
 # 🚧兼容性
 
-## 兼容插件
-
-- Excel
-- Sheet Plus
-- Surfing
-- Canvas
-- Excalidraw
-- Folder Note
-- Auto Content Toc
-- VSCode Editor
-- Markmind（💰pay）
-- Component（💰pay）
-- ...
-
 ## 冲突插件
 
 当前已知的有冲突的插件

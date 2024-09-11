@@ -16,7 +16,6 @@ export interface ModalOpenPluginSettings {
 }
 
 interface CustomCommand {
-	id: string;
 	name: string;
 	command: string;
 }
@@ -64,22 +63,11 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	}
 
 	async reloadPlugin() {
-		try {
-			// Save the settings before reloading
-			await this.plugin.saveSettings();
-
-			// Reload the plugin
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const app = this.plugin.app as any;
-			await app.plugins.disablePlugin("obsidian-modal-plugin");
-			await app.plugins.enablePlugin("obsidian-modal-plugin");
-
-			app.setting.openTabById("obsidian-modal-plugin").display();
-			// new Notice("Plugin reloaded successfully.");
-		} catch (error) {
-			// new Notice("Failed to reload the plugin. Please reload manually.");
-			// console.error("Error reloading plugin:", error);
-		}
+		await this.plugin.saveSettings();
+		const app = this.plugin.app as any;
+		await app.plugins.disablePlugin("obsidian-modal-plugin");
+		await app.plugins.enablePlugin("obsidian-modal-plugin");
+		app.setting.openTabById("obsidian-modal-plugin").display();
 	}
 
 	display(): void {
@@ -217,7 +205,6 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 	addCustomCommand() {
 		const newCommand: CustomCommand = {
-			id: String(Date.now()),
 			name: "",
 			command: ""
 		};
@@ -251,7 +238,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 		const textInputs = setting.controlEl.querySelectorAll('.setting-item-control input');
 		textInputs.forEach((input: HTMLElement) => {
-			input.style.width = 'calc(50% - 12px)';
+			input.addClass('custom-command-input');
 		});
 	
 		return setting;

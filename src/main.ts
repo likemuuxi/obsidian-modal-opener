@@ -38,16 +38,19 @@ export default class ModalOpenPlugin extends Plugin {
 
         this.addCommand({
             id: 'open-in-modal-window',
-            name: 'Open current file in modal',
+            name: 'Open current leaf content in modal',
             callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
-                const file = this.app.vault.getAbstractFileByPath(currentFile) as TFile;
+                const file = this.app.vault.getAbstractFileByPath(currentFile);
+                if (!(file instanceof TFile)) {
+                    new Notice('Unable to open current file');
+                    return;
+                }
                 const app = this.app as unknown as App & { plugins: { plugins: Record<string, any> } };
                 const surfPlugin = app.plugins.plugins["surfing"];
                 const activeLeaf = this.app.workspace.getLeaf(false);
                 
                 if (!activeLeaf) {
-                    console.log("No active leaf found");
                     return;
                 }
                 let linkValue = ""; // 初始化为空字符串
@@ -55,17 +58,11 @@ export default class ModalOpenPlugin extends Plugin {
                     const wbFrameElement = activeLeaf.view.containerEl.querySelector('.wb-frame') as HTMLIFrameElement;
                     if (wbFrameElement) {
                         linkValue = wbFrameElement.src;
-                        console.log("Found wb-frame src:", linkValue);
-                    } else {
-                        console.log("wb-frame element not found in the current tab.");
                     }
                 } else {
                     const iframeElement = activeLeaf.view.containerEl.querySelector('iframe') as HTMLIFrameElement;
                     if (iframeElement) {
                         linkValue = iframeElement.src;
-                        console.log("Found iframe src:", linkValue);
-                    } else {
-                        console.log("iframe element not found in the current tab.");
                     }
                 }
                 new ModalWindow(
@@ -118,15 +115,12 @@ export default class ModalOpenPlugin extends Plugin {
     executeCustomCommand(command: string) {
         // 判断字符串是否是链接
         if (this.isValidURL(command)) {
-            console.log("Executing link:", command);
             // 实现打开链接的逻辑
             this.openInFloatPreview(command);
         } else {
             if (command.includes('.canvas') || command.includes('.md') || command.includes('.excalidraw')) {
-                console.log("Executing file path:", command);
                 this.openInFloatPreview(command);
             } else {
-                console.log("Unsupported file or link format:", command);
                 new Notice("Unsupported file or link format");
             }
         }
@@ -134,28 +128,23 @@ export default class ModalOpenPlugin extends Plugin {
 
     private removeEventListeners() {
         if (this.dragHandler) {
-            console.log("Removing drag event handlers");
             document.removeEventListener('dragstart', this.dragHandler);
             document.removeEventListener('dragend', this.dragHandler);
             this.dragHandler = undefined; // Clear reference
         }
         if (this.middleClickHandler) {
-            console.log("Removing middle click event handler");
             document.removeEventListener('auxclick', this.middleClickHandler, { capture: true });
             this.middleClickHandler = undefined; // Clear reference
         }
         if (this.altClickHandler) {
-            console.log("Removing alt click event handler");
             document.removeEventListener('click', this.altClickHandler, { capture: true });
             this.altClickHandler = undefined; // Clear reference
         }
         if (this.contextMenuListener) {
-            console.log("Removing context menu event handler");
             document.removeEventListener('contextmenu', this.contextMenuListener);
             this.contextMenuListener = undefined; // Clear reference
         }
         if (this.mouseHoverListener) {
-            console.log("Removing mouse hover event handler");
             document.removeEventListener('mouseover', this.mouseHoverListener);
             this.mouseHoverListener = undefined; // Clear reference
         }
@@ -201,7 +190,6 @@ export default class ModalOpenPlugin extends Plugin {
                     linkText = linkText.split('|')[0];
                 }
                 this.currentAnchor = linkText;
-                console.log("Hovered link text:", this.currentAnchor);
             }
         };
     
@@ -219,7 +207,6 @@ export default class ModalOpenPlugin extends Plugin {
             const target = (event.target as HTMLElement).closest('a[data-href]');
             if (target) {
                 this.currentAnchor = target.getAttribute('data-href') || target.getAttribute('href') || '';
-                console.log("Right-clicked anchor:", this.currentAnchor);
             } else {
                 this.currentAnchor = null;
             }
@@ -237,7 +224,6 @@ export default class ModalOpenPlugin extends Plugin {
                     if (!target.closest('.nav-folder-children') && !target.closest('.nav-folder')) {
                         this.draggedLink = this.getLinkFromTarget(target);
                         this.dragStartTime = Date.now();
-                        console.log("Drag started on link:", this.draggedLink);
                     }
                 }
             });
@@ -245,16 +231,13 @@ export default class ModalOpenPlugin extends Plugin {
             this.registerDomEvent(document, 'dragend', (_evt: DragEvent) => {
                 if (this.draggedLink) {
                     if (this.settings.dragThreshold === 0) {
-                        // console.log("Opening link immediately:", this.draggedLink);
                         this.openInFloatPreview(this.draggedLink);
                     } else if (this.dragStartTime) {
                         const dragDuration = Date.now() - this.dragStartTime;
-                        // console.log("Drag ended, duration:", dragDuration);
                         if (dragDuration >= this.settings.dragThreshold) {
-                            console.log("Opening link:", this.draggedLink);
                             this.openInFloatPreview(this.draggedLink);
                         } else {
-                            console.log("Drag duration too short, not opening link");
+                            new Notice("Drag duration too short");
                         }
                     }
                     this.draggedLink = null;
@@ -378,12 +361,17 @@ export default class ModalOpenPlugin extends Plugin {
                 link = currentFilePath + link;
             }
 
-            console.log("OpenLink:", link);
+            // console.log("OpenLink:", link);
 
-            // let file: TFile | undefined;
             const [filePath, fragment] = link.split(/[#]/);
+            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
+            let file: TFile | undefined;
 
-            const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "") as TFile | undefined;
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
+            } else {
+                file = undefined;
+            }
             
             // 检测文件是否存在
             if (!file && !this.isValidURL(link)) {
@@ -403,7 +391,6 @@ export default class ModalOpenPlugin extends Plugin {
             this.modal.open();
             this.currentAnchor = null;
         } catch (error) {
-            console.error("Open in modal window error:", error);
             new Notice("Open in modal window error");
         }
     }
@@ -414,31 +401,26 @@ export default class ModalOpenPlugin extends Plugin {
                 this.modal.close();
             }
 
-            console.log("folderOpenLink:", link);
-
             let file: TFile | undefined;
-
             const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
-
-            // 尝试使用组合路径查找 .md 文件
-            let folderFilePath = `${link}/${fileNameOnly}.md`;
-            file = this.app.vault.getAbstractFileByPath(folderFilePath) as TFile;
-
-            if (!(file instanceof TFile)) {
-                // 如果找不到 .md 文件，尝试查找 .canvas 文件
-                folderFilePath = `${link}/${fileNameOnly}.canvas`;
-                file = this.app.vault.getAbstractFileByPath(folderFilePath) as TFile;
-
-                if (!(file instanceof TFile)) {
-                    console.log("File not found by getAbstractFileByPath. Trying getFirstLinkpathDest...");
-                    file = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "") as TFile;
-                } else {
-                    console.log("File found with .canvas extension:", file.path);
-                }
+            let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
+            
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
             } else {
-                console.log("File found with .md extension:", file.path);
+                // 尝试查找 .canvas 文件
+                abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.canvas`);
+                if (abstractFile instanceof TFile) {
+                    file = abstractFile;
+                } else {
+                    // 通过 metadataCache 查找匹配的文件
+                    const possibleFile = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "");
+                    if (possibleFile instanceof TFile) {
+                        file = possibleFile;
+                    }
+                }
             }
-
+            
             // 处理网络链接
             this.modal = new ModalWindow(
                 this,
@@ -450,7 +432,6 @@ export default class ModalOpenPlugin extends Plugin {
             );
             this.modal.open();
         } catch (error) {
-            console.error("Open in modal window error:", error);
             new Notice("Open in modal window error");
         }
     }

@@ -64,22 +64,6 @@
 
 # 🚧Compatibility
 
-## Compatible plugins
-
-- Excel
-- Sheet Plus
-- Surfing
-- Canvas
-- Excalidraw
-- Folder Note
-- Auto Content Toc
-- VSCode Editor
-- Markmind（💰pay）
-- Component（💰pay）
-- ...
-
-## Conflict plugin
-
 Currently known plugins with conflicts.
 
 - `no dupe leave`
@@ -89,7 +73,7 @@ Currently known plugins with conflicts.
 
 # 🥰Special thanks
 
-Special thanks to these amazing plugins! I use these plugins as a reference for developing my first public plugin. The basic structure of this plugin is mainly based on [obidian link opener]（ https://github.com/zorazrr/obsidian-link-opener ）. I referred to other plugins and completed the modal window file display and plugin restart functions.
+Special thanks to these amazing plugins! I use these plugins as a reference for developing my first public plugin. The basic structure of this plugin is mainly based on [obidian link opener]( https://github.com/zorazrr/obsidian-link-opener ). I referred to other plugins and completed the modal window file display and plugin restart functions.
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Float-Search](https://github.com/Quorafind/Obsidian-Float-Search) by Quorafind
