@@ -332,7 +332,7 @@ export class ModalWindow extends Modal {
         if (isLinkView) {
             // 链接视图的高度设置
             if (!this.plugin.settings.showLinkViewHeader) {
-                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) + 1;
+                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) - 2;
                 adjustedModalHeight = `${heightValue}vh`;
             } else {
                 adjustedModalHeight = '81vh';
