@@ -38,7 +38,7 @@ export default class ModalOpenPlugin extends Plugin {
 
         this.addCommand({
             id: 'open-in-modal-window',
-            name: 'Open current leaf content in modal',
+            name: 'Open current tab content in modal',
             callback: () => {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile);
