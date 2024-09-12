@@ -2,9 +2,9 @@
     width: 220px !important;
 }
 
-.modal-tab-header-hidden .workspace-tab-header.is-active {
+/* .modal-tab-header-hidden .workspace-tab-header.is-active {
     display: none !important;
-}
+} */
 
 .modal-animation-enabled .modal-container:has(.link-modal), 
 .modal-animation-enabled .modal-container:has(.file-modal) {
@@ -61,6 +61,10 @@
     height: 100%;
     position: relative;
 }
+
+body:not(.show-metadata) .file-modal .metadata-container {
+    display: none !important;
+} 
 
 .file-modal .markdown-rendered
 {

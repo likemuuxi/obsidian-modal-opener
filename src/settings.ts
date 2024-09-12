@@ -13,6 +13,7 @@ export interface ModalOpenPluginSettings {
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
+	showMetadata: boolean;
 }
 
 interface CustomCommand {
@@ -31,6 +32,7 @@ export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	customCommands: [],
 	showFileViewHeader: false,
 	showLinkViewHeader: false,
+	showMetadata: false,
 };
 
 export default class ModalOpenSettingTab extends PluginSettingTab {
@@ -45,6 +47,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
+	showMetadata: boolean;
 
 	constructor(app: App, plugin: ModalOpenPlugin) {
 		super(app, plugin);
@@ -185,6 +188,17 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					this.plugin.applyStyles();
 				}));
 
+		new Setting(containerEl)
+		.setName(t('Display metadata'))
+		.setDesc(t('Display metadata in the file modal window'))
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.showMetadata)
+			.onChange(async (value) => {
+				this.plugin.settings.showMetadata = value;
+				await this.plugin.saveSettings();
+				this.plugin.applyStyles();
+			}));
+
 		new Setting(containerEl).setName('Custom Commands').setHeading();
 
 		new Setting(containerEl)
@@ -196,7 +210,6 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					this.addCustomCommand();
 				}));
 
-		// 显示现有的自定义命令
 		const customCommandsContainer = containerEl.createDiv("custom-commands-container");
 		this.plugin.settings.customCommands.forEach((command, index) => {
 			this.createCustomCommandSetting(customCommandsContainer, command, index);

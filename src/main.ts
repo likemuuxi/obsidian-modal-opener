@@ -85,6 +85,7 @@ export default class ModalOpenPlugin extends Plugin {
         document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
         document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
         document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
+        document.body.classList.toggle('show-metadata', this.settings.showMetadata);
     }
 
     onunload() {
@@ -105,7 +106,7 @@ export default class ModalOpenPlugin extends Plugin {
         // 重新注册所有自定义命令
         this.settings.customCommands.forEach(command => {
             this.addCommand({
-                id: `modal-open-custom-${command.id}`,
+                id: command.name.toLowerCase().replace(/\s+/g, '-'),
                 name: command.name,
                 callback: () => this.executeCustomCommand(command.command)
             });

@@ -29,7 +29,9 @@ export default {
     'Show Link View Header':'显示链接视图头部',
     'Show the header of the file view in the modal window':'在模态窗口中显示文件视图的头部',
     'Show the header of the link view in the modal window':'在模态窗口中显示链接视图的头部',
-    
+    'Display metadata':'显示元数据',
+    'Display metadata in the file modal window':'在文件模态窗口中显示元数据',
+
     'Custom Commands':'自定义命令',
     'Add Custom Command':'添加自定义命令',
     'Add a new custom command':'命令可以与其他插件搭配使用，例如 Command',

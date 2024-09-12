@@ -213,7 +213,7 @@ export class ModalWindow extends Modal {
 
         this.app.keymap.popScope(this.scope);
 
-        document.body.removeClass('modal-tab-header-hidden');
+        // document.body.removeClass('modal-tab-header-hidden');
         
     }
 
@@ -300,9 +300,10 @@ export class ModalWindow extends Modal {
         const surfingLeaves = this.app.workspace.getLeavesOfType('surfing-view');
         if (linkModalContainer && surfingLeaves.length > 0) {
             const latestSurfingLeaf = surfingLeaves.length > 1 ? surfingLeaves[1] : surfingLeaves[0];
-            if (latestSurfingLeaf.view && latestSurfingLeaf.view.containerEl) {
-                document.body.addClass('modal-tab-header-hidden');
-            }
+            // if (latestSurfingLeaf.view && latestSurfingLeaf.view.containerEl) {
+            //     document.body.addClass('modal-tab-header-hidden');
+            // }
+            (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
             this.debounceTimeout = setTimeout(() => {
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();
@@ -382,9 +383,10 @@ export class ModalWindow extends Modal {
             const filePath = `${file.path}#${fragment}`;
             const newLeaf = this.app.workspace.getLeaf(true);
             await newLeaf.openFile(file);
-            if (newLeaf.view && newLeaf.view.containerEl) {
-                document.body.addClass('modal-tab-header-hidden');
-            }
+            (newLeaf as any).tabHeaderEl.style.display = 'none';
+            // if (newLeaf.view && newLeaf.view.containerEl) {
+            //     document.body.addClass('modal-tab-header-hidden');
+            // }
             this.openedLink = filePath;
             this.associatedLeaf = newLeaf;
 
@@ -410,9 +412,10 @@ export class ModalWindow extends Modal {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file, { state: { mode } });
 
-            if (leaf.view && leaf.view.containerEl) {
-                document.body.addClass('modal-tab-header-hidden');
-            }
+            // if (leaf.view && leaf.view.containerEl) {
+            //     document.body.addClass('modal-tab-header-hidden');
+            // }
+            (leaf as any).tabHeaderEl.style.display = 'none';
 
             if (leaf.view instanceof MarkdownView) {
                 const view = leaf.view;
@@ -453,9 +456,10 @@ export class ModalWindow extends Modal {
             this.setContainerHeight(linkContainer, true);
             setTimeout(() => {
                 const currentLeaf = this.app.workspace.getLeaf(false);
-                if (currentLeaf.view && currentLeaf.view.containerEl) {
-                    document.body.addClass('modal-tab-header-hidden');
-                }
+                // if (currentLeaf.view && currentLeaf.view.containerEl) {
+                //     document.body.addClass('modal-tab-header-hidden');
+                // }
+                (currentLeaf as any).tabHeaderEl.style.display = 'none';
                 linkContainer.appendChild(currentLeaf.view.containerEl);
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();

@@ -29,6 +29,8 @@ export default {
   'Show Link View Header':'Show Link View Header',
   'Show the header of the file view in the modal window':'Show the header of the file view in the modal window',
   'Show the header of the link view in the modal window':'Show the header of the link view in the modal window',
+  'Display metadata':'Display metadata',
+  'Display metadata in the file modal window':'Display metadata in the file modal window',
 
   'Custom Commands':'Custom Commands',
   'Add Custom Command':'Add Custom Command',
