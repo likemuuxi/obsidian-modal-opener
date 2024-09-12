@@ -131,7 +131,6 @@ export class ModalWindow extends Modal {
 
     async onOpen() {
         if (!this.contentEl) {
-            console.error("contentEl is undefined");
             return;
         }
 
@@ -214,9 +213,8 @@ export class ModalWindow extends Modal {
 
         this.app.keymap.popScope(this.scope);
 
-        if (this.leaf instanceof WorkspaceLeaf) {
-            this.leaf.view.containerEl.removeClass('modal-tab-header-hidden');
-        }
+        document.body.removeClass('modal-tab-header-hidden');
+        
     }
 
     private bindHotkey() {
@@ -303,7 +301,7 @@ export class ModalWindow extends Modal {
         if (linkModalContainer && surfingLeaves.length > 0) {
             const latestSurfingLeaf = surfingLeaves.length > 1 ? surfingLeaves[1] : surfingLeaves[0];
             if (latestSurfingLeaf.view && latestSurfingLeaf.view.containerEl) {
-                latestSurfingLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+                document.body.addClass('modal-tab-header-hidden');
             }
             this.debounceTimeout = setTimeout(() => {
                 if (this.associatedLeaf) {
@@ -329,23 +327,23 @@ export class ModalWindow extends Modal {
 
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
         let adjustedModalHeight: string;
+        const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
+        
         if (isLinkView) {
             // 链接视图的高度设置
             if (!this.plugin.settings.showLinkViewHeader) {
-                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) + 1;
-                adjustedModalHeight = `${heightValue}vh`;
+                adjustedModalHeight = `${baseHeight + 1}vh`;
             } else {
-                adjustedModalHeight = '81vh';
+                adjustedModalHeight = `${baseHeight - 5}vh`;
             }
         } else {
             // 文件视图的高度设置
             const app = this.app as any;
             const editingPlugin = app.plugins.plugins["editing-toolbar"];
             if (!this.plugin.settings.showFileViewHeader) {
-                const heightValue = parseInt(this.plugin.settings.modalHeight, 10) - (editingPlugin ? 2 : 1);
-                adjustedModalHeight = `${heightValue}vh`;
+                adjustedModalHeight = `${baseHeight - (editingPlugin ? 2 : 1)}vh`;
             } else {
-                adjustedModalHeight = '81vh';
+                adjustedModalHeight = `${baseHeight - 5}vh`;
             }
         }
         
@@ -355,7 +353,6 @@ export class ModalWindow extends Modal {
 
     async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
-            console.error("contentEl is undefined in displayFileContent.");
             return;
         }
 
@@ -386,7 +383,7 @@ export class ModalWindow extends Modal {
             const newLeaf = this.app.workspace.getLeaf(true);
             await newLeaf.openFile(file);
             if (newLeaf.view && newLeaf.view.containerEl) {
-                newLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+                document.body.addClass('modal-tab-header-hidden');
             }
             this.openedLink = filePath;
             this.associatedLeaf = newLeaf;
@@ -414,7 +411,7 @@ export class ModalWindow extends Modal {
             await leaf.openFile(file, { state: { mode } });
 
             if (leaf.view && leaf.view.containerEl) {
-                leaf.view.containerEl.addClass('modal-tab-header-hidden');
+                document.body.addClass('modal-tab-header-hidden');
             }
 
             if (leaf.view instanceof MarkdownView) {
@@ -447,17 +444,17 @@ export class ModalWindow extends Modal {
             cls: "link-modal-container",
             attr: { 'data-src': link }
         });
-        this.setContainerHeight(linkContainer, true);
     
         const app = this.plugin.app as any;
         const surfPlugin = app.plugins.plugins["surfing"];
         if (surfPlugin) {
             window.open(link);
             this.openedLink = link;
+            this.setContainerHeight(linkContainer, true);
             setTimeout(() => {
                 const currentLeaf = this.app.workspace.getLeaf(false);
                 if (currentLeaf.view && currentLeaf.view.containerEl) {
-                    currentLeaf.view.containerEl.addClass('modal-tab-header-hidden');
+                    document.body.addClass('modal-tab-header-hidden');
                 }
                 linkContainer.appendChild(currentLeaf.view.containerEl);
                 if (this.associatedLeaf) {
@@ -478,13 +475,16 @@ export class ModalWindow extends Modal {
     }
 
     private setupDoubleClickHandler(file?: TFile, mode?: string) {
-        this.modalEl = document.querySelector('.modal') as HTMLElement;
+        this.modalEl = this.containerEl.querySelector('.modal') as HTMLElement;
         if (this.modalEl) {
             this.modalEl.addEventListener('dblclick', (event: MouseEvent) => {
-                if (this.contentEl?.contains(event.target as Node)) {
-                    console.log("Double-click detected on content area, ignoring.");
+                const target = event.target as HTMLElement;
+                
+                // 检查点击的目标是否在允许双击的区域内
+                if (!this.isClickableArea(target)) {
                     return;
                 }
+                
                 if (this.openedLink) {
                     this.close();
                     if (this.isValidURL(this.openedLink)) {
@@ -494,9 +494,34 @@ export class ModalWindow extends Modal {
                     }
                 }
             });
-        } else {
-            console.error("Modal element not found.");
         }
+    }
+    
+    private isClickableArea(element: HTMLElement): boolean {
+        // 允许 modal 元素本身或其直接子元素的双击
+        if (element === this.modalEl || element.parentElement === this.modalEl) {
+            return true;
+        }
+    
+        // 检查元素是否在内容区域内
+        if (this.contentEl?.contains(element)) {
+            return false;
+        }
+        
+        // 检查元素是否是常见内容元素
+        if (['P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'CODE'].includes(element.tagName)) {
+            return false;
+        }
+        
+        // 检查元素是否在特定容器内
+        const excludedContainers = ['.mm-app-container', '.workspace-leaf-content', '.markdown-preview-view', '.cm-node-text'];
+        for (const selector of excludedContainers) {
+            if (element.closest(selector)) {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     private openExternalLink(link: string) {
@@ -504,7 +529,12 @@ export class ModalWindow extends Modal {
         if (surfPlugin) {
             window.open(link);
         } else {
-            this.openInNewLeaf(link);
+            const newLeaf = this.app.workspace.getLeaf(true);
+            const container = newLeaf.view.containerEl;
+            container.empty();
+            const frame = container.createEl("iframe", { cls: "modal-iframe" });
+            frame.src = link;
+            this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
         }
     }
 
@@ -513,15 +543,6 @@ export class ModalWindow extends Modal {
         if (mode) {
             setTimeout(() => this.setViewMode(mode), 150);
         }
-    }
-
-    private openInNewLeaf(link: string) {
-        const newLeaf = this.app.workspace.getLeaf(true);
-        const container = newLeaf.view.containerEl;
-        container.empty();
-        const frame = container.createEl("iframe", { cls: "modal-iframe" });
-        frame.src = link;
-        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
     }
 
     private setViewMode(mode: string) {

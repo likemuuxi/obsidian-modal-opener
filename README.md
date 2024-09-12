@@ -1,6 +1,6 @@
 # 🎉Obsidian Modal Plugin
 
-[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README-ZH.md) ｜ [English Doc](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README.md)
+English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README-ZH.md)
 
 > This is a plugin that uses the Obsidian modal window to open files and links.
 > It can be combined with other plug-ins to easily read and edit various types of files, block various interferences for you.

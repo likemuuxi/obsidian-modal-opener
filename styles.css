@@ -2,8 +2,8 @@
     width: 220px !important;
 }
 
-.modal-tab-header-hidden .workspace-tab-header {
-    display: none;
+.modal-tab-header-hidden .workspace-tab-header.is-active {
+    display: none !important;
 }
 
 .modal-animation-enabled .modal-container:has(.link-modal), 
@@ -46,10 +46,10 @@
 
 .modal-iframe {
     width: 100%;
-    height: 100%;
-    border: none;
+    height: 98%;
+    border: 0;
     position: absolute;
-    top: 0;
+    top: 1;
     left: 0;
 }
 
@@ -68,21 +68,12 @@
     padding: 0;
 }
 
-.file-modal .metadata-container {
-    display: none !important;
-}
-
 .modal-content-container {
     min-height: var(--adjusted-modal-height, 81vh);
     max-height: var(--adjusted-modal-height, 81vh);
     flex-grow: 1;
     position: relative;
     overflow: auto;
-    padding: 0;
-}
-
-.modal-content:has(.components--Component), .file-modal:has(.components--Component) {
-    --file-line-width: 90%;
     padding: 0;
 }
 

@@ -1,6 +1,6 @@
 # 🎉Obsidian Modal Plugin
 
-[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README-ZH.md) ｜ [English Doc](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README.md)
+中文文档｜[English Doc](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README.md)
 
 > 这是一个使用黑曜石模式窗口打开文件和链接的插件。它可以与其他插件结合使用，轻松读取和编辑各种类型的文件，为您提供便利和阻止各种干扰。
 
