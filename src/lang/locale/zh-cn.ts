@@ -1,5 +1,9 @@
 // 简体中文
 export default {
+    "Unsupported file or link format": "不支持的文件或链接格式",
+    "Drag duration too short": "拖拽时间太短",
+    "The file does not exist: ": "文件不存在: ",
+    "Open in modal window error": "在模态窗口中打开错误",
     "Open in Modal Window": "在模态窗口中打开",
     // General settings
     'Open with':'打开方式',
@@ -19,7 +23,7 @@ export default {
     'Disable external click Close':'禁用外部点击关闭',
     'Use only the "Close" button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
 
-    "Style Settings":'样式',
+    "Styles":'样式',
     "Modal width":'窗口宽度',
     "Modal height":'窗口高度',
     "Enter any valid CSS unit":'输入任何有效的CSS单位',
@@ -40,5 +44,9 @@ export default {
     'Command':'命令',
     'Description':'输入文件路径或网页链接',
     'Delete':'删除',
-
+    'Confirm':'确认',
+    'The command name already exists, please use a different name':'命令名称已存在，请使用不同的名称',
+    'Command added successfully':'命令添加成功',
+    'Please enter both command name and description':'请输入命令名称和描述',
+    'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'命令删除成功。请重新启动 Obsidian 以使更改生效。',
 }

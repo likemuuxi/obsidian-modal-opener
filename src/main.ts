@@ -43,7 +43,6 @@ export default class ModalOpenPlugin extends Plugin {
                 const currentFile = this.app.workspace.getActiveFile()?.path || '';
                 const file = this.app.vault.getAbstractFileByPath(currentFile);
                 if (!(file instanceof TFile)) {
-                    new Notice('Unable to open current file');
                     return;
                 }
                 const app = this.app as unknown as App & { plugins: { plugins: Record<string, any> } };
@@ -106,7 +105,7 @@ export default class ModalOpenPlugin extends Plugin {
         // 重新注册所有自定义命令
         this.settings.customCommands.forEach(command => {
             this.addCommand({
-                id: command.name.toLowerCase().replace(/\s+/g, '-'),
+                id: command.id,
                 name: command.name,
                 callback: () => this.executeCustomCommand(command.command)
             });
@@ -122,7 +121,7 @@ export default class ModalOpenPlugin extends Plugin {
             if (command.includes('.canvas') || command.includes('.md') || command.includes('.excalidraw')) {
                 this.openInFloatPreview(command);
             } else {
-                new Notice("Unsupported file or link format");
+                new Notice(t("Unsupported file or link format"));
             }
         }
     }
@@ -238,7 +237,7 @@ export default class ModalOpenPlugin extends Plugin {
                         if (dragDuration >= this.settings.dragThreshold) {
                             this.openInFloatPreview(this.draggedLink);
                         } else {
-                            new Notice("Drag duration too short");
+                            new Notice(t("Drag duration too short"));
                         }
                     }
                     this.draggedLink = null;
@@ -376,7 +375,7 @@ export default class ModalOpenPlugin extends Plugin {
             
             // 检测文件是否存在
             if (!file && !this.isValidURL(link)) {
-                new Notice("The file does not exist: " + filePath);
+                new Notice(t("The file does not exist: ") + filePath);
                 return;
             }
 
@@ -392,7 +391,7 @@ export default class ModalOpenPlugin extends Plugin {
             this.modal.open();
             this.currentAnchor = null;
         } catch (error) {
-            new Notice("Open in modal window error");
+            new Notice(t("Open in modal window error"));
         }
     }
 
@@ -433,7 +432,7 @@ export default class ModalOpenPlugin extends Plugin {
             );
             this.modal.open();
         } catch (error) {
-            new Notice("Open in modal window error");
+            new Notice(t("Open in modal window error"));
         }
     }
 

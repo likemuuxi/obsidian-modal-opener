@@ -1,5 +1,9 @@
 // English
 export default {
+  "Unsupported file or link format": "Unsupported file or link format",
+  "Drag duration too short": "Drag duration too short",
+  "The file does not exist: ": "The file does not exist: ",
+  "Open in modal window error": "Open in modal window error",
   "Open in Modal Window": "Open in Modal Window",
   // General settings
   'Open with':'Open with',
@@ -19,7 +23,7 @@ export default {
   'Disable external click Close':'Disable external click Close',
   'Use only the "Close" button and Esc to close.':'Use only the "Close" button and Esc to close',
 
-  "Style Settings":'Style',
+  "Styles":'Styles',
   "Modal width":'Modal width',
   "Modal height":'Modal height',
   "Enter any valid CSS unit":'Enter any valid CSS unit',
@@ -40,4 +44,9 @@ export default {
   'Command':'Command',
   'Description':'Enter File Path or Web Link',
   'Delete':'Delete',
+  'Confirm':'Confirm',
+  'The command name already exists, please use a different name':'The command name already exists, please use a different name',
+  'Command added successfully':'Command added successfully',
+  'Please enter both command name and description':'Please enter both command name and description',
+  'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'Command deleted successfully. Please restart Obsidian for changes to take full effect.',
 }

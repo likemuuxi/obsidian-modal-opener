@@ -332,8 +332,14 @@ export class ModalWindow extends Modal {
         
         if (isLinkView) {
             // 链接视图的高度设置
-            if (!this.plugin.settings.showLinkViewHeader) {
-                adjustedModalHeight = `${baseHeight + 1}vh`;
+            if (!this.plugin.settings.showLinkViewHeader) { 
+                const hasBookmarkBar = this.containerEl.querySelector('.wb-bookmark-bar') !== null;
+                console.log('Has bookmark bar:', hasBookmarkBar);
+                if (hasBookmarkBar) {
+                    adjustedModalHeight = `${baseHeight + 1}vh`;
+                } else {
+                    adjustedModalHeight = `${baseHeight - 2}vh`;
+                }
             } else {
                 adjustedModalHeight = `${baseHeight - 5}vh`;
             }
@@ -453,7 +459,6 @@ export class ModalWindow extends Modal {
         if (surfPlugin) {
             window.open(link);
             this.openedLink = link;
-            this.setContainerHeight(linkContainer, true);
             setTimeout(() => {
                 const currentLeaf = this.app.workspace.getLeaf(false);
                 // if (currentLeaf.view && currentLeaf.view.containerEl) {
@@ -467,6 +472,8 @@ export class ModalWindow extends Modal {
                 }
                 this.associatedLeaf = currentLeaf;
                 this.app.workspace.on('active-leaf-change', this.activeLeafChangeHandler);
+
+                this.setContainerHeight(linkContainer, true);
             }, 150);
 
         } else {
@@ -488,7 +495,6 @@ export class ModalWindow extends Modal {
                 if (!this.isClickableArea(target)) {
                     return;
                 }
-                
                 if (this.openedLink) {
                     this.close();
                     if (this.isValidURL(this.openedLink)) {

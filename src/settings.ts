@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import ModalOpenPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -17,6 +17,7 @@ export interface ModalOpenPluginSettings {
 }
 
 interface CustomCommand {
+	id: string;
 	name: string;
 	command: string;
 }
@@ -132,7 +133,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				await this.plugin.saveSettings();
 			}));
 			
-		new Setting(containerEl).setName('Styles').setHeading();
+		new Setting(containerEl).setName(t('Styles')).setHeading();
 		
 		new Setting(containerEl)
 			.setName(t("Modal width"))
@@ -199,7 +200,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				this.plugin.applyStyles();
 			}));
 
-		new Setting(containerEl).setName('Custom Commands').setHeading();
+		new Setting(containerEl).setName(t('Custom Commands')).setHeading();
 
 		new Setting(containerEl)
 			.setName(t("Add Custom Command"))
@@ -218,29 +219,56 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 	addCustomCommand() {
 		const newCommand: CustomCommand = {
+			id: "",
 			name: "",
 			command: ""
 		};
 		this.plugin.settings.customCommands.push(newCommand);
-		this.plugin.saveSettings();
 		this.display();
 	}
 
 	createCustomCommandSetting(containerEl: HTMLElement, command: CustomCommand, index: number) {
+		let tempCommand = { ...command };
+	
 		const setting = new Setting(containerEl)
 			.addText((text) => text
 				.setPlaceholder(t("Command Name"))
-				.setValue(command.name)
-				.onChange(async (value) => {
-					command.name = value;
-					await this.plugin.saveSettings();
+				.setValue(tempCommand.name)
+				.onChange((value) => {
+					tempCommand.id = `modal-opener:${value}`;
+					tempCommand.name = value;
 				}))
 			.addText((text) => text
 				.setPlaceholder(t("Description"))
-				.setValue(command.command)
-				.onChange(async (value) => {
-					command.command = value;
-					await this.plugin.saveSettings();
+				.setValue(tempCommand.command)
+				.onChange((value) => {
+					tempCommand.command = value;
+				}))
+				.addButton((button) => button
+				.setButtonText(t("Confirm"))
+				.onClick(async () => {
+					if (tempCommand.name && tempCommand.command) {
+						// 检查命令名是否已存在
+						const isDuplicate = this.plugin.settings.customCommands.some((cmd, i) => 
+							cmd.name === tempCommand.name && i !== index
+						);
+						
+						if (isDuplicate) {
+							new Notice(t("The command name already exists, please use a different name"));
+							return;
+						}
+						
+						if (index >= 0) {
+							this.plugin.settings.customCommands[index] = tempCommand;
+						} else {
+							this.plugin.settings.customCommands.push(tempCommand);
+						}
+						await this.plugin.saveSettings();
+						new Notice(t("Command added successfully"));
+						this.display(); // 刷新设置页面
+					} else {
+						new Notice(t("Please enter both command name and description"));
+					}
 				}))
 			.addExtraButton((button) => button
 				.setIcon("trash")
@@ -248,7 +276,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				.onClick(() => {
 					this.deleteCustomCommand(index);
 				}));
-
+	
 		const textInputs = setting.controlEl.querySelectorAll('.setting-item-control input');
 		textInputs.forEach((input: HTMLElement) => {
 			input.addClass('custom-command-input');
@@ -262,5 +290,6 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		this.plugin.saveSettings();
 		this.reloadPlugin();
 		this.display();
+		new Notice(t("Command deleted successfully. Please restart Obsidian for changes to take full effect."));
 	}
 }
