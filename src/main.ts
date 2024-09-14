@@ -352,9 +352,6 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async openInFloatPreview(link: string) {
         try {
-            if (this.modal) {
-                this.modal.close();
-            }
             // 适配 auto content tco
             if (link?.startsWith('#')) {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
@@ -380,15 +377,14 @@ export default class ModalOpenPlugin extends Plugin {
             }
 
             // 处理网络链接
-            this.modal = new ModalWindow(
+            new ModalWindow(
                 this,
                 this.isValidURL(link) ? link : "",
                 file,
                 fragment ?? "",
                 this.settings.modalWidth,
                 this.settings.modalHeight
-            );
-            this.modal.open();
+            ).open();
             this.currentAnchor = null;
         } catch (error) {
             new Notice(t("Open in modal window error"));
@@ -422,15 +418,14 @@ export default class ModalOpenPlugin extends Plugin {
             }
             
             // 处理网络链接
-            this.modal = new ModalWindow(
+            new ModalWindow(
                 this,
                 "",
                 file,
                 "",
                 this.settings.modalWidth,
                 this.settings.modalHeight
-            );
-            this.modal.open();
+            ).open();
         } catch (error) {
             new Notice(t("Open in modal window error"));
         }

@@ -14,6 +14,7 @@ export interface ModalOpenPluginSettings {
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
+	hideTabHeader: boolean;
 }
 
 interface CustomCommand {
@@ -34,6 +35,7 @@ export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	showFileViewHeader: false,
 	showLinkViewHeader: false,
 	showMetadata: false,
+	hideTabHeader: true,
 };
 
 export default class ModalOpenSettingTab extends PluginSettingTab {
@@ -49,6 +51,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
+	hideTabHeader: boolean;
 
 	constructor(app: App, plugin: ModalOpenPlugin) {
 		super(app, plugin);
@@ -196,6 +199,17 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 			.setValue(this.plugin.settings.showMetadata)
 			.onChange(async (value) => {
 				this.plugin.settings.showMetadata = value;
+				await this.plugin.saveSettings();
+				this.plugin.applyStyles();
+			}));
+
+		new Setting(containerEl)
+		.setName(t('Hide Tab Header'))
+		.setDesc(t('Hides the tab header associated with the modal window'))
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.hideTabHeader)
+			.onChange(async (value) => {
+				this.plugin.settings.hideTabHeader = value;
 				await this.plugin.saveSettings();
 				this.plugin.applyStyles();
 			}));

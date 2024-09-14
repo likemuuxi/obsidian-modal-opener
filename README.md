@@ -71,6 +71,8 @@ Currently known plugins with conflicts.
 - `float search`
 - `Templify`
 
+> Notice: When loading a Web page using the `surfing` plugin, do not turn on the **option to open a web page** in a fixed and unique TAB. This affects the plugin's functionality.
+
 # 🥰Special thanks
 
 Special thanks to these amazing plugins! I use these plugins as a reference for developing my first public plugin. The basic structure of this plugin is mainly based on [obidian link opener]( https://github.com/zorazrr/obsidian-link-opener ). I referred to other plugins and completed the modal window file display and plugin restart functions.

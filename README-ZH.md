@@ -69,6 +69,8 @@
 - `float search`
 - `Templify`
 
+> 注意：当使用`surfing`插件加载网页时，不要开启**在固定且唯一标签页中打开网页**选项，会影响插件功能。
+
 # 🥰特别感谢
 
 特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和插件重启功能。

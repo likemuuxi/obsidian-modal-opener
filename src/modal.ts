@@ -303,7 +303,11 @@ export class ModalWindow extends Modal {
             // if (latestSurfingLeaf.view && latestSurfingLeaf.view.containerEl) {
             //     document.body.addClass('modal-tab-header-hidden');
             // }
-            (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
+
+            if (this.plugin.settings.hideTabHeader) {
+                (latestSurfingLeaf as any).tabHeaderEl.style.display = 'none';
+            }
+
             this.debounceTimeout = setTimeout(() => {
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();
@@ -334,7 +338,6 @@ export class ModalWindow extends Modal {
             // 链接视图的高度设置
             if (!this.plugin.settings.showLinkViewHeader) { 
                 const hasBookmarkBar = this.containerEl.querySelector('.wb-bookmark-bar') !== null;
-                console.log('Has bookmark bar:', hasBookmarkBar);
                 if (hasBookmarkBar) {
                     adjustedModalHeight = `${baseHeight + 1}vh`;
                 } else {
@@ -389,7 +392,10 @@ export class ModalWindow extends Modal {
             const filePath = `${file.path}#${fragment}`;
             const newLeaf = this.app.workspace.getLeaf(true);
             await newLeaf.openFile(file);
-            (newLeaf as any).tabHeaderEl.style.display = 'none';
+            
+            if (this.plugin.settings.hideTabHeader) {
+                (newLeaf as any).tabHeaderEl.style.display = 'none';
+            }
             // if (newLeaf.view && newLeaf.view.containerEl) {
             //     document.body.addClass('modal-tab-header-hidden');
             // }
@@ -421,7 +427,9 @@ export class ModalWindow extends Modal {
             // if (leaf.view && leaf.view.containerEl) {
             //     document.body.addClass('modal-tab-header-hidden');
             // }
-            (leaf as any).tabHeaderEl.style.display = 'none';
+            if (this.plugin.settings.hideTabHeader) {
+                (leaf as any).tabHeaderEl.style.display = 'none';
+            }
 
             if (leaf.view instanceof MarkdownView) {
                 const view = leaf.view;
@@ -464,7 +472,9 @@ export class ModalWindow extends Modal {
                 // if (currentLeaf.view && currentLeaf.view.containerEl) {
                 //     document.body.addClass('modal-tab-header-hidden');
                 // }
-                (currentLeaf as any).tabHeaderEl.style.display = 'none';
+                if (this.plugin.settings.hideTabHeader) {
+                    (currentLeaf as any).tabHeaderEl.style.display = 'none';
+                }
                 linkContainer.appendChild(currentLeaf.view.containerEl);
                 if (this.associatedLeaf) {
                     this.associatedLeaf.detach();
@@ -475,7 +485,6 @@ export class ModalWindow extends Modal {
 
                 this.setContainerHeight(linkContainer, true);
             }, 150);
-
         } else {
             const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
             frame.src = link;

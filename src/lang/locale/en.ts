@@ -35,6 +35,8 @@ export default {
   'Show the header of the link view in the modal window':'Show the header of the link view in the modal window',
   'Display metadata':'Display metadata',
   'Display metadata in the file modal window':'Display metadata in the file modal window',
+  'Hide Tab Header':'Hide Tab Header',
+  'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 
   'Custom Commands':'Custom Commands',
   'Add Custom Command':'Add Custom Command',

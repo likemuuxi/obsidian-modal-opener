@@ -35,6 +35,8 @@ export default {
     'Show the header of the link view in the modal window':'在模态窗口中显示链接视图的头部',
     'Display metadata':'显示元数据',
     'Display metadata in the file modal window':'在文件模态窗口中显示元数据',
+    'Hide Tab Header':'隐藏标签头部',
+    'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签头部',
 
     'Custom Commands':'自定义命令',
     'Add Custom Command':'添加自定义命令',
