@@ -1,7 +1,7 @@
 {
 	"id": "modal-opener",
 	"name": "Modal Opener",
-	"version": "0.4.4",
+	"version": "0.4.5",
 	"minAppVersion": "1.0.0",
 	"description": "Uses modal windows to open files and links.",
 	"author": "Muuxi",
