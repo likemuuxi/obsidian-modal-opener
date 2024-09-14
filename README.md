@@ -71,7 +71,7 @@ Currently known plugins with conflicts.
 - `float search`
 - `Templify`
 
-> Notice: When loading a Web page using the `surfing` plugin, do not turn on the **option to open a web page** in a fixed and unique TAB. This affects the plugin's functionality.
+> Notice: When loading a Web page using the `surfing` plugin, do not turn on the **option to open a web page in a fixed and unique tab**. This affects the plugin's functionality.
 
 # 🥰Special thanks
 
