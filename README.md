@@ -15,18 +15,6 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 
 
 
-![image](https://github.com/user-attachments/assets/c4784538-03d7-4ad2-bd91-8bdb8d07461b)
-
-
-
-![image](https://github.com/user-attachments/assets/9c9a4099-45e8-42c6-af70-3f0d3a6de41a)
-
-
-
-![image](https://github.com/user-attachments/assets/c3999325-1531-4ec2-b2b7-07c974240711)
-
-
-
 # ✨Feature
 
 - Support Markdown file titles and block link anchor jumps

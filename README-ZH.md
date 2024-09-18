@@ -4,23 +4,12 @@
 
 > 这是一个使用黑曜石模式窗口打开文件和链接的插件。它可以与其他插件结合使用，轻松读取和编辑各种类型的文件，为您提供便利和阻止各种干扰。
 
+
 ![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
 
 
 
 ![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
-
-
-
-![image](https://github.com/user-attachments/assets/c4784538-03d7-4ad2-bd91-8bdb8d07461b)
-
-
-
-![image](https://github.com/user-attachments/assets/9c9a4099-45e8-42c6-af70-3f0d3a6de41a)
-
-
-
-![image](https://github.com/user-attachments/assets/c3999325-1531-4ec2-b2b7-07c974240711)
 
 
 
