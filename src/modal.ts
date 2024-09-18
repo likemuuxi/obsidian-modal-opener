@@ -42,8 +42,8 @@ export class ModalWindow extends Modal {
 
     private handleFileOpen(filePath: string, isExcalidraw = false) {
         // console.log("filePath", filePath);
+        this.updateDataSrc(filePath);
         const leaf = isExcalidraw ? this.app.workspace.getLeaf(true) : this.associatedLeaf;
-        
         if (isExcalidraw) {
             const abstractFile = this.app.vault.getAbstractFileByPath(filePath);
             if (abstractFile instanceof TFile) {
@@ -67,7 +67,7 @@ export class ModalWindow extends Modal {
                     this.associatedLeaf = leaf;
                 }
             }
-        }, 150);
+        }, 300);
     }
 
     handleFileModalClick(event: MouseEvent) {
@@ -115,8 +115,43 @@ export class ModalWindow extends Modal {
             event.preventDefault();
             event.stopImmediatePropagation();
             this.displayLinkContent(webLink);
+            this.updateDataSrc(webLink);
         } else if (filePath) {
             this.handleFileOpen(filePath);
+        }
+    }
+    
+    private updateDataSrc(src: string) {
+        const fileContainer = this.containerEl.querySelector('.file-modal-container') as HTMLElement;
+        const modalContentContainer = this.containerEl.querySelector('.modal-content-container') as HTMLElement;
+        
+        if (!this.isValidURL(src)) {
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile) {
+                const resolvedLink = this.app.metadataCache.resolvedLinks[activeFile.path][src];
+                if (resolvedLink) {
+                    src = typeof resolvedLink === 'string' ? resolvedLink : src;
+                } else {
+                    // 检查文件是否存在，如果不存在则尝试添加后缀
+                    const file = this.app.vault.getAbstractFileByPath(src);
+                    if (!file) {
+                        const extensions = ['.md', '.canvas', '.excalidraw']; // 可以根据需要添加更多后缀
+                        for (const ext of extensions) {
+                            if (this.app.vault.getAbstractFileByPath(src + ext)) {
+                                src += ext;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (fileContainer) {
+            fileContainer.setAttribute('data-src', src);
+        }
+        if (modalContentContainer) {
+            modalContentContainer.setAttribute('data-src', src);
         }
     }
 
@@ -192,7 +227,6 @@ export class ModalWindow extends Modal {
 
     onClose() {
         if (this.leaf && this.fragment == '') {
-            // 清理 leaf
             this.leaf.detach();
             this.leaf = undefined;
         }
@@ -214,7 +248,6 @@ export class ModalWindow extends Modal {
         this.app.keymap.popScope(this.scope);
 
         // document.body.removeClass('modal-tab-header-hidden');
-        
     }
 
     private bindHotkey() {
@@ -250,8 +283,11 @@ export class ModalWindow extends Modal {
     }
 
     private openInNewTab() {
-        const fileContainer = this.contentEl.querySelector('.file-modal-container');
-        const linkContainer = this.contentEl.querySelector('.link-modal-container');
+        const modalElement = this.containerEl.querySelector('.modal');
+        if (!modalElement) return;
+
+        const fileContainer = modalElement.querySelector('.file-modal-container');
+        const linkContainer = modalElement.querySelector('.link-modal-container');
         let src = '';
     
         if (fileContainer) {
@@ -267,7 +303,9 @@ export class ModalWindow extends Modal {
             } else {
                 const [filePath, fragment] = src.split('#');
                 const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+                console.log("file", file);
                 if (file instanceof TFile) {
+                    console.log("file", file);
                     this.plugin.app.workspace.openLinkText(src, filePath, 'tab').then(() => {
                         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                         if (activeView instanceof MarkdownView) {
@@ -490,7 +528,6 @@ export class ModalWindow extends Modal {
             frame.src = link;
             this.openedLink = link;
         }
-
         this.setupDoubleClickHandler();
     }
 
@@ -528,7 +565,7 @@ export class ModalWindow extends Modal {
         }
         
         // 检查元素是否是常见内容元素
-        if (['P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'CODE'].includes(element.tagName)) {
+        if (['P', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'UL', 'OL', 'LI', 'CODE', 'IMG'].includes(element.tagName)) {
             return false;
         }
         

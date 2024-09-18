@@ -102,7 +102,6 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     registerCustomCommands() {
-        // 重新注册所有自定义命令
         this.settings.customCommands.forEach(command => {
             this.addCommand({
                 id: command.id,
@@ -113,9 +112,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     executeCustomCommand(command: string) {
-        // 判断字符串是否是链接
         if (this.isValidURL(command)) {
-            // 实现打开链接的逻辑
             this.openInFloatPreview(command);
         } else {
             if (command.includes('.canvas') || command.includes('.md') || command.includes('.excalidraw')) {
