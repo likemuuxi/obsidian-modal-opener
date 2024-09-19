@@ -88,3 +88,46 @@ body:not(.show-link-view-header) .link-modal-container .view-header ,
 body:not(.show-link-view-header) .link-modal-container .wb-bookmark-bar {
     display: none;
 }
+
+
+
+/* 在现有样式的末尾添加以下内容 */
+
+.new-file-modal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px;
+}
+
+.new-file-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.new-file-input {
+    flex-grow: 1;
+}
+
+.new-file-select {
+    width: auto;
+}
+
+.new-file-button-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 5px;
+}
+
+.new-file-button {
+    padding: 5px 10px;
+}
+
+.new-file-button.confirm {
+    background-color: var(--interactive-accent) !important;
+}
+
+.new-file-modal-container .new-file-button-container .new-file-button.confirm:hover {
+    background-color: var(--interactive-accent-hover) !important;
+}

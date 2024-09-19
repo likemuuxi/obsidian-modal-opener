@@ -1,4 +1,4 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile } from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import { t } from "./lang/helpers"
@@ -307,6 +307,170 @@ export default class ModalOpenPlugin extends Plugin {
                 this.addLinkFloatMenuItem(menu, link);
             })
         );
+
+        this.registerEvent(
+            this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView) => {
+                this.addCreateFileMenuItem(menu, "");
+            })
+        );
+    }
+
+    private addCreateFileMenuItem(menu: Menu, parentPath: string) {
+        menu.addItem((item) => {
+            item
+                .setTitle('Create file and edit in modal')
+                .setIcon('file-plus')
+                .onClick(() => {
+                    new Notice('Please select a file type');
+                });
+    
+            const subMenu = (item as any).setSubmenu();
+    
+            subMenu.addItem((subItem: MenuItem) =>
+                subItem
+                    .setTitle("Markdown")
+                    .setIcon("file")
+                    .onClick(() => {
+                        this.createFileAndEditInModal(parentPath, "md");
+                    })
+            );
+            subMenu.addItem((subItem: MenuItem) =>
+                subItem
+                    .setTitle("Canvas")
+                    .setIcon("layout-dashboard")
+                    .onClick(() => {
+                        this.createFileAndEditInModal(parentPath, "canvas");
+                    })
+            );
+            // subMenu.addItem((subItem: MenuItem) =>
+            //     subItem
+            //         .setTitle("Excalidraw")
+            //         .setIcon("swords")
+            //         .onClick(() => {
+            //             this.createFileAndEditInModal(parentPath, "excalidraw");
+            //         })
+            // );
+            // subMenu.addItem((subItem: MenuItem) =>
+            //     subItem
+            //         .setTitle("Diagrams")
+            //         .setIcon("pencil-ruler")
+            //         .onClick(() => {
+            //             this.createFileAndEditInModal(parentPath, "xml");
+            //         })
+            // );
+            // subMenu.addItem((subItem: MenuItem) =>
+            //     subItem
+            //         .setTitle("Code File")
+            //         .setIcon("file-code")
+            //         .onClick(() => {
+            //             this.createFileAndEditInModal(parentPath, "");
+            //         })
+            // );
+        });
+    }
+
+    private async getNewFileName(parentPath: string, fileType: string): Promise<{ fileName: string, isEmbed: boolean } | null> {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const selectedText = activeView?.editor?.getSelection() || '';
+    
+        return new Promise((resolve) => {
+            const modal = new Modal(this.app);
+            modal.titleEl.setText(`Enter new ${fileType} file name`);
+            
+            const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
+    
+            const inputContainer = container.createDiv({ cls: 'new-file-input-container' });
+    
+            const input = inputContainer.createEl("input", { 
+                type: "text", 
+                value: selectedText,
+                placeholder: "File name",
+                cls: 'new-file-input'
+            });
+            input.focus();
+            input.select();
+    
+            const select = inputContainer.createEl("select", { cls: 'new-file-select' });
+            select.createEl("option", { text: "wikilink", value: "wikilink" });
+            select.createEl("option", { text: "embed", value: "embed" });
+    
+            const buttonContainer = container.createDiv({ cls: 'new-file-button-container' });
+    
+            const confirmButton = buttonContainer.createEl("button", { 
+                text: "Confirm", 
+                cls: 'new-file-button confirm'
+            });
+            const cancelButton = buttonContainer.createEl("button", { 
+                text: "Cancel", 
+                cls: 'new-file-button'
+            });
+    
+            confirmButton.onclick = () => {
+                const fileName = input.value.trim();
+                if (fileName) {
+                    resolve({
+                        fileName: fileName,
+                        isEmbed: select.value === "embed"
+                    });
+                    modal.close();
+                }
+            };
+    
+            cancelButton.onclick = () => {
+                resolve(null);
+                modal.close();
+            };
+            modal.open();
+        });
+    }
+    
+    private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean) {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView) {
+            const editor = activeView.editor;
+            const selection = editor.getSelection();
+            const linkText = isEmbed ? `![[${filePath}|${displayName}]]` : `[[${filePath}|${displayName}]]`;
+            if (selection) {
+                const from = editor.getCursor("from");
+                const to = editor.getCursor("to");
+                editor.replaceRange(linkText, from, to);
+            } else {
+                const cursor = editor.getCursor();
+                editor.replaceRange(linkText, cursor);
+            }
+        }
+    }
+    
+    private async createFileAndEditInModal(parentPath: string, fileType: string) {
+        const result = await this.getNewFileName(parentPath, fileType);
+        if (!result) return;
+    
+        const { fileName, isEmbed } = result;
+        // let newFilePath = fileName.includes('/') ? fileName : `${parentPath}/${fileName}`;
+        let newFilePath = fileName;
+        if (!newFilePath.endsWith(`.${fileType}`)) {
+            newFilePath += `.${fileType}`;
+        }
+    
+        try {
+            const newFile = await this.app.vault.create(newFilePath, '');
+    
+            new ModalWindow(
+                this,
+                "",
+                newFile,
+                "",
+                this.settings.modalWidth,
+                this.settings.modalHeight
+            ).open();
+
+            const displayName = newFile.basename;
+
+            this.insertLinkToActiveFile(newFilePath, displayName, isEmbed);
+        } catch (error) {
+            console.error("Failed to create file:", error);
+            new Notice(`Failed to create file: ${error.message}`);
+        }
     }
 
     private addFloatMenuItem(menu: Menu, link: string, title: string, onClick: () => void) {
