@@ -21,10 +21,7 @@
 - 支持使设置快捷键打开当前文件和链接
 - 支持添加自定义命令，一键打开文件或链接(可以搭配 Command 插件添加图标)
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
-
-
-
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1726831815672.png)
+  ![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1726831815672.png)
 
 # 🎯How to use
 

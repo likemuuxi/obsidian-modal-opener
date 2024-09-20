@@ -23,8 +23,7 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 - Support setting shortcut keys to open current files and links
 - Support adding custom commands, one click opening of files or links (can be combined with Command plugin to add icons)
 - Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
-
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1726831815672.png)
+  ![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1726831815672.png)
 
 # 🎯How to use
 

@@ -1,5 +1,6 @@
 // English
 export default {
+  "Create file and edit in modal":"Create file and edit in modal",
   "Enter new file name": "Enter new file name: ",
   "wiki link": "wiki link",
   "embed link": "embed link",
