@@ -1,5 +1,9 @@
 // 简体中文
 export default {
+    "Enter new file name": "输入新文件名：",
+    "wiki link": "wiki链接",
+    "embed link": "嵌入链接",
+    
     "Unsupported file or link format": "不支持的文件或链接格式",
     "Drag duration too short": "拖拽时间太短",
     "The file does not exist: ": "文件不存在: ",
@@ -47,6 +51,7 @@ export default {
     'Description':'输入文件路径或网页链接',
     'Delete':'删除',
     'Confirm':'确认',
+    'Cancel':'取消',
     'The command name already exists, please use a different name':'命令名称已存在，请使用不同的名称',
     'Command added successfully':'命令添加成功',
     'Please enter both command name and description':'请输入命令名称和描述',

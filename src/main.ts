@@ -1,4 +1,4 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal } from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenSettingTab from "./settings";
 import { t } from "./lang/helpers"
@@ -39,45 +39,56 @@ export default class ModalOpenPlugin extends Plugin {
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current tab content in modal',
-            callback: () => {
-                const currentFile = this.app.workspace.getActiveFile()?.path || '';
-                const file = this.app.vault.getAbstractFileByPath(currentFile);
-                if (!(file instanceof TFile)) {
-                    return;
-                }
-                const app = this.app as unknown as App & { plugins: { plugins: Record<string, any> } };
-                const surfPlugin = app.plugins.plugins["surfing"];
-                const activeLeaf = this.app.workspace.getLeaf(false);
-                
-                if (!activeLeaf) {
-                    return;
-                }
-                let linkValue = ""; // 初始化为空字符串
-                if (surfPlugin) {
-                    const wbFrameElement = activeLeaf.view.containerEl.querySelector('.wb-frame') as HTMLIFrameElement;
-                    if (wbFrameElement) {
-                        linkValue = wbFrameElement.src;
-                    }
-                } else {
-                    const iframeElement = activeLeaf.view.containerEl.querySelector('iframe') as HTMLIFrameElement;
-                    if (iframeElement) {
-                        linkValue = iframeElement.src;
-                    }
-                }
-                new ModalWindow(
-                    this,
-                    linkValue,
-                    file,
-                    "",
-                    this.settings.modalWidth,
-                    this.settings.modalHeight
-                ).open();
-            }
+            callback: () => this.openCurrentContentInModal()
+        });
+        this.addCommand({
+            id: 'duplicate-in-modal-window',
+            name: 'Duplicate current tab content in modal',
+            callback: () => this.duplicateCurrentContentInModal()
         });
         this.addCommand({
             id: 'open-modal-content-in-new-tab',
             name: 'Open modal content in new tab',
         });
+    }
+
+    private openContentInModal(shouldDetach: boolean = false) {
+        const currentFile = this.app.workspace.getActiveFile()?.path || '';
+        const file = this.app.vault.getAbstractFileByPath(currentFile);
+        if (!(file instanceof TFile)) {
+            return;
+        }
+        
+        const activeLeaf = this.app.workspace.getLeaf(false);
+        if (!activeLeaf) {
+            return;
+        }
+        
+        const surfPlugin = (this.app as any).plugins.plugins["surfing"];
+        const frameSelector = surfPlugin ? '.wb-frame' : 'iframe';
+        const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
+        const linkValue = frameElement?.src || "";
+        
+        new ModalWindow(
+            this,
+            linkValue,
+            file,
+            "",
+            this.settings.modalWidth,
+            this.settings.modalHeight
+        ).open();
+        
+        if (shouldDetach) {
+            activeLeaf.detach();
+        }
+    }
+    
+    private openCurrentContentInModal() {
+        this.openContentInModal(true);
+    }
+
+    private duplicateCurrentContentInModal() {
+        this.openContentInModal(false);
     }
 
     applyStyles() {
@@ -310,7 +321,11 @@ export default class ModalOpenPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView) => {
-                this.addCreateFileMenuItem(menu, "");
+                let parentPath = "";
+                if (view.file && view.file.parent) {
+                    parentPath = view.file.parent.path;
+                }
+                this.addCreateFileMenuItem(menu, parentPath);
             })
         );
     }
@@ -320,10 +335,7 @@ export default class ModalOpenPlugin extends Plugin {
             item
                 .setTitle('Create file and edit in modal')
                 .setIcon('file-plus')
-                .onClick(() => {
-                    new Notice('Please select a file type');
-                });
-    
+
             const subMenu = (item as any).setSubmenu();
     
             subMenu.addItem((subItem: MenuItem) =>
@@ -334,48 +346,249 @@ export default class ModalOpenPlugin extends Plugin {
                         this.createFileAndEditInModal(parentPath, "md");
                     })
             );
-            subMenu.addItem((subItem: MenuItem) =>
-                subItem
-                    .setTitle("Canvas")
-                    .setIcon("layout-dashboard")
-                    .onClick(() => {
-                        this.createFileAndEditInModal(parentPath, "canvas");
-                    })
-            );
-            // subMenu.addItem((subItem: MenuItem) =>
-            //     subItem
-            //         .setTitle("Excalidraw")
-            //         .setIcon("swords")
-            //         .onClick(() => {
-            //             this.createFileAndEditInModal(parentPath, "excalidraw");
-            //         })
-            // );
-            // subMenu.addItem((subItem: MenuItem) =>
-            //     subItem
-            //         .setTitle("Diagrams")
-            //         .setIcon("pencil-ruler")
-            //         .onClick(() => {
-            //             this.createFileAndEditInModal(parentPath, "xml");
-            //         })
-            // );
-            // subMenu.addItem((subItem: MenuItem) =>
-            //     subItem
-            //         .setTitle("Code File")
-            //         .setIcon("file-code")
-            //         .onClick(() => {
-            //             this.createFileAndEditInModal(parentPath, "");
-            //         })
-            // );
+
+            const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
+            if (canvasPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Canvas")
+                        .setIcon("layout-dashboard")
+                        .onClick(() => {
+                            this.createFileAndEditInModal(parentPath, "canvas");
+                        })
+                );
+            }
+            const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
+            if (excalidrawPlugin) {
+                subMenu.addSeparator();
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Excalidraw")
+                        .setIcon("swords")
+                        .onClick(async () => {
+                            const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                            (this.app as any).commands.executeCommandById("obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab");
+                            const waitForNewLeaf = () => {
+                                return new Promise<void>((resolve) => {
+                                    const checkLeaf = () => {
+                                        const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                                        if (currentLeafCount > initialLeafCount) {
+                                            resolve();
+                                        } else {
+                                            setTimeout(checkLeaf, 50);
+                                        }
+                                    };
+                                    checkLeaf();
+                                });
+                            };
+    
+                            await waitForNewLeaf();
+                            setTimeout(() => {
+                                this.openCurrentContentInModal();
+                            }, 150);
+
+                            // await this.createFileAndInsertLink("obsidian-excalidraw-plugin:excalidraw-autocreate-on-current");
+                        })
+                );
+            }
+            const diagramsPlugin = this.getPlugin("obsidian-diagrams-net");
+            if (diagramsPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Diagrams")
+                        .setIcon("pencil-ruler")
+                        .onClick(() => {
+                            (this.app as any).commands.executeCommandById("obsidian-diagrams-net:app:diagrams-net-new-diagram");
+                        })
+                );
+            }
+            subMenu.addSeparator();
+            const excelPlugin = this.getPlugin("excel");
+            if (excelPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Excel")
+                        .setIcon("table")
+                        .onClick(async () => {
+                            await this.createFileAndInsertLink("excel:excel-autocreate");
+                        })
+                );
+            }
+            const SheetPlugin = this.getPlugin("sheet-plus");
+            if (SheetPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Sheet Plus")
+                        .setIcon("grid")
+                        .onClick(async () => {
+                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation");
+                        })
+                );
+            }
+            
+            const vscodePlugin = this.getPlugin("vscode-editor");
+            const codePlugin = this.getPlugin("code-files");
+            if (vscodePlugin || codePlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Code File")
+                        .setIcon("file-code")
+                        .onClick(async () => {
+                            await this.createCodeFileAndOpenInModal();
+                        })
+                );
+            }
+            
+            const markmindPlugin = this.getPlugin("obsidian-markmind");
+            if (markmindPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("MarkMind")
+                        .setIcon("brain-circuit")
+                        .onClick(async () => {
+                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap");
+                        })
+                );
+            }
         });
     }
 
-    private async getNewFileName(parentPath: string, fileType: string): Promise<{ fileName: string, isEmbed: boolean } | null> {
+    private async createFileAndInsertLink(commandId: string) {
+        // 保存当前活动编辑器的信息
+        const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    
+        let previousEditor: Editor | null = null;
+        let previousCursor: EditorPosition | null = null;
+    
+        if (previousView) {
+            previousEditor = previousView.editor;
+            previousCursor = previousEditor.getCursor();
+        }
+    
+        const newLeaf = this.app.workspace.getLeaf(true);
+        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
+    
+        (this.app as any).commands.executeCommandById(commandId);
+    
+        const activeFile = await this.waitForActiveFile();
+    
+        if (activeFile && previousEditor && previousCursor) {
+            const fileName = activeFile.name;
+            const filePath = activeFile.path;
+            const linkText = `[[${filePath}|${fileName}]]`;
+            
+            if (previousView) {
+                this.app.workspace.setActiveLeaf(previousView.leaf, { focus: true });
+                previousEditor?.replaceRange(linkText, previousCursor);
+            }
+    
+            // 移动光标到插入的链接之后
+            const newCursor = {
+                line: previousCursor.line,
+                ch: previousCursor.ch + linkText.length
+            };
+            previousEditor.setCursor(newCursor);
+            this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
+        }
+        this.openCurrentContentInModal();
+    }
+
+    private async waitForActiveFile(timeout: number = 5000): Promise<TFile | null> {
+        const startTime = Date.now();
+        while (Date.now() - startTime < timeout) {
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile) {
+                return activeFile;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        return null;
+    }
+
+    private async createCodeFileAndOpenInModal() {
+        return new Promise<void>((resolve) => {
+            let fileName = '';
+            let fileExtension = '';
+    
+            const observer = new MutationObserver((mutations, obs) => {
+                for (const mutation of mutations) {
+                    for (const node of Array.from(mutation.addedNodes)) {
+                        if (node instanceof HTMLElement) {
+                            if (node.classList.contains('modal-container')) {
+                                const confirmButton = node.querySelector('.mod-cta');
+                                const inputElement = node.querySelector('input');
+                                let selectElement = node.querySelector('.modal_select') as HTMLSelectElement;
+                                const codePlugin = this.getPlugin("code-files");
+                                if (codePlugin) {
+                                    selectElement = node.querySelector('.dropdown') as HTMLSelectElement;
+                                }
+                                
+                                if (confirmButton && inputElement && selectElement) {
+                                    
+                                    // 监听输入框的变化
+                                    inputElement.addEventListener('input', () => {
+                                        fileName = inputElement.value || '';
+                                    });
+    
+                                    // 监听输入框的键盘事件
+                                    inputElement.addEventListener('keyup', () => {
+                                        fileName = inputElement.value || '';
+                                    });
+    
+                                    // 监听选择框的变化
+                                    selectElement.addEventListener('change', () => {
+                                        fileExtension = selectElement.value;
+                                    });
+    
+                                    confirmButton.addEventListener('click', async () => {
+                                        fileName = inputElement.value || fileName;
+                                        fileExtension = selectElement.value || fileExtension;
+                                        const fullFileName = `${fileName}.${fileExtension}|${fileName}`;
+
+                                        if (fileName != '') {
+                                            this.insertCodeFileLink(fullFileName, "");
+                                            setTimeout(() => {
+                                                this.openCurrentContentInModal();
+                                            }, 150);
+                                        }
+
+                                        obs.disconnect();
+                                        resolve();
+                                    });
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+            });
+    
+            observer.observe(document.body, { childList: true, subtree: true });
+    
+            // 设置监听器后执行命令
+            setTimeout(() => {
+                (this.app as any).commands.executeCommandById("vscode-editor:create");
+                const codePlugin = this.getPlugin("code-files");
+                if (codePlugin) {
+                    (this.app as any).commands.executeCommandById("code-files:create");
+                }
+            }, 0);
+    
+            // 设置超时检查
+            setTimeout(() => {
+                observer.disconnect();
+                resolve();
+            }, 10000);
+        });
+    }
+    
+    private async getNewFileName(fileType: string): Promise<{ fileName: string, isEmbed: boolean } | null> {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         const selectedText = activeView?.editor?.getSelection() || '';
     
         return new Promise((resolve) => {
             const modal = new Modal(this.app);
-            modal.titleEl.setText(`Enter new ${fileType} file name`);
+            modal.titleEl.setText(t("Enter new file name"));
             
             const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
     
@@ -391,21 +604,21 @@ export default class ModalOpenPlugin extends Plugin {
             input.select();
     
             const select = inputContainer.createEl("select", { cls: 'new-file-select' });
-            select.createEl("option", { text: "wikilink", value: "wikilink" });
-            select.createEl("option", { text: "embed", value: "embed" });
+            select.createEl("option", { text: t("wiki link"), value: "wikilink" });
+            select.createEl("option", { text: t("embed link"), value: "embed" });
     
             const buttonContainer = container.createDiv({ cls: 'new-file-button-container' });
     
             const confirmButton = buttonContainer.createEl("button", { 
-                text: "Confirm", 
+                text: t("Confirm"), 
                 cls: 'new-file-button confirm'
             });
             const cancelButton = buttonContainer.createEl("button", { 
-                text: "Cancel", 
+                text: t("Cancel"), 
                 cls: 'new-file-button'
             });
     
-            confirmButton.onclick = () => {
+            const confirmAction = () => {
                 const fileName = input.value.trim();
                 if (fileName) {
                     resolve({
@@ -416,6 +629,15 @@ export default class ModalOpenPlugin extends Plugin {
                 }
             };
     
+            confirmButton.onclick = confirmAction;
+
+            input.addEventListener('keydown', (event: KeyboardEvent) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    confirmAction();
+                }
+            });
+
             cancelButton.onclick = () => {
                 resolve(null);
                 modal.close();
@@ -424,6 +646,16 @@ export default class ModalOpenPlugin extends Plugin {
         });
     }
     
+    private insertCodeFileLink(filePath: string, content: string) {
+        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView) {
+            const editor = activeView.editor;
+            const cursor = editor.getCursor();
+            const linkText = `[[${filePath}]]`;
+            editor.replaceRange(linkText, cursor);
+        }
+    }
+
     private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -442,12 +674,18 @@ export default class ModalOpenPlugin extends Plugin {
     }
     
     private async createFileAndEditInModal(parentPath: string, fileType: string) {
-        const result = await this.getNewFileName(parentPath, fileType);
+        const result = await this.getNewFileName(fileType);
         if (!result) return;
     
         const { fileName, isEmbed } = result;
-        // let newFilePath = fileName.includes('/') ? fileName : `${parentPath}/${fileName}`;
-        let newFilePath = fileName;
+        let newFilePath = '';
+    
+        if (fileName.includes('/') || parentPath === '/') {
+            newFilePath = fileName;
+        } else {
+            newFilePath = `${parentPath}/${fileName}`;
+        }
+
         if (!newFilePath.endsWith(`.${fileType}`)) {
             newFilePath += `.${fileType}`;
         }
@@ -468,7 +706,6 @@ export default class ModalOpenPlugin extends Plugin {
 
             this.insertLinkToActiveFile(newFilePath, displayName, isEmbed);
         } catch (error) {
-            console.error("Failed to create file:", error);
             new Notice(`Failed to create file: ${error.message}`);
         }
     }
@@ -604,4 +841,9 @@ export default class ModalOpenPlugin extends Plugin {
 
     private isValidURL = (url: string) => 
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
+
+    private getPlugin(pluginId: string) {
+        const app = this.app as any;
+        return app.plugins.plugins[pluginId];
+    }
 }

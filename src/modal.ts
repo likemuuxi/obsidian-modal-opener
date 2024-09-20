@@ -373,7 +373,6 @@ export class ModalWindow extends Modal {
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
         
         if (isLinkView) {
-            // 链接视图的高度设置
             if (!this.plugin.settings.showLinkViewHeader) { 
                 const hasBookmarkBar = this.containerEl.querySelector('.wb-bookmark-bar') !== null;
                 if (hasBookmarkBar) {
@@ -385,11 +384,14 @@ export class ModalWindow extends Modal {
                 adjustedModalHeight = `${baseHeight - 5}vh`;
             }
         } else {
-            // 文件视图的高度设置
-            const app = this.app as any;
-            const editingPlugin = app.plugins.plugins["editing-toolbar"];
+            const editingPlugin = this.getPlugin("editing-toolbar");
+            const vscodePlugin = this.getPlugin("vscode-editor");
+            const codePlugin = this.getPlugin("code-files");
             if (!this.plugin.settings.showFileViewHeader) {
                 adjustedModalHeight = `${baseHeight - (editingPlugin ? 2 : 1)}vh`;
+                if (vscodePlugin || codePlugin) {
+                    adjustedModalHeight = `${baseHeight + 1}vh`;
+                }
             } else {
                 adjustedModalHeight = `${baseHeight - 5}vh`;
             }
@@ -500,8 +502,7 @@ export class ModalWindow extends Modal {
             attr: { 'data-src': link }
         });
     
-        const app = this.plugin.app as any;
-        const surfPlugin = app.plugins.plugins["surfing"];
+        const surfPlugin = this.getPlugin("surfing");
         if (surfPlugin) {
             window.open(link);
             this.openedLink = link;

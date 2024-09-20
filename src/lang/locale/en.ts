@@ -1,5 +1,9 @@
 // English
 export default {
+  "Enter new file name": "Enter new file name: ",
+  "wiki link": "wiki link",
+  "embed link": "embed link",
+  
   "Unsupported file or link format": "Unsupported file or link format",
   "Drag duration too short": "Drag duration too short",
   "The file does not exist: ": "The file does not exist: ",
@@ -47,6 +51,7 @@ export default {
   'Description':'Enter File Path or Web Link',
   'Delete':'Delete',
   'Confirm':'Confirm',
+  'Cancel':'Cancel',
   'The command name already exists, please use a different name':'The command name already exists, please use a different name',
   'Command added successfully':'Command added successfully',
   'Please enter both command name and description':'Please enter both command name and description',
