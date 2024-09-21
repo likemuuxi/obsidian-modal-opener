@@ -46,7 +46,7 @@ export default class ModalOpenPlugin extends Plugin {
             name: 'Duplicate current tab content in modal',
             callback: () => this.duplicateCurrentContentInModal()
         });
-        this.addCommand({
+        this.addCommand({ // This command binds the shortcut key in the bindHotkey() function of modal.ts and defines the functionality in the openInNewTab() function
             id: 'open-modal-content-in-new-tab',
             name: 'Open modal content in new tab',
         });
@@ -604,8 +604,8 @@ export default class ModalOpenPlugin extends Plugin {
             input.select();
     
             const select = inputContainer.createEl("select", { cls: 'new-file-select' });
-            select.createEl("option", { text: t("wiki link"), value: "wikilink" });
-            select.createEl("option", { text: t("embed link"), value: "embed" });
+            select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
+            select.createEl("option", { text: t("Embed link"), value: "embed" });
     
             const buttonContainer = container.createDiv({ cls: 'new-file-button-container' });
     
@@ -725,7 +725,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
 
     private addFileFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 this.openInFloatPreview(this.currentAnchor || link);
             }
@@ -733,7 +733,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
     
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 this.folderNoteOpenInFloatPreview(link);
             }
@@ -741,7 +741,7 @@ export default class ModalOpenPlugin extends Plugin {
     }
     
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in Modal Window"), () => {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 this.openInFloatPreview(link);
             }

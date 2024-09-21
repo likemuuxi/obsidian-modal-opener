@@ -88,8 +88,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				dd
 					.addOption("both", t("Both"))
 					.addOption("drag", t("Drag & Drop"))
-					.addOption("middle", t("Middle Mouse Button"))
-					.addOption("altclick", t("Alt & Left Click"))
+					.addOption("middle", t("Middle mouse button"))
+					.addOption("altclick", t("Alt & Left click"))
 					.setValue(this.plugin.settings.openMethod)
 					.onChange(async (value: "drag" | "middle" | "altclick" | "both") => { // 更新类型
 						this.plugin.settings.openMethod = value;
@@ -99,8 +99,8 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 					}));
 
 		new Setting(containerEl)
-			.setName(t('Disable external click Close'))
-			.setDesc(t('Use only the "Close" button and Esc to close.'))
+			.setName(t('Disable external click close'))
+			.setDesc(t('Use only the "Close" button and "Esc" to close.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.onlyCloseButton)
 				.onChange(async (value) => {
@@ -127,7 +127,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		.setName(t('Default editing mode'))
 		.setDesc(t('Select the default mode for opening files in the modal window'))
 		.addDropdown(dropdown => dropdown
-			.addOption('current', t('Current File'))
+			.addOption('current', t('Current file'))
 			.addOption('source', t('Edit'))
 			.addOption('preview', t('Preview'))
 			.setValue(this.plugin.settings.fileOpenMode)
@@ -161,7 +161,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Enable Animation and Blur'))
+			.setName(t('Enable animation and blur'))
 			.setDesc(t('Toggle to enable or disable animation and blur effects.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableAnimation)
@@ -171,7 +171,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Show File View Header'))
+			.setName(t('Show file view header'))
 			.setDesc(t('Show the header of the file view in the modal window'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showFileViewHeader)
@@ -182,7 +182,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Show Link View Header'))
+			.setName(t('Show link view header'))
 			.setDesc(t('Show the header of the link view in the modal window'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showLinkViewHeader)
@@ -204,7 +204,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 			}));
 
 		new Setting(containerEl)
-		.setName(t('Hide Tab Header'))
+		.setName(t('Hide tab header'))
 		.setDesc(t('Hides the tab header associated with the modal window'))
 		.addToggle(toggle => toggle
 			.setValue(this.plugin.settings.hideTabHeader)
@@ -214,10 +214,10 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				this.plugin.applyStyles();
 			}));
 
-		new Setting(containerEl).setName(t('Custom Commands')).setHeading();
+		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 
 		new Setting(containerEl)
-			.setName(t("Add Custom Command"))
+			.setName(t("Add custom command"))
 			.setDesc(t("Add a new custom command"))
 			.addButton((button) => button
 				.setButtonText(t("Add"))
@@ -246,7 +246,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	
 		const setting = new Setting(containerEl)
 			.addText((text) => text
-				.setPlaceholder(t("Command Name"))
+				.setPlaceholder(t("Command name"))
 				.setValue(tempCommand.name)
 				.onChange((value) => {
 					tempCommand.id = `modal-opener:${value}`;

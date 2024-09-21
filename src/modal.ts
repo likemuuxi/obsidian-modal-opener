@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Modifier, Scope} from "obsidian";
+import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Modifier, Scope, requestUrl, RequestUrlResponse} from "obsidian";
 import ModalOpenPlugin from "./main";
 
 export class ModalWindow extends Modal {
@@ -12,11 +12,12 @@ export class ModalWindow extends Modal {
     public scope: Scope;
     private associatedLeaf?: WorkspaceLeaf;
     private openedLink?: string;
-    private debounceTimeout: NodeJS.Timeout | null = null;
+    private debounceTimeout: number | null = null;
     private debounceDelay = 150; // 防抖延迟时间
 
     constructor(plugin: ModalOpenPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
+        this.containerEl.addClass('modal-opener');
         this.plugin = plugin;
         this.link = link;
         this.file = file;
@@ -33,12 +34,17 @@ export class ModalWindow extends Modal {
 
     private async checkURLReachability(url: string): Promise<boolean> {
         try {
-            const response = await fetch(url, { method: 'HEAD', mode: 'no-cors' });
-            return response.ok || response.type === 'opaque';
+            const response: RequestUrlResponse = await requestUrl({
+                url: url,
+                method: 'HEAD',
+                throw: false // 不抛出错误，而是返回响应
+            });
+            return response.status >= 200 && response.status < 300;
         } catch (error) {
+            console.error("Error checking URL reachability:", error);
             return false;
         }
-    }  
+    }
 
     private handleFileOpen(filePath: string, isExcalidraw = false) {
         // console.log("filePath", filePath);
@@ -240,7 +246,7 @@ export class ModalWindow extends Modal {
         const { contentEl } = this;
         contentEl.empty();
 
-        if (this.debounceTimeout) {
+        if (this.debounceTimeout !== null) {
             clearTimeout(this.debounceTimeout);
             this.debounceTimeout = null;
         }
@@ -364,7 +370,7 @@ export class ModalWindow extends Modal {
                         this.openedLink = src;
                     }
                 }
-            }, this.debounceDelay);
+            }, this.debounceDelay) as unknown as number;
         }
     };
 
@@ -389,9 +395,6 @@ export class ModalWindow extends Modal {
             const codePlugin = this.getPlugin("code-files");
             if (!this.plugin.settings.showFileViewHeader) {
                 adjustedModalHeight = `${baseHeight - (editingPlugin ? 2 : 1)}vh`;
-                if (vscodePlugin || codePlugin) {
-                    adjustedModalHeight = `${baseHeight + 1}vh`;
-                }
             } else {
                 adjustedModalHeight = `${baseHeight - 5}vh`;
             }
