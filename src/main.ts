@@ -333,7 +333,7 @@ export default class ModalOpenPlugin extends Plugin {
     private addCreateFileMenuItem(menu: Menu, parentPath: string) {
         menu.addItem((item) => {
             item
-                .setTitle(t('Create file and edit in modal'))
+                .setTitle(t('Create and edit in modal'))
                 .setIcon('file-plus')
 
             const subMenu = (item as any).setSubmenu();

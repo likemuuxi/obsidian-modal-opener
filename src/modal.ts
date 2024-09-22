@@ -391,8 +391,6 @@ export class ModalWindow extends Modal {
             }
         } else {
             const editingPlugin = this.getPlugin("editing-toolbar");
-            const vscodePlugin = this.getPlugin("vscode-editor");
-            const codePlugin = this.getPlugin("code-files");
             if (!this.plugin.settings.showFileViewHeader) {
                 adjustedModalHeight = `${baseHeight - (editingPlugin ? 2 : 1)}vh`;
             } else {
