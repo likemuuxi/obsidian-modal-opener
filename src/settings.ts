@@ -1,8 +1,8 @@
 import { App, PluginSettingTab, Setting, Notice } from "obsidian";
-import ModalOpenPlugin from "./main";
+import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
-export interface ModalOpenPluginSettings {
+export interface ModalOpenerPluginSettings {
 	openMethod: "drag" | "middle" | "altclick" | "both";
 	fileOpenMode: 'current' | 'source' | 'preview';
 	modalWidth: string;
@@ -15,6 +15,7 @@ export interface ModalOpenPluginSettings {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideTabHeader: boolean;
+	preventDuplicateFileOpen: boolean;
 }
 
 interface CustomCommand {
@@ -23,7 +24,7 @@ interface CustomCommand {
 	command: string;
 }
 
-export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
+export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	openMethod: "both",
 	fileOpenMode: 'current',
 	modalWidth: "86vw",
@@ -36,10 +37,11 @@ export const DEFAULT_SETTINGS: ModalOpenPluginSettings = {
 	showLinkViewHeader: false,
 	showMetadata: false,
 	hideTabHeader: true,
+	preventDuplicateFileOpen: false,
 };
 
-export default class ModalOpenSettingTab extends PluginSettingTab {
-	plugin: ModalOpenPlugin;
+export default class ModalOpenerSettingTab extends PluginSettingTab {
+	plugin: ModalOpenerPlugin;
 	openMethod: string;
 	fileOpenMode: string;
 	modalWidth: string;
@@ -52,8 +54,9 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideTabHeader: boolean;
+	preventDuplicateFileOpen: boolean;
 
-	constructor(app: App, plugin: ModalOpenPlugin) {
+	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 		// Initialize settings with default values or plugin settings
@@ -84,8 +87,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t("Open with"))
-			.addDropdown((dd) =>
-				dd
+			.addDropdown((dd) => dd
 					.addOption("both", t("Both"))
 					.addOption("drag", t("Drag & Drop"))
 					.addOption("middle", t("Middle mouse button"))
@@ -106,7 +108,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.onlyCloseButton = value;
 					await this.plugin.saveSettings();
-			}));
+				}));
 
 		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
@@ -124,20 +126,20 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 		}
 
 		new Setting(containerEl)
-		.setName(t('Default editing mode'))
-		.setDesc(t('Select the default mode for opening files in the modal window'))
-		.addDropdown(dropdown => dropdown
-			.addOption('current', t('Current file'))
-			.addOption('source', t('Edit'))
-			.addOption('preview', t('Preview'))
-			.setValue(this.plugin.settings.fileOpenMode)
-			.onChange(async (value) => {
-				this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
-				await this.plugin.saveSettings();
-			}));
-			
+			.setName(t('Default editing mode'))
+			.setDesc(t('Select the default mode for opening files in the modal window'))
+			.addDropdown(dropdown => dropdown
+				.addOption('current', t('Current file'))
+				.addOption('source', t('Edit'))
+				.addOption('preview', t('Preview'))
+				.setValue(this.plugin.settings.fileOpenMode)
+				.onChange(async (value) => {
+					this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
+					await this.plugin.saveSettings();
+				}));
+
 		new Setting(containerEl).setName(t('Styles')).setHeading();
-		
+
 		new Setting(containerEl)
 			.setName(t("Modal width"))
 			.setDesc(t("Enter any valid CSS unit"))
@@ -193,26 +195,26 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-		.setName(t('Display metadata'))
-		.setDesc(t('Display metadata in the file modal window'))
-		.addToggle(toggle => toggle
-			.setValue(this.plugin.settings.showMetadata)
-			.onChange(async (value) => {
-				this.plugin.settings.showMetadata = value;
-				await this.plugin.saveSettings();
-				this.plugin.applyStyles();
-			}));
+			.setName(t('Display metadata'))
+			.setDesc(t('Display metadata in the file modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showMetadata)
+				.onChange(async (value) => {
+					this.plugin.settings.showMetadata = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				}));
 
 		new Setting(containerEl)
-		.setName(t('Hide tab header'))
-		.setDesc(t('Hides the tab header associated with the modal window'))
-		.addToggle(toggle => toggle
-			.setValue(this.plugin.settings.hideTabHeader)
-			.onChange(async (value) => {
-				this.plugin.settings.hideTabHeader = value;
-				await this.plugin.saveSettings();
-				this.plugin.applyStyles();
-			}));
+			.setName(t('Hide tab header'))
+			.setDesc(t('Hides the tab header associated with the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideTabHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.hideTabHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				}));
 
 		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 
@@ -243,7 +245,7 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 
 	createCustomCommandSetting(containerEl: HTMLElement, command: CustomCommand, index: number) {
 		let tempCommand = { ...command };
-	
+
 		const setting = new Setting(containerEl)
 			.addText((text) => text
 				.setPlaceholder(t("Command name"))
@@ -258,20 +260,20 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				.onChange((value) => {
 					tempCommand.command = value;
 				}))
-				.addButton((button) => button
+			.addButton((button) => button
 				.setButtonText(t("Confirm"))
 				.onClick(async () => {
 					if (tempCommand.name && tempCommand.command) {
 						// 检查命令名是否已存在
-						const isDuplicate = this.plugin.settings.customCommands.some((cmd, i) => 
+						const isDuplicate = this.plugin.settings.customCommands.some((cmd, i) =>
 							cmd.name === tempCommand.name && i !== index
 						);
-						
+
 						if (isDuplicate) {
 							new Notice(t("The command name already exists, please use a different name"));
 							return;
 						}
-						
+
 						if (index >= 0) {
 							this.plugin.settings.customCommands[index] = tempCommand;
 						} else {
@@ -290,12 +292,12 @@ export default class ModalOpenSettingTab extends PluginSettingTab {
 				.onClick(() => {
 					this.deleteCustomCommand(index);
 				}));
-	
+
 		const textInputs = setting.controlEl.querySelectorAll('.setting-item-control input');
 		textInputs.forEach((input: HTMLElement) => {
 			input.addClass('custom-command-input');
 		});
-	
+
 		return setting;
 	}
 

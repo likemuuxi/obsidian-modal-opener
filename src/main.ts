@@ -1,12 +1,12 @@
 import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition } from "obsidian";
+import { OpenViewState, PaneType, Workspace, getLinkpath} from 'obsidian'
 import { ModalWindow } from "./modal";
-import ModalOpenSettingTab from "./settings";
+import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
-import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
+import ModalOpenerPluginSettings, { DEFAULT_SETTINGS } from "./settings";
 
-export default class ModalOpenPlugin extends Plugin {
-    settings: ModalOpenPluginSettings;
-    private modal: ModalWindow | undefined;
+export default class ModalOpenerPlugin extends Plugin {
+    settings: ModalOpenerPluginSettings;
     private draggedLink: string | null = null;
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
@@ -15,7 +15,8 @@ export default class ModalOpenPlugin extends Plugin {
     private contextMenuListener: ((event: MouseEvent) => void) | undefined;
     private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
     private currentAnchor: string | null = null;
-    // private currentSrcText: string | null = null;
+    private originalOpenLinkText: any;
+    static activeModalWindow: ModalWindow | null = null;
 
     async onload() {
         await this.loadSettings();
@@ -25,6 +26,8 @@ export default class ModalOpenPlugin extends Plugin {
         this.setupHoverListener();
         this.setupContextMenuListener();
         this.applyStyles();
+        this.registerCustomCommands();
+        this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
 
         // 监听设置变化
         this.registerEvent(
@@ -32,9 +35,6 @@ export default class ModalOpenPlugin extends Plugin {
                 this.applyStyles();
             })
         );
-
-        this.registerCustomCommands();
-        this.addSettingTab(new ModalOpenSettingTab(this.app, this));
 
         this.addCommand({
             id: 'open-in-modal-window',
@@ -49,6 +49,13 @@ export default class ModalOpenPlugin extends Plugin {
         this.addCommand({ // This command binds the shortcut key in the bindHotkey() function of modal.ts and defines the functionality in the openInNewTab() function
             id: 'open-modal-content-in-new-tab',
             name: 'Open modal content in new tab',
+            callback: () => {
+                if (ModalOpenerPlugin.activeModalWindow) {
+                    ModalOpenerPlugin.activeModalWindow.openInNewTab();
+                } else {
+                    new Notice(t("No active modal window"));
+                }
+            }
         });
     }
 
@@ -100,6 +107,7 @@ export default class ModalOpenPlugin extends Plugin {
 
     onunload() {
         this.removeEventListeners();
+        this.originalOpenLinkText = null;
     }
 
     async loadSettings() {
@@ -203,11 +211,6 @@ export default class ModalOpenPlugin extends Plugin {
     
         document.addEventListener('mouseover', this.mouseHoverListener);
     }
-    
-
-    // private getSrcFromSpan(target: HTMLElement): string | null {
-    //     return target.getAttribute('src') || null; // 返回 src 属性内容
-    // }
 
     private setupContextMenuListener() {
         // Create a context menu listener
@@ -750,15 +753,19 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async openInFloatPreview(link: string) {
         try {
-            // 适配 auto content tco
-            if (link?.startsWith('#')) {
-                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
-                link = currentFilePath + link;
+            // console.log("OpenLink:", link);
+            let fileLink = link;
+            if (link.includes("/") && !this.isValidURL(link)) {
+                const parts = link.split('/');
+                fileLink = parts.pop() || '';
+            }
+            
+            let filePath = fileLink;
+            let fragment = '';
+            if (fileLink.includes('#')) {
+                [filePath, fragment] = fileLink.split('#');
             }
 
-            // console.log("OpenLink:", link);
-
-            const [filePath, fragment] = link.split(/[#]/);
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
             let file: TFile | undefined;
 
@@ -791,10 +798,6 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async folderNoteOpenInFloatPreview(link: string) {
         try {
-            if (this.modal) {
-                this.modal.close();
-            }
-
             let file: TFile | undefined;
             const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
             let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);

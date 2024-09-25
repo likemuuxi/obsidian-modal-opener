@@ -1,5 +1,7 @@
 // 简体中文
 export default {
+    "No active modal window":"没有活动的Modal窗口",
+
     "Create and edit in modal": "创建并在Modal窗口中编辑",
     "Enter new file name": "输入新文件名：",
     "Wiki link": "Wiki链接",

@@ -1,5 +1,7 @@
 // English
 export default {
+  "No active modal window":"No active modal window",
+
   "Create and edit in modal":"Create and edit in modal",
   "Enter new file name": "Enter new file name: ",
   "Wiki link": "Wiki link",
