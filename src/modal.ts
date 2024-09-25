@@ -222,8 +222,8 @@ export class ModalWindow extends Modal {
             }
         } else {
             const leaf = this.app.workspace.getLeaf(true);
-            this.handledLeaves.push(leaf);
             await leaf.openFile(file, { state: { mode } });
+            this.handledLeaves.push(leaf);
             // if (leaf.view && leaf.view.containerEl) {
             //     document.body.addClass('modal-tab-header-hidden');
             // }
@@ -278,41 +278,41 @@ export class ModalWindow extends Modal {
         this.setupDoubleClickHandler();
     }
 
+
+    private getLinkFromTarget(target: HTMLElement): string {
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+    }
+
     private handleInternalLinkClick = (event: MouseEvent) => {
-        const target = event.target as HTMLElement;
-        console.log("Clicked element:", target);
-    
-        // 查找最近的 A 标签祖先
-        const linkElement = target.closest('a');
-    
-        if (linkElement && (linkElement.classList.contains('internal-link') || linkElement.classList.contains('cm-underline'))) {
-            const href = linkElement.getAttribute('href');
-            const linkText = linkElement.textContent?.trim() || href; // 如果没有 linkText 则使用 href
-            const activeFile = this.app.workspace.getActiveFile();
+        let target = event.target as HTMLElement;
+        let linkText = this.getLinkFromTarget(target)
+        if (linkText?.startsWith('#')) {
+            const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+            linkText = currentFilePath + linkText;
+        }
+        const [path, fragment] = linkText.split(/[#]/);
+        const abstractFile = this.app.metadataCache.getFirstLinkpathDest(path, "");
+        let file: TFile | undefined;
+
+        if (abstractFile instanceof TFile) {
+            file = abstractFile;
+        } else {
+            file = undefined;
+        }
+        
+        // 检测文件是否存在
+        if (!file && !this.isValidURL(linkText)) {
+            return;
+        }
+        
+        if (file) {
+            const filePath = `${file.path}#${fragment}`;
             const modalContainer = this.containerEl.querySelector('.modal-opener-content');
-    
-            if (activeFile && linkText) {
-                const extension = activeFile.extension;
-    
-                // 去除路径，只保留文件名
-                const parts = linkText.split('/');
-                const fileName = parts.pop(); // 获取最后一个部分
-    
-                if (fileName) {
-                    const linkTextParts = fileName.split(/[#>]/); // 根据 # 或 > 分割
-                    const firstPart = linkTextParts[0].trim() + '.' + extension; // 前半部分加上后缀，去掉空格
-                    const secondPart = linkTextParts[1]?.trim() ? '#' + linkTextParts[1].trim() : ''; // 去掉空格并始终使用 #
-    
-                    const newLinkText = firstPart + secondPart; // 拼接
-    
-                    if (modalContainer) {
-                        modalContainer.setAttribute('data-src', newLinkText);
-                    }
-                }
+            if (modalContainer) {
+                modalContainer.setAttribute('data-src', filePath);
             }
         }
     }
-    
     
     private focusOnModalContent() {
         if (this.associatedLeaf?.view instanceof MarkdownView) {
@@ -350,7 +350,7 @@ export class ModalWindow extends Modal {
     }
 
     private setupDoubleClickHandler() {
-        this.modalEl = this.containerEl.querySelector('.modal') as HTMLElement;
+        this.modalEl = this.containerEl.querySelector('.modal-opener') as HTMLElement;
 
         if (this.modalEl) {
             this.modalEl.addEventListener('dblclick', (event: MouseEvent) => {

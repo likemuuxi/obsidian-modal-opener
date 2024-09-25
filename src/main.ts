@@ -754,18 +754,13 @@ export default class ModalOpenerPlugin extends Plugin {
     private async openInFloatPreview(link: string) {
         try {
             // console.log("OpenLink:", link);
-            let fileLink = link;
-            if (link.includes("/") && !this.isValidURL(link)) {
-                const parts = link.split('/');
-                fileLink = parts.pop() || '';
-            }
-            
-            let filePath = fileLink;
-            let fragment = '';
-            if (fileLink.includes('#')) {
-                [filePath, fragment] = fileLink.split('#');
+            // 适配 auto content tco
+            if (link?.startsWith('#')) {
+                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                link = currentFilePath + link;
             }
 
+            const [filePath, fragment] = link.split(/[#]/);
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
             let file: TFile | undefined;
 

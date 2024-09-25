@@ -57,8 +57,6 @@
 
 - `no dupe leave`
 - `mononote`
-- `float search`
-- `Templify`
 
 > 注意：当使用`surfing`插件加载网页时，不要开启**在固定且唯一标签页中打开网页**选项，会影响插件功能。
 
