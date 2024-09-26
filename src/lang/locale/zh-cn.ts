@@ -45,7 +45,7 @@ export default {
     'Hide tab header':'隐藏标签头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签头部',
 
-    'Behavior':'Behavior',
+    'Behavior':'行为',
     'Prevents duplicate tabs':'防止重复标签页',
     'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
     'Delay time':'延迟时间',
