@@ -909,8 +909,8 @@ export default class ModalOpenerPlugin extends Plugin {
                         targetToFocus.setEphemeralState(ephemeralState);
                     }
                     resolve();
-                }, 100);
-            }, 100);
+                }, this.settings.delayInMs);
+            }, this.settings.delayInMs);
         });
     }
 
