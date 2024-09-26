@@ -103,16 +103,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.display();
 					}));
 
-		new Setting(containerEl)
-			.setName(t('Disable external click close'))
-			.setDesc(t('Use only the "Close" button and "Esc" to close.'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.onlyCloseButton)
-				.onChange(async (value) => {
-					this.plugin.settings.onlyCloseButton = value;
-					await this.plugin.saveSettings();
-				}));
-
 		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
 				.setName(t("Drag and drop time threshold"))
@@ -142,6 +132,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
+
+		
+		new Setting(containerEl)
+			.setName(t('Disable external click close'))
+			.setDesc(t('Use only the "Close" button and "Esc" to close.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.onlyCloseButton)
+				.onChange(async (value) => {
+					this.plugin.settings.onlyCloseButton = value;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl)
 		.setName(t('Prevents duplicate tabs'))
@@ -191,7 +192,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t('Enable animation and blur'))
-			.setDesc(t('Toggle to enable or disable animation and blur effects.'))
+			.setDesc(t('Toggle to enable or disable animation and blur effects'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableAnimation)
 				.onChange(async (value) => {
@@ -200,8 +201,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Show file view header'))
-			.setDesc(t('Show the header of the file view in the modal window'))
+			.setName(t('Show view header of the file'))
+			.setDesc(t('Show the view header of the file in the modal window'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showFileViewHeader)
 				.onChange(async (value) => {
@@ -211,8 +212,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Show link view header'))
-			.setDesc(t('Show the header of the link view in the modal window'))
+			.setName(t('Show view header of the link'))
+			.setDesc(t('Show the Surfing plugin\'s navigation bar and bookmarks bar'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showLinkViewHeader)
 				.onChange(async (value) => {
@@ -222,8 +223,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Display metadata'))
-			.setDesc(t('Display metadata in the file modal window'))
+			.setName(t('Show metadata'))
+			.setDesc(t('Show file metadata in the modal window'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showMetadata)
 				.onChange(async (value) => {
