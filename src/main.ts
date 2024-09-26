@@ -28,7 +28,6 @@ export default class ModalOpenerPlugin extends Plugin {
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
 
-
     async onload() {
         await this.loadSettings();
 
