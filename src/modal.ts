@@ -1,5 +1,6 @@
 import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Scope, requestUrl, RequestUrlResponse } from "obsidian";
 import ModalOpenerPlugin from "./main";
+import tr from "./lang/locale/tr";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -16,6 +17,7 @@ export class ModalWindow extends Modal {
     private static instances: ModalWindow[] = [];
     private static activeInstance: ModalWindow | null = null;
     private boundHandleActiveLeafChange: () => void;
+    private updateFragmentLink: boolean;
 
     constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -150,7 +152,7 @@ export class ModalWindow extends Modal {
                 this.handledLeaves.push(activeLeaf);
 
                 const wbViewContent = activeLeaf.view.containerEl.querySelector('.wb-view-content');
-                // const activeFile = this.app.workspace.getActiveFile();
+                const activeFile = this.app.workspace.getActiveFile();
                 if (wbViewContent) {
                     const webviewElement = wbViewContent.querySelector('webview');
                     if (webviewElement) {
@@ -159,13 +161,13 @@ export class ModalWindow extends Modal {
                             modalContainer.setAttribute('data-src', srcValue);
                         }
                     }
+                } else if (activeFile && !this.updateFragmentLink) {
+                    const filePath = activeFile.path;
+                    modalContainer.setAttribute('data-src', filePath);
                 }
-                // else if (activeFile) {
-                //     const filePath = activeFile.path;
-                //     modalContainer.setAttribute('data-src', filePath);
-                // }
 
                 this.focusOnModalContent();
+                this.updateFragmentLink = false;
             }
         }
     }
@@ -310,6 +312,7 @@ export class ModalWindow extends Modal {
             const modalContainer = this.containerEl.querySelector('.modal-opener-content');
             if (modalContainer) {
                 modalContainer.setAttribute('data-src', filePath);
+                this.updateFragmentLink = true;
             }
         }
     }

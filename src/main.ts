@@ -842,12 +842,9 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-        private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
-        if (!this.settings.preventsDuplicateTabs) {
-            return; // 如果功能未启用，直接返回
-        }
-        if (activeLeaf.view.containerEl.closest('.modal-opener')) {
-            return; // 如果是模态窗口，不处理
+    private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
+        if (!this.settings.preventsDuplicateTabs || activeLeaf.view.containerEl.closest('.modal-opener')) {
+            return; // 如果如果功能未启用，直接返回或是模态窗口，不处理
         }
 
         const { id } = activeLeaf;
@@ -872,46 +869,58 @@ export default class ModalOpenerPlugin extends Plugin {
         if (!this.settings.preventsDuplicateTabs) {
             return; // 如果功能未启用，直接返回
         }
+    
+        // 延迟处理，给予新页面加载的时间
+        await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
+    
         const filePath = activeLeaf.view.getState().file;
         if (!filePath) return;
-
+    
         const viewType = activeLeaf.view.getViewType();
         const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
             .filter(l => 
                 l !== activeLeaf && 
                 l.view.getState().file === filePath &&
                 (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
-            )
-            .sort((a, b) => (b as RealLifeWorkspaceLeaf).activeTime - (a as RealLifeWorkspaceLeaf).activeTime);
-
+            );
+    
         if (duplicateLeaves.length === 0) return;
-
-        const targetToFocus = duplicateLeaves.find(l => (l as RealLifeWorkspaceLeaf).pinned) || duplicateLeaves[0];
-
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (activeLeaf.view.containerEl.closest('.modal-opener')) {
-                    resolve();
-                    return;
+    
+        // 根据活跃时间排序，最近活跃的在前
+        const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) => 
+            (b as any).activeTime - (a as any).activeTime
+        );
+    
+        const mostRecentLeaf = sortedLeaves[0];
+        const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
+    
+        // 如果当前叶子不是最近活跃的，我们需要进一步处理
+        if (activeLeaf !== mostRecentLeaf) {
+            // 如果当前叶子是最老的，我们应该保留它并关闭其他的
+            if (activeLeaf === oldestLeaf) {
+                for (const leaf of duplicateLeaves) {
+                    if (!(leaf as any).pinned) {
+                        leaf.detach();
+                    }
                 }
-
-                const ephemeralState = activeLeaf.getEphemeralState();
-
+                this.app.workspace.setActiveLeaf(activeLeaf, { focus: true });
+            } else {
+                // 否则，我们应该关闭当前叶子
                 if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
                     activeLeaf.history.back();
-                } else if (!activeLeaf.pinned) {
+                } else if (!(activeLeaf as any).pinned) {
                     activeLeaf.detach();
                 }
-
-                setTimeout(() => {
-                    this.app.workspace.setActiveLeaf(targetToFocus, { focus: true });
-                    if (Object.keys(ephemeralState).length > 0) {
-                        targetToFocus.setEphemeralState(ephemeralState);
-                    }
-                    resolve();
-                }, this.settings.delayInMs);
-            }, this.settings.delayInMs);
-        });
+                this.app.workspace.setActiveLeaf(mostRecentLeaf, { focus: true });
+            }
+        } else {
+            // 当前叶子是最近活跃的，我们应该保留它并关闭其他的
+            for (const leaf of duplicateLeaves) {
+                if (!(leaf as any).pinned) {
+                    leaf.detach();
+                }
+            }
+        }
     }
 
     private isSupportElement(target: HTMLElement): boolean {
