@@ -119,11 +119,12 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 }
 
 .new-file-button.confirm {
-    background-color: var(--interactive-accent) !important;
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
 }
 
 .new-file-modal-container .new-file-button-container .new-file-button.confirm:hover {
-    background-color: var(--interactive-accent-hover) !important;
+    background-color: var(--interactive-accent-hover);
 }
 
 .custom-command-input {
