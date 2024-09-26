@@ -1,12 +1,22 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition } from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf } from "obsidian";
 import { ModalWindow } from "./modal";
-import ModalOpenSettingTab from "./settings";
+import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
-import ModalOpenPluginSettings, { DEFAULT_SETTINGS } from "./settings";
+import ModalOpenerPluginSettings, { DEFAULT_SETTINGS } from "./settings";
 
-export default class ModalOpenPlugin extends Plugin {
-    settings: ModalOpenPluginSettings;
-    private modal: ModalWindow | undefined;
+export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
+    activeTime: number;
+    history: {
+      back: () => void;
+      backHistory: any[];
+    };
+    id: string;
+    pinned: boolean;
+    parent: { id: string };
+  };
+
+export default class ModalOpenerPlugin extends Plugin {
+    settings: ModalOpenerPluginSettings;
     private draggedLink: string | null = null;
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
@@ -15,7 +25,9 @@ export default class ModalOpenPlugin extends Plugin {
     private contextMenuListener: ((event: MouseEvent) => void) | undefined;
     private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
     private currentAnchor: string | null = null;
-    // private currentSrcText: string | null = null;
+    static activeModalWindow: ModalWindow | null = null;
+    private processors: Map<string, Promise<void>> = new Map();
+
 
     async onload() {
         await this.loadSettings();
@@ -25,6 +37,8 @@ export default class ModalOpenPlugin extends Plugin {
         this.setupHoverListener();
         this.setupContextMenuListener();
         this.applyStyles();
+        this.registerCustomCommands();
+        this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
 
         // 监听设置变化
         this.registerEvent(
@@ -33,8 +47,11 @@ export default class ModalOpenPlugin extends Plugin {
             })
         );
 
-        this.registerCustomCommands();
-        this.addSettingTab(new ModalOpenSettingTab(this.app, this));
+        this.app.workspace.onLayoutReady(() => {
+            this.registerEvent(
+                this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this))
+            );
+        });
 
         this.addCommand({
             id: 'open-in-modal-window',
@@ -49,7 +66,35 @@ export default class ModalOpenPlugin extends Plugin {
         this.addCommand({ // This command binds the shortcut key in the bindHotkey() function of modal.ts and defines the functionality in the openInNewTab() function
             id: 'open-modal-content-in-new-tab',
             name: 'Open modal content in new tab',
+            callback: () => {
+                if (ModalOpenerPlugin.activeModalWindow) {
+                    ModalOpenerPlugin.activeModalWindow.openInNewTab();
+                } else {
+                    new Notice(t("No active modal window"));
+                }
+            }
         });
+    }
+
+    applyStyles() {
+        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+        document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
+        document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
+        document.body.classList.toggle('show-metadata', this.settings.showMetadata);
+    }
+
+    onunload() {
+        this.removeEventListeners();
+    }
+
+    async loadSettings() {
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    }
+
+    async saveSettings() {
+        await this.saveData(this.settings);
+        this.registerOpenHandler();
+        this.registerCustomCommands();
     }
 
     private openContentInModal(shouldDetach: boolean = false) {
@@ -89,27 +134,6 @@ export default class ModalOpenPlugin extends Plugin {
 
     private duplicateCurrentContentInModal() {
         this.openContentInModal(false);
-    }
-
-    applyStyles() {
-        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
-        document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
-        document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
-        document.body.classList.toggle('show-metadata', this.settings.showMetadata);
-    }
-
-    onunload() {
-        this.removeEventListeners();
-    }
-
-    async loadSettings() {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-    }
-
-    async saveSettings() {
-        await this.saveData(this.settings);
-        this.registerOpenHandler();
-        this.registerCustomCommands();
     }
 
     registerCustomCommands() {
@@ -203,11 +227,6 @@ export default class ModalOpenPlugin extends Plugin {
     
         document.addEventListener('mouseover', this.mouseHoverListener);
     }
-    
-
-    // private getSrcFromSpan(target: HTMLElement): string | null {
-    //     return target.getAttribute('src') || null; // 返回 src 属性内容
-    // }
 
     private setupContextMenuListener() {
         // Create a context menu listener
@@ -750,13 +769,12 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async openInFloatPreview(link: string) {
         try {
+            // console.log("OpenLink:", link);
             // 适配 auto content tco
             if (link?.startsWith('#')) {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
                 link = currentFilePath + link;
             }
-
-            // console.log("OpenLink:", link);
 
             const [filePath, fragment] = link.split(/[#]/);
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
@@ -791,10 +809,6 @@ export default class ModalOpenPlugin extends Plugin {
 
     private async folderNoteOpenInFloatPreview(link: string) {
         try {
-            if (this.modal) {
-                this.modal.close();
-            }
-
             let file: TFile | undefined;
             const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
             let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
@@ -827,6 +841,78 @@ export default class ModalOpenPlugin extends Plugin {
         } catch (error) {
             new Notice(t("Open in modal window error"));
         }
+    }
+
+        private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
+        if (!this.settings.preventsDuplicateTabs) {
+            return; // 如果功能未启用，直接返回
+        }
+        if (activeLeaf.view.containerEl.closest('.modal-opener')) {
+            return; // 如果是模态窗口，不处理
+        }
+
+        const { id } = activeLeaf;
+
+        if (this.processors.has(id)) {
+            // console.log(`已经在处理叶子 ${id}`);
+            return;
+        }
+
+        const processor = this.processActiveLeaf(activeLeaf);
+        this.processors.set(id, processor);
+
+        try {
+            await processor;
+        } finally {
+            this.processors.delete(id);
+            // console.log(`完成处理叶子 ${id}`);
+        }
+    }
+
+    private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
+        if (!this.settings.preventsDuplicateTabs) {
+            return; // 如果功能未启用，直接返回
+        }
+        const filePath = activeLeaf.view.getState().file;
+        if (!filePath) return;
+
+        const viewType = activeLeaf.view.getViewType();
+        const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
+            .filter(l => 
+                l !== activeLeaf && 
+                l.view.getState().file === filePath &&
+                (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
+            )
+            .sort((a, b) => (b as RealLifeWorkspaceLeaf).activeTime - (a as RealLifeWorkspaceLeaf).activeTime);
+
+        if (duplicateLeaves.length === 0) return;
+
+        const targetToFocus = duplicateLeaves.find(l => (l as RealLifeWorkspaceLeaf).pinned) || duplicateLeaves[0];
+
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (activeLeaf.view.containerEl.closest('.modal-opener')) {
+                    resolve();
+                    return;
+                }
+
+                const ephemeralState = activeLeaf.getEphemeralState();
+
+                if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
+                    activeLeaf.history.back();
+                } else if (!activeLeaf.pinned) {
+                    activeLeaf.detach();
+                }
+
+                setTimeout(() => {
+                    this.app.workspace.setActiveLeaf(targetToFocus, { focus: true });
+                    if (Object.keys(ephemeralState).length > 0) {
+                        targetToFocus.setEphemeralState(ephemeralState);
+                    }
+                    resolve();
+                }, 100);
+            }, 100);
+        });
     }
 
     private isSupportElement(target: HTMLElement): boolean {

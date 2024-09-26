@@ -1,5 +1,7 @@
 // 简体中文
 export default {
+    "No active modal window":"没有活动的Modal窗口",
+
     "Create and edit in modal": "创建并在Modal窗口中编辑",
     "Enter new file name": "输入新文件名：",
     "Wiki link": "Wiki链接",
@@ -42,6 +44,12 @@ export default {
     'Display metadata in the file modal window':'在文件模态窗口中显示元数据',
     'Hide tab header':'隐藏标签头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签头部',
+
+    'Behavior':'Behavior',
+    'Prevents duplicate tabs':'防止重复标签页',
+    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
+    'Delay time':'延迟时间',
+    'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
 
     'Custom commands':'自定义命令',
     'Add custom command':'添加自定义命令',

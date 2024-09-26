@@ -1,5 +1,7 @@
 // English
 export default {
+  "No active modal window":"No active modal window",
+
   "Create and edit in modal":"Create and edit in modal",
   "Enter new file name": "Enter new file name: ",
   "Wiki link": "Wiki link",
@@ -42,6 +44,12 @@ export default {
   'Display metadata in the file modal window':'Display metadata in the file modal window',
   'Hide tab header':'Hide tab header',
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
+
+  'Behavior':'Behavior',
+  'Prevents duplicate tabs':'Prevents duplicate tabs',
+  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
+  'Delay time':'Delay time',
+  'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
 
   'Custom commands':'Custom commands',
   'Add custom command':'Add custom command',

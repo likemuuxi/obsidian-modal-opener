@@ -1,48 +1,6 @@
-.custom-command-input {
-    width: 220px !important;
-}
-
 /* .modal-tab-header-hidden .workspace-tab-header.is-active {
     display: none !important;
 } */
-
-.modal-animation-enabled .modal-container:has(.link-modal), 
-.modal-animation-enabled .modal-container:has(.file-modal) {
-    backdrop-filter: blur(10px);
-    background-color: rgba(var(--background-primary-rgb), 0.8);
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.modal-animation-enabled .modal-container[class*="mod-"]:has(.link-modal), 
-.modal-animation-enabled .modal-container[class*="mod-"]:has(.file-modal) {
-    opacity: 1;
-}
-
-.modal-animation-enabled .modal:has(.link-modal), 
-.modal-animation-enabled .modal:has(.file-modal) {
-    border: 1px solid var(--background-modifier-border);
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    background-color: var(--background-primary);
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-}
-
-.modal-animation-enabled .modal[class*="mod-"] .link-modal,
-.modal-animation-enabled .modal[class*="mod-"] .file-modal {
-    transform: scale(1);
-    opacity: 1;
-}
-
-.modal-opener .modal{
-    overflow: hidden;
-}
-
-.modal-opener .modal-close-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1000;
-}
 
 .modal-iframe {
     width: 100%;
@@ -53,8 +11,18 @@
     left: 0;
 }
 
-.file-modal,
-.link-modal  {
+.modal.modal-opener {
+    overflow: hidden;
+}
+
+.modal-opener .modal-close-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.modal-opener .modal-content {
     padding-top: 16px;
     display: flex;
     flex-direction: column;
@@ -62,17 +30,12 @@
     position: relative;
 }
 
-body:not(.show-metadata) .file-modal .metadata-container {
-    display: none !important;
-} 
-
-.file-modal .markdown-rendered
-{
+.modal-opener-content .markdown-rendered {
     overflow-x: hidden;
     padding: 0;
 }
 
-.modal-content-container {
+.modal-opener-content {
     min-height: var(--adjusted-modal-height, 81vh);
     max-height: var(--adjusted-modal-height, 81vh);
     flex-grow: 1;
@@ -81,20 +44,46 @@ body:not(.show-metadata) .file-modal .metadata-container {
     padding: 0;
 }
 
-.modal-content-container .workspace-leaf-content[data-type="code-editor"] .view-content,
-.modal-content-container .workspace-leaf-content[data-type="vscode-editor"] .view-content {
+.modal-opener-content .workspace-leaf-content[data-type="code-editor"] .view-content,
+.modal-opener-content .workspace-leaf-content[data-type="vscode-editor"] .view-content {
     padding: 0;
 }
 
-body:not(.show-file-view-header) .file-modal-container .view-header {
-    display: none;
-}
-body:not(.show-link-view-header) .link-modal-container .view-header ,
-body:not(.show-link-view-header) .link-modal-container .wb-bookmark-bar {
+body:not(.show-file-view-header) .modal-opener-content .view-header {
     display: none;
 }
 
+body:not(.show-link-view-header) .modal-opener-content .view-header,
+body:not(.show-link-view-header) .modal-opener-content .wb-bookmark-bar {
+    display: none;
+}
 
+body:not(.show-metadata) .modal-opener-content .metadata-container {
+    display: none !important;
+} 
+
+.modal-animation-enabled .modal-container:has(.modal-opener-content) {
+    backdrop-filter: blur(10px);
+    background-color: rgba(var(--background-primary-rgb), 0.8);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+ 
+.modal-animation-enabled .modal-container[class*="mod-"]:has(.modal-opener-content) {
+    opacity: 1;
+}
+
+.modal-animation-enabled .modal-container:has(.modal-opener-content) {
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background-color: var(--background-primary);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+}
+
+.modal-animation-enabled .modal[class*="mod-"] .modal-opener-content {
+    transform: scale(1);
+    opacity: 1;
+}
 
 /* 在现有样式的末尾添加以下内容 */
 
@@ -135,4 +124,8 @@ body:not(.show-link-view-header) .link-modal-container .wb-bookmark-bar {
 
 .new-file-modal-container .new-file-button-container .new-file-button.confirm:hover {
     background-color: var(--interactive-accent-hover) !important;
+}
+
+.custom-command-input {
+    width: 220px !important;
 }

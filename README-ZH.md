@@ -64,10 +64,11 @@
 
 # 🥰特别感谢
 
-特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和插件重启功能。
+特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和阻止重复标签页功能，插件列表如下。
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Float-Search](https://github.com/Quorafind/Obsidian-Float-Search) by Quorafind
 - [obsidian-copilot](https://github.com/logancyang/obsidian-copilot) by logancyang
+- [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 - [Cursor](https://www.cursor.com/) 、[ChatGPT](https://chatgpt.com/)
 
