@@ -30,6 +30,12 @@ export default {
   'Disable external click close':'Disable external click close',
   'Use only the "Close" button and "Esc" to close.':'Use only the "Close" button and "Esc" to close',
 
+  'Behavior':'Behavior',
+  'Prevents duplicate tabs':'Prevents duplicate tabs',
+  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
+  'Delay time':'Delay time',
+  'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
+
   "Styles":'Styles',
   "Modal width":'Modal width',
   "Modal height":'Modal height',
@@ -45,15 +51,9 @@ export default {
   'Hide tab header':'Hide tab header',
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 
-  'Behavior':'Behavior',
-  'Prevents duplicate tabs':'Prevents duplicate tabs',
-  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
-  'Delay time':'Delay time',
-  'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
-
   'Custom commands':'Custom commands',
   'Add custom command':'Add custom command',
-  'Add a new custom command':'Commands can be used with other plug-ins, such as Command',
+  'Add a new custom command':'Commands can be used with other plug-ins, such as Commander',
   'Add':'Add',
   'Command name':'Input the command name',
   'Command':'Command',

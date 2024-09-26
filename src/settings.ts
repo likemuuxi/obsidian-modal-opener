@@ -141,6 +141,30 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl).setName(t('Behavior')).setHeading();
+
+		new Setting(containerEl)
+		.setName(t('Prevents duplicate tabs'))
+		.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)'))
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.preventsDuplicateTabs)
+			.onChange(async (value) => {
+			this.plugin.settings.preventsDuplicateTabs = value;
+			await this.plugin.saveSettings();
+			}));
+
+		new Setting(containerEl)
+		.setName(t('Delay time'))
+		.setDesc(t('Delay in milliseconds before performing operations'))
+		.addSlider(slider => slider
+			.setLimits(100, 500, 100)
+			.setValue(this.plugin.settings.delayInMs)
+			.setDynamicTooltip()
+			.onChange(async (value) => {
+			this.plugin.settings.delayInMs = value;
+			await this.plugin.saveSettings();
+			}));
+
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
 		new Setting(containerEl)
@@ -218,30 +242,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
-
-		new Setting(containerEl).setName(t('Behavior')).setHeading();
-
-		new Setting(containerEl)
-		.setName(t('Prevents duplicate tabs'))
-		.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)'))
-		.addToggle(toggle => toggle
-			.setValue(this.plugin.settings.preventsDuplicateTabs)
-			.onChange(async (value) => {
-			this.plugin.settings.preventsDuplicateTabs = value;
-			await this.plugin.saveSettings();
-			}));
-
-		new Setting(containerEl)
-		.setName(t('Delay time'))
-		.setDesc(t('Delay in milliseconds before performing operations'))
-		.addSlider(slider => slider
-			.setLimits(100, 500, 100)
-			.setValue(this.plugin.settings.delayInMs)
-			.setDynamicTooltip()
-			.onChange(async (value) => {
-			this.plugin.settings.delayInMs = value;
-			await this.plugin.saveSettings();
-			}));
 
 		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 

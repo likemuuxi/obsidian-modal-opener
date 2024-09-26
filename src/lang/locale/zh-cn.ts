@@ -1,8 +1,8 @@
 // 简体中文
 export default {
-    "No active modal window":"没有活动的Modal窗口",
+    "No active modal window":"没有活动的模态窗口",
 
-    "Create and edit in modal": "创建并在Modal窗口中编辑",
+    "Create and edit in modal": "创建并在模态窗口中编辑",
     "Enter new file name": "输入新文件名：",
     "Wiki link": "Wiki链接",
     "Embed link": "嵌入链接",
@@ -30,6 +30,12 @@ export default {
     'Disable external click close':'禁用外部点击关闭',
     'Use only the "Close" button and "Esc" to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
 
+    'Behavior':'行为',
+    'Prevents duplicate tabs':'防止重复标签页',
+    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
+    'Delay time':'延迟时间',
+    'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
+
     "Styles":'样式',
     "Modal width":'窗口宽度',
     "Modal height":'窗口高度',
@@ -45,15 +51,9 @@ export default {
     'Hide tab header':'隐藏标签头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签头部',
 
-    'Behavior':'行为',
-    'Prevents duplicate tabs':'防止重复标签页',
-    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
-    'Delay time':'延迟时间',
-    'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
-
     'Custom commands':'自定义命令',
     'Add custom command':'添加自定义命令',
-    'Add a new custom command':'命令可以与其他插件搭配使用，例如 Command',
+    'Add a new custom command':'命令可以与其他插件搭配使用，例如 Commander',
     'Add':'添加',
     'Command name':'输入命令名称',
     'Command':'命令',
