@@ -18,6 +18,7 @@ export class ModalWindow extends Modal {
     private static activeInstance: ModalWindow | null = null;
     private boundHandleActiveLeafChange: () => void;
     private updateFragmentLink: boolean;
+    private observer: MutationObserver | null = null;
 
     constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -114,6 +115,11 @@ export class ModalWindow extends Modal {
     }
 
     onClose() {
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+
         if (this.associatedLeaf) {
             this.associatedLeaf.detach();
             this.associatedLeaf = undefined;
@@ -129,7 +135,6 @@ export class ModalWindow extends Modal {
 
         const { contentEl } = this;
         contentEl.empty();
-
         // document.body.removeClass('modal-tab-header-hidden');
     }
 
@@ -238,9 +243,42 @@ export class ModalWindow extends Modal {
             this.associatedLeaf = leaf;
         }
 
+        const noteToolbarPlugin = this.getPlugin("note-toolbar");
+        if(noteToolbarPlugin) {
+            this.setupToolbarObserver();
+        }
+
         this.setupDoubleClickHandler();
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
+    }
+
+    private setupToolbarObserver() {
+        // 首先移除任何现有的重复工具栏
+        this.ensureSingleToolbar();
+
+        // 设置 MutationObserver 来监听 DOM 变化
+        this.observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    this.ensureSingleToolbar();
+                }
+            }
+        });
+
+        // 开始观察 modal-opener 的子元素变化
+        this.observer.observe(this.contentEl, { childList: true, subtree: true });
+    }
+
+    private ensureSingleToolbar() {
+        const toolbars = this.contentEl.querySelectorAll('.cg-note-toolbar-container');
+        if (toolbars.length > 1) {
+            // console.log(`Found ${toolbars.length} toolbars, keeping only the first one`);
+            // 保留第一个工具栏，移除其他的
+            for (let i = 1; i < toolbars.length; i++) {
+                toolbars[i].remove();
+            }
+        }
     }
 
     displayLinkContent(link:string) {
