@@ -48,8 +48,8 @@ export default {
     'Show the Surfing plugin\'s navigation bar and bookmarks bar':'在模态窗口中显示Surfing插件的导航栏和书签栏',
     'Show metadata':'显示元数据',
     'Show file metadata in the modal window':'在模态窗口中显示文件元数据',
-    'Hide tab header':'隐藏标签头部',
-    'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签头部',
+    'Hide tab header':'隐藏标签页头部',
+    'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
 
     'Custom commands':'自定义命令',
     'Add custom command':'添加自定义命令',
