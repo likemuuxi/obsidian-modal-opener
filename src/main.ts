@@ -27,6 +27,8 @@ export default class ModalOpenerPlugin extends Plugin {
     private currentAnchor: string | null = null;
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
+    private hoverDebounceTimer: NodeJS.Timeout | null = null;
+    private linkCache: Map<HTMLElement, string> = new Map();
 
     async onload() {
         await this.loadSettings();
@@ -84,6 +86,9 @@ export default class ModalOpenerPlugin extends Plugin {
 
     onunload() {
         this.removeEventListeners();
+        if (this.hoverDebounceTimer) {
+            clearTimeout(this.hoverDebounceTimer);
+        }
     }
 
     async loadSettings() {
@@ -197,50 +202,6 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private setupHoverListener() {
-        // Create a hover listener
-        this.mouseHoverListener = (event: MouseEvent) => {
-            // Get the hovered target element
-            const target = event.target as HTMLElement;
-            // Check if the target element is part of a link or an alias
-            if (target.matches('.cn-hmd-internal-link, .cm-hmd-internal-link, .cm-link-alias, .cm-link-alias-pipe')) {
-                // Initialize a variable to collect the full link text
-                let linkText = '';
-                let currentElement: HTMLElement | null = target;
-                // Traverse backward to collect the text from the start of the link
-                while (currentElement && 
-                        (currentElement.matches('.cn-hmd-internal-link') ||
-                        currentElement.matches('.cm-hmd-internal-link') ||
-                        currentElement.matches('.cm-link-alias-pipe') ||
-                        currentElement.matches('.cm-link-alias'))) {
-                    linkText = currentElement.innerText + linkText;
-                    currentElement = currentElement.previousElementSibling as HTMLElement;
-                }
-                // Exclude the alias part if it exists
-                if (linkText.includes('|')) {
-                    linkText = linkText.split('|')[0];
-                }
-                this.currentAnchor = linkText;
-            }
-        };
-    
-        document.addEventListener('mouseover', this.mouseHoverListener);
-    }
-
-    private setupContextMenuListener() {
-        // Create a context menu listener
-        this.contextMenuListener = (event: MouseEvent) => {
-            const target = (event.target as HTMLElement).closest('a[data-href]');
-            if (target) {
-                this.currentAnchor = target.getAttribute('data-href') || target.getAttribute('href') || '';
-            } else {
-                this.currentAnchor = null;
-            }
-        };
-
-        document.addEventListener('contextmenu', this.contextMenuListener);
-    }
-
     private registerDragHandler() {
         this.dragHandler = () => {
             this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => {
@@ -348,6 +309,180 @@ export default class ModalOpenerPlugin extends Plugin {
         );
     }
 
+    private addFloatMenuItem(menu: Menu, link: string, title: string, onClick: () => void) {
+        menu.addItem((item) =>
+            item
+                .setTitle(title)
+                .setIcon("popup-open")
+                .setSection("open")
+                .onClick(onClick)
+        );
+    }
+
+    private getFolderElement(filePath: string): HTMLElement | null {
+        return document.querySelector(`.nav-folder-title[data-path="${filePath}"]`);
+    }
+
+    private addFileFloatMenuItem(menu: Menu, link?: string) {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
+            if (link) {
+                this.openInFloatPreview(this.currentAnchor || link);
+            }
+        });
+    }
+    
+    private addFolderFloatMenuItem(menu: Menu, link?: string) {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
+            if (link) {
+                this.folderNoteOpenInFloatPreview(link);
+            }
+        });
+    }
+    
+    private addLinkFloatMenuItem(menu: Menu, link?: string) {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
+            if (link) {
+                this.openInFloatPreview(link);
+            }
+        });
+    }
+
+    
+    private setupHoverListener() {
+        this.registerDomEvent(document, 'mouseover', this.debouncedHoverHandler.bind(this));
+    }
+
+    private debouncedHoverHandler(event: MouseEvent) {
+        if (this.hoverDebounceTimer) {
+            clearTimeout(this.hoverDebounceTimer);
+        }
+        this.hoverDebounceTimer = setTimeout(() => {
+            this.handleHover(event);
+        }, 100); // 100ms 延迟
+    }
+
+    private handleHover(event: MouseEvent) {
+        const target = event.target as HTMLElement;
+        if (target.matches('.cn-hmd-internal-link, .cm-hmd-internal-link, .cm-link-alias, .cm-link-alias-pipe')) {
+            if (this.linkCache.has(target)) {
+                this.currentAnchor = this.linkCache.get(target)!;
+                return;
+            }
+
+            let linkText = this.extractLinkText(target);
+            this.linkCache.set(target, linkText);
+            this.currentAnchor = linkText;
+        }
+    }
+
+    private extractLinkText(element: HTMLElement): string {
+        let linkText = '';
+        let currentElement: HTMLElement | null = element;
+        while (currentElement && 
+                (currentElement.matches('.cn-hmd-internal-link') ||
+                currentElement.matches('.cm-hmd-internal-link') ||
+                currentElement.matches('.cm-link-alias-pipe') ||
+                currentElement.matches('.cm-link-alias'))) {
+            linkText = currentElement.innerText + linkText;
+            currentElement = currentElement.previousElementSibling as HTMLElement;
+        }
+        if (linkText.includes('|')) {
+            linkText = linkText.split('|')[0];
+        }
+        return linkText;
+    }
+
+    private setupContextMenuListener() {
+        // Create a context menu listener
+        this.contextMenuListener = (event: MouseEvent) => {
+            const target = (event.target as HTMLElement).closest('a[data-href]');
+            if (target) {
+                this.currentAnchor = target.getAttribute('data-href') || target.getAttribute('href') || '';
+            } else {
+                this.currentAnchor = null;
+            }
+        };
+
+        document.addEventListener('contextmenu', this.contextMenuListener);
+    }
+
+    private async openInFloatPreview(link: string) {
+        try {
+            // console.log("OpenLink:", link);
+            // 适配 auto content tco
+            if (link?.startsWith('#')) {
+                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                link = currentFilePath + link;
+            }
+
+            const [filePath, fragment] = link.split(/[#]/);
+            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
+            let file: TFile | undefined;
+
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
+            } else {
+                file = undefined;
+            }
+            
+            // 检测文件是否存在
+            if (!file && !this.isValidURL(link)) {
+                new Notice(t("The file does not exist: ") + filePath);
+                return;
+            }
+
+            // 处理网络链接
+            new ModalWindow(
+                this,
+                this.isValidURL(link) ? link : "",
+                file,
+                fragment ?? "",
+                this.settings.modalWidth,
+                this.settings.modalHeight
+            ).open();
+            this.currentAnchor = null;
+        } catch (error) {
+            new Notice(t("Open in modal window error"));
+        }
+    }
+
+    private async folderNoteOpenInFloatPreview(link: string) {
+        try {
+            let file: TFile | undefined;
+            const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
+            let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
+            
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
+            } else {
+                // 尝试查找 .canvas 文件
+                abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.canvas`);
+                if (abstractFile instanceof TFile) {
+                    file = abstractFile;
+                } else {
+                    // 通过 metadataCache 查找匹配的文件
+                    const possibleFile = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "");
+                    if (possibleFile instanceof TFile) {
+                        file = possibleFile;
+                    }
+                }
+            }
+            
+            // 处理网络链接
+            new ModalWindow(
+                this,
+                "",
+                file,
+                "",
+                this.settings.modalWidth,
+                this.settings.modalHeight
+            ).open();
+        } catch (error) {
+            new Notice(t("Open in modal window error"));
+        }
+    }
+
+    // create File And Open In Modal
     private addCreateFileMenuItem(menu: Menu, parentPath: string) {
         menu.addItem((item) => {
             item
@@ -728,120 +863,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private addFloatMenuItem(menu: Menu, link: string, title: string, onClick: () => void) {
-        menu.addItem((item) =>
-            item
-                .setTitle(title)
-                .setIcon("popup-open")
-                .setSection("open")
-                .onClick(onClick)
-        );
-    }
-
-    private getFolderElement(filePath: string): HTMLElement | null {
-        return document.querySelector(`.nav-folder-title[data-path="${filePath}"]`);
-    }
-
-    private addFileFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
-            if (link) {
-                this.openInFloatPreview(this.currentAnchor || link);
-            }
-        });
-    }
-    
-    private addFolderFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
-            if (link) {
-                this.folderNoteOpenInFloatPreview(link);
-            }
-        });
-    }
-    
-    private addLinkFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
-            if (link) {
-                this.openInFloatPreview(link);
-            }
-        });
-    }
-
-    private async openInFloatPreview(link: string) {
-        try {
-            // console.log("OpenLink:", link);
-            // 适配 auto content tco
-            if (link?.startsWith('#')) {
-                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
-                link = currentFilePath + link;
-            }
-
-            const [filePath, fragment] = link.split(/[#]/);
-            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
-            let file: TFile | undefined;
-
-            if (abstractFile instanceof TFile) {
-                file = abstractFile;
-            } else {
-                file = undefined;
-            }
-            
-            // 检测文件是否存在
-            if (!file && !this.isValidURL(link)) {
-                new Notice(t("The file does not exist: ") + filePath);
-                return;
-            }
-
-            // 处理网络链接
-            new ModalWindow(
-                this,
-                this.isValidURL(link) ? link : "",
-                file,
-                fragment ?? "",
-                this.settings.modalWidth,
-                this.settings.modalHeight
-            ).open();
-            this.currentAnchor = null;
-        } catch (error) {
-            new Notice(t("Open in modal window error"));
-        }
-    }
-
-    private async folderNoteOpenInFloatPreview(link: string) {
-        try {
-            let file: TFile | undefined;
-            const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
-            let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
-            
-            if (abstractFile instanceof TFile) {
-                file = abstractFile;
-            } else {
-                // 尝试查找 .canvas 文件
-                abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.canvas`);
-                if (abstractFile instanceof TFile) {
-                    file = abstractFile;
-                } else {
-                    // 通过 metadataCache 查找匹配的文件
-                    const possibleFile = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "");
-                    if (possibleFile instanceof TFile) {
-                        file = possibleFile;
-                    }
-                }
-            }
-            
-            // 处理网络链接
-            new ModalWindow(
-                this,
-                "",
-                file,
-                "",
-                this.settings.modalWidth,
-                this.settings.modalHeight
-            ).open();
-        } catch (error) {
-            new Notice(t("Open in modal window error"));
-        }
-    }
-
+    // no dupe leaf
     private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
         if (!this.settings.preventsDuplicateTabs || activeLeaf.view.containerEl.closest('.modal-opener')) {
             return; // 如果如果功能未启用，直接返回或是模态窗口，不处理
