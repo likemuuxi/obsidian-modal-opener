@@ -197,7 +197,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.settings.openMethod === "middle" || this.settings.openMethod === "both") {
             this.registerMouseMiddleClickHandler();
         }
-        if (this.settings.openMethod === "altClick" || this.settings.openMethod === "both") {
+        if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
             this.registerAltClickHandler();
         }
     }
