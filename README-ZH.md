@@ -4,14 +4,9 @@
 
 > 这是一个使用黑曜石模式窗口打开文件和链接的插件。它可以与其他插件结合使用，轻松读取和编辑各种类型的文件，为您提供便利和阻止各种干扰。
 
-
 ![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
 
-
-
 ![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
-
-
 
 # ✨Feature
 
@@ -23,30 +18,34 @@
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
   ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
 
+  > Diagrams的使用需要安装我的修改版插件：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+  >
+
 # 🎯How to use
 
 - 阅读模式
+
   - 右键菜单
   - 拖拽链接
   - 鼠标中键
   - `alt` + 鼠标左键
-
 - 编辑模式
+
   - 右键菜单
 
 # 🪒如何安装
 
 ## 手动安装
 
-复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径`VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
+复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径 `VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
 
 ## 通过 BRAT 安装
 
-1. 安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件. 
+1. 安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件.
 2. 添加 "Modal Plugin" 到 BRAT:
    1. 打开 "BRAT" 的社区插件部分
    2. 点击 "Add Beta plugin"
-   3. 粘贴如下链接`https://github.com/likemuuxi/obsidian-modal-plugin`
+   3. 粘贴如下链接 `https://github.com/likemuuxi/obsidian-modal-plugin`
 3. 安装后启用插件即可使用
 
 # 🚧兼容性
@@ -58,7 +57,9 @@
 - `no dupe leave`
 - `mononote`
 
-> 注意：当使用`surfing`插件加载网页时，不要开启**在固定且唯一标签页中打开网页**选项，会影响插件功能。
+以上插件都是对重复标签页的处理，现在插件内置重复标签页检测功能，功能来自 `mononote` 插件，在原有基础上有所修改。
+
+> 注意：当使用 `surfing`插件加载网页时，不要开启**在固定且唯一标签页中打开网页**选项，会影响插件功能。
 
 # 🥰特别感谢
 
@@ -69,4 +70,3 @@
 - [obsidian-copilot](https://github.com/logancyang/obsidian-copilot) by logancyang
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 - [Cursor](https://www.cursor.com/) 、[ChatGPT](https://chatgpt.com/)
-
