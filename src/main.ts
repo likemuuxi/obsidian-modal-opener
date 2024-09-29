@@ -209,10 +209,10 @@ export default class ModalOpenerPlugin extends Plugin {
         this.dragHandler = () => {
             this.registerDomEvent(document, 'dragstart', (evt: DragEvent) => {
                 const target = evt.target as HTMLElement;
-                if (this.isSupportElement(target)) {
+                if (this.isPreviewModeLink(target)) {
                     // Check if the target has 'nav-folder-children' or 'nav-folder' class
                     if (!target.closest('.nav-folder-children') && !target.closest('.nav-folder')) {
-                        this.draggedLink = this.getLinkFromTarget(target);
+                        this.draggedLink = this.getPreviewModeLinkText(target);
                         this.dragStartTime = Date.now();
                     }
                 }
@@ -238,51 +238,14 @@ export default class ModalOpenerPlugin extends Plugin {
         this.dragHandler();
     }
 
-    private isEditModeLink(target: HTMLElement): boolean {
-        return target.classList.contains('cm-hmd-internal-link') ||
-               target.classList.contains('cm-link') ||
-               target.classList.contains('cm-url') ||
-               target.classList.contains('cm-underline')||
-               target.classList.contains('cm-link-alias') ;
-    }
-    
-
-    private getEditModeLinkText(target: HTMLElement): string {
-        let linkText = '';
-        let currentElement: HTMLElement | null = target;
-    
-        // 向前查找链接的其他部分
-        while (currentElement && this.isEditModeLink(currentElement)) {
-            linkText = currentElement.textContent + linkText;
-            currentElement = currentElement.previousElementSibling as HTMLElement;
-        }
-    
-        // 向后查找链接的其他部分
-        currentElement = target.nextElementSibling as HTMLElement;
-        while (currentElement && this.isEditModeLink(currentElement)) {
-            linkText += currentElement.textContent;
-            currentElement = currentElement.nextElementSibling as HTMLElement;
-        }
-    
-        // 处理 Markdown 格式的外部链接
-        const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
-        if (markdownLinkMatch) {
-            return markdownLinkMatch[2]; // 返回链接 URL
-        }
-    
-        // 处理内部链接
-        linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
-    
-        return linkText;
-    }
-
-    private handleLinkClick(evt: MouseEvent, linkGetter: (target: HTMLElement) => string) {
+    private handlePreviewModeLink(evt: MouseEvent) {
         const target = evt.target as HTMLElement;
-        if (this.isSupportElement(target) || this.isEditModeLink(target)) {
+        if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
-            const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : linkGetter(target);
-            console.log("Link clicked:", link);
+
+            const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : this.getPreviewModeLinkText(target);
+
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -294,16 +257,27 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     }
-    
+
+    private handleEditModeLink(editor: Editor) {
+        const cursor = editor.getCursor();
+        const line = editor.getLine(cursor.line);
+        const linkMatch = this.findLinkAtPosition(line, cursor.ch);
+        
+        if (linkMatch) {
+            this.openInFloatPreview(linkMatch);
+        } else {
+            new Notice("No link found at cursor position");
+        }
+    }
     
     private registerMouseMiddleClickHandler() {
         this.middleClickHandler = (evt: MouseEvent) => {
             if (evt.button === 1) {
                 const target = evt.target as HTMLElement;
-                if (this.isSupportElement(target) || this.isEditModeLink(target)) {
+                if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
                     evt.preventDefault();
                     evt.stopPropagation();
-                    this.handleLinkClick(evt, this.getLinkFromTarget);
+                    this.handlePreviewModeLink(evt);
                 }
             }
         };
@@ -313,10 +287,35 @@ export default class ModalOpenerPlugin extends Plugin {
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
-                this.handleLinkClick(evt, this.getLinkFromTarget);
+                evt.preventDefault();
+                evt.stopPropagation();
+    
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (activeView) {
+                    if (activeView.getMode() === 'source') {
+                        // 编辑模式
+                        this.handleEditModeLink(activeView.editor);
+                    } else {
+                        // 阅读模式
+                        this.handlePreviewModeLink(evt);
+                    }
+                }
             }
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
+    }
+    
+    private findLinkAtPosition(line: string, position: number): string | null {
+        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)/g;
+        let match;
+        
+        while ((match = linkRegex.exec(line)) !== null) {
+            if (match.index <= position && position <= match.index + match[0].length) {
+                return match[1] || match[3] || null;
+            }
+        }
+        
+        return null;
     }
 
     private registerContextMenuHandler() {
@@ -463,8 +462,10 @@ export default class ModalOpenerPlugin extends Plugin {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
                 link = currentFilePath + link;
             }
+            const [linkWithoutAlias] = link.split('|');
 
-            const [filePath, fragment] = link.split(/[#]/);
+            // 然后分割文件路径和片段
+            const [filePath, fragment] = linkWithoutAlias.split('#');
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
             let file: TFile | undefined;
 
@@ -994,14 +995,51 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private isSupportElement(target: HTMLElement): boolean {
+    private isPreviewModeLink(target: HTMLElement): boolean {
         return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content')
             || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button");
     }
 
-    private getLinkFromTarget(target: HTMLElement): string {
+    private getPreviewModeLinkText(target: HTMLElement): string {
         return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+    }
+
+    private isEditModeLink(target: HTMLElement): boolean {
+        return target.classList.contains('cm-hmd-internal-link') ||
+                target.classList.contains('cm-link') ||
+                target.classList.contains('cm-url') ||
+                target.classList.contains('cm-underline')||
+                target.classList.contains('cm-link-alias');
+    }
+    
+    private getEditModeLinkText(target: HTMLElement): string {
+        let linkText = '';
+        let currentElement: HTMLElement | null = target;
+    
+        // 向前查找链接的其他部分
+        while (currentElement && this.isEditModeLink(currentElement)) {
+            linkText = currentElement.textContent + linkText;
+            currentElement = currentElement.previousElementSibling as HTMLElement;
+        }
+    
+        // 向后查找链接的其他部分
+        currentElement = target.nextElementSibling as HTMLElement;
+        while (currentElement && this.isEditModeLink(currentElement)) {
+            linkText += currentElement.textContent;
+            currentElement = currentElement.nextElementSibling as HTMLElement;
+        }
+    
+        // 处理 Markdown 格式的外部链接
+        const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        if (markdownLinkMatch) {
+            return markdownLinkMatch[2]; // 返回链接 URL
+        }
+    
+        // 处理内部链接
+        linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
+    
+        return linkText;
     }
 
     private isValidURL = (url: string) => 

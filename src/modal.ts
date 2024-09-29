@@ -1,6 +1,5 @@
 import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Scope, requestUrl, RequestUrlResponse } from "obsidian";
 import ModalOpenerPlugin from "./main";
-import tr from "./lang/locale/tr";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -136,6 +135,22 @@ export class ModalWindow extends Modal {
         const { contentEl } = this;
         contentEl.empty();
         // document.body.removeClass('modal-tab-header-hidden');
+
+        // 检查是否所有模态窗口都已关闭
+        if (document.querySelectorAll('.modal-opener').length === 0) {
+            setTimeout(() => {
+                this.exitMultiCursorMode();
+            }, 100);
+        }
+    }
+
+    private exitMultiCursorMode() {
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.editor) {
+            const editor = activeView.editor;
+            const cursor = editor.getCursor();
+            editor.setCursor(cursor);
+        }
     }
 
     private handleActiveLeafChange() {
