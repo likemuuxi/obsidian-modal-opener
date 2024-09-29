@@ -1,6 +1,7 @@
 // English
 export default {
   "No active modal window":"No active modal window",
+  "No link found at cursor position":"No link found at cursor position",
 
   "Create and edit in modal":"Create and edit in modal",
   "Enter new file name": "Enter new file name: ",
@@ -9,7 +10,7 @@ export default {
   
   "Unsupported file or link format": "Unsupported file or link format",
   "Drag duration too short": "Drag duration too short",
-  "The file does not exist: ": "The file does not exist: ",
+  "The file or link does not exist: ": "The file or link does not exist: ",
   "Open in modal window error": "Open in modal window error",
   "Open in modal window": "Open in modal window",
   // General settings

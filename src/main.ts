@@ -240,12 +240,11 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private handlePreviewModeLink(evt: MouseEvent) {
         const target = evt.target as HTMLElement;
-        if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
+        if (this.isPreviewModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
-
-            const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : this.getPreviewModeLinkText(target);
-
+            const link = this.getPreviewModeLinkText(target);
+            
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -258,6 +257,26 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
+    // private handlePreviewModeLink(evt: MouseEvent) {
+    //     const target = evt.target as HTMLElement;
+    //     if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
+    //         evt.preventDefault();
+    //         evt.stopImmediatePropagation();
+
+    //         const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : this.getPreviewModeLinkText(target);
+
+    //         const isFolderLink = target.classList.contains('has-folder-note');
+    //         const app = this.app as any;
+    //         const folderPlugin = app.plugins.plugins["folder-notes"];
+            
+    //         if (!folderPlugin || !isFolderLink) {
+    //             this.openInFloatPreview(link);
+    //         } else {
+    //             this.folderNoteOpenInFloatPreview(link);
+    //         }
+    //     }
+    // }
+
     private handleEditModeLink(editor: Editor) {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
@@ -266,7 +285,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (linkMatch) {
             this.openInFloatPreview(linkMatch);
         } else {
-            new Notice("No link found at cursor position");
+            new Notice(t("No link found at cursor position"));
         }
     }
     
@@ -274,7 +293,8 @@ export default class ModalOpenerPlugin extends Plugin {
         this.middleClickHandler = (evt: MouseEvent) => {
             if (evt.button === 1) {
                 const target = evt.target as HTMLElement;
-                if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
+                // if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
+                if (this.isPreviewModeLink(target)) {
                     evt.preventDefault();
                     evt.stopPropagation();
                     this.handlePreviewModeLink(evt);
@@ -292,13 +312,31 @@ export default class ModalOpenerPlugin extends Plugin {
     
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
-                    if (activeView.getMode() === 'source') {
-                        // 编辑模式
-                        this.handleEditModeLink(activeView.editor);
+                    // 从点击的元素开始，向上查找 .view-content 类
+                    let targetElement = evt.target as HTMLElement;
+                    let isInViewContent = false;
+                    while (targetElement && targetElement !== document.body) {
+                        if (targetElement.classList.contains('view-content')) {
+                            isInViewContent = true;
+                            break;
+                        }
+                        if (targetElement && targetElement.parentElement) {
+                            targetElement = targetElement.parentElement;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (isInViewContent) {
+                        if (activeView.getMode() === 'source') {
+                            this.handleEditModeLink(activeView.editor);
+                        } else {
+                            this.handlePreviewModeLink(evt);
+                        }
                     } else {
-                        // 阅读模式
                         this.handlePreviewModeLink(evt);
                     }
+                } else {
+                    this.handlePreviewModeLink(evt);
                 }
             }
         };
@@ -477,7 +515,7 @@ export default class ModalOpenerPlugin extends Plugin {
             
             // 检测文件是否存在
             if (!file && !this.isValidURL(link)) {
-                new Notice(t("The file does not exist: ") + filePath);
+                new Notice(t("The file or link does not exist: ") + filePath);
                 return;
             }
 
@@ -1005,42 +1043,42 @@ export default class ModalOpenerPlugin extends Plugin {
         return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
     }
 
-    private isEditModeLink(target: HTMLElement): boolean {
-        return target.classList.contains('cm-hmd-internal-link') ||
-                target.classList.contains('cm-link') ||
-                target.classList.contains('cm-url') ||
-                target.classList.contains('cm-underline')||
-                target.classList.contains('cm-link-alias');
-    }
+    // private isEditModeLink(target: HTMLElement): boolean {
+    //     return target.classList.contains('cm-hmd-internal-link') ||
+    //             target.classList.contains('cm-link') ||
+    //             target.classList.contains('cm-url') ||
+    //             target.classList.contains('cm-underline')||
+    //             target.classList.contains('cm-link-alias');
+    // }
     
-    private getEditModeLinkText(target: HTMLElement): string {
-        let linkText = '';
-        let currentElement: HTMLElement | null = target;
+    // private getEditModeLinkText(target: HTMLElement): string {
+    //     let linkText = '';
+    //     let currentElement: HTMLElement | null = target;
     
-        // 向前查找链接的其他部分
-        while (currentElement && this.isEditModeLink(currentElement)) {
-            linkText = currentElement.textContent + linkText;
-            currentElement = currentElement.previousElementSibling as HTMLElement;
-        }
+    //     // 向前查找链接的其他部分
+    //     while (currentElement && this.isEditModeLink(currentElement)) {
+    //         linkText = currentElement.textContent + linkText;
+    //         currentElement = currentElement.previousElementSibling as HTMLElement;
+    //     }
     
-        // 向后查找链接的其他部分
-        currentElement = target.nextElementSibling as HTMLElement;
-        while (currentElement && this.isEditModeLink(currentElement)) {
-            linkText += currentElement.textContent;
-            currentElement = currentElement.nextElementSibling as HTMLElement;
-        }
+    //     // 向后查找链接的其他部分
+    //     currentElement = target.nextElementSibling as HTMLElement;
+    //     while (currentElement && this.isEditModeLink(currentElement)) {
+    //         linkText += currentElement.textContent;
+    //         currentElement = currentElement.nextElementSibling as HTMLElement;
+    //     }
     
-        // 处理 Markdown 格式的外部链接
-        const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
-        if (markdownLinkMatch) {
-            return markdownLinkMatch[2]; // 返回链接 URL
-        }
+    //     // 处理 Markdown 格式的外部链接
+    //     const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
+    //     if (markdownLinkMatch) {
+    //         return markdownLinkMatch[2]; // 返回链接 URL
+    //     }
     
-        // 处理内部链接
-        linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
+    //     // 处理内部链接
+    //     linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
     
-        return linkText;
-    }
+    //     return linkText;
+    // }
 
     private isValidURL = (url: string) => 
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
