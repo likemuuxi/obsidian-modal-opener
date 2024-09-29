@@ -74,7 +74,7 @@ export class ModalWindow extends Modal {
         
         if (this.file) {
             // console.log("file", this.file);
-            await this.displayFileContent(this.file, this.fragment);
+            this.displayFileContent(this.file, this.fragment);
         } else {
             if (!this.link.startsWith('http://') && !this.link.startsWith('https://')) {
                 const httpsLink = `https://${this.link}`;

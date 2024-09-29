@@ -21,9 +21,12 @@ export default class ModalOpenerPlugin extends Plugin {
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
     private middleClickHandler: ((evt: MouseEvent) => void) | undefined;
+    private middleClickExecuteHandler: ((evt: MouseEvent) => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
+    private altClickExecuteHandler: ((evt: MouseEvent) => void) | undefined;
     private contextMenuListener: ((event: MouseEvent) => void) | undefined;
     private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
+
     private currentAnchor: string | null = null;
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
@@ -169,12 +172,12 @@ export default class ModalOpenerPlugin extends Plugin {
             this.dragHandler = undefined; // Clear reference
         }
         if (this.middleClickHandler) {
-            document.removeEventListener('auxclick', this.middleClickHandler, { capture: true });
-            this.middleClickHandler = undefined; // Clear reference
+            document.removeEventListener('mousedown', this.middleClickHandler, { capture: true });
+            this.middleClickHandler = undefined;
         }
         if (this.altClickHandler) {
-            document.removeEventListener('click', this.altClickHandler, { capture: true });
-            this.altClickHandler = undefined; // Clear reference
+            document.removeEventListener('mousedown', this.altClickHandler, { capture: true });
+            this.altClickHandler = undefined;
         }
         if (this.contextMenuListener) {
             document.removeEventListener('contextmenu', this.contextMenuListener);
@@ -235,12 +238,51 @@ export default class ModalOpenerPlugin extends Plugin {
         this.dragHandler();
     }
 
+    private isEditModeLink(target: HTMLElement): boolean {
+        return target.classList.contains('cm-hmd-internal-link') ||
+               target.classList.contains('cm-link') ||
+               target.classList.contains('cm-url') ||
+               target.classList.contains('cm-underline')||
+               target.classList.contains('cm-link-alias') ;
+    }
+    
+
+    private getEditModeLinkText(target: HTMLElement): string {
+        let linkText = '';
+        let currentElement: HTMLElement | null = target;
+    
+        // 向前查找链接的其他部分
+        while (currentElement && this.isEditModeLink(currentElement)) {
+            linkText = currentElement.textContent + linkText;
+            currentElement = currentElement.previousElementSibling as HTMLElement;
+        }
+    
+        // 向后查找链接的其他部分
+        currentElement = target.nextElementSibling as HTMLElement;
+        while (currentElement && this.isEditModeLink(currentElement)) {
+            linkText += currentElement.textContent;
+            currentElement = currentElement.nextElementSibling as HTMLElement;
+        }
+    
+        // 处理 Markdown 格式的外部链接
+        const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        if (markdownLinkMatch) {
+            return markdownLinkMatch[2]; // 返回链接 URL
+        }
+    
+        // 处理内部链接
+        linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
+    
+        return linkText;
+    }
+
     private handleLinkClick(evt: MouseEvent, linkGetter: (target: HTMLElement) => string) {
         const target = evt.target as HTMLElement;
-        if (this.isSupportElement(target)) {
+        if (this.isSupportElement(target) || this.isEditModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
-            const link = linkGetter(target);
+            const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : linkGetter(target);
+            console.log("Link clicked:", link);
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -252,15 +294,22 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     }
+    
+    
     private registerMouseMiddleClickHandler() {
         this.middleClickHandler = (evt: MouseEvent) => {
             if (evt.button === 1) {
-                this.handleLinkClick(evt, this.getLinkFromTarget);
+                const target = evt.target as HTMLElement;
+                if (this.isSupportElement(target) || this.isEditModeLink(target)) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    this.handleLinkClick(evt, this.getLinkFromTarget);
+                }
             }
         };
-        document.addEventListener('auxclick', this.middleClickHandler, { capture: true });
+        document.addEventListener('mousedown', this.middleClickHandler, { capture: true });
     }
-    
+
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
