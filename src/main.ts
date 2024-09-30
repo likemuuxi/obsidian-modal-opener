@@ -93,33 +93,29 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerOpenHandler();
         this.registerCustomCommands();
     }
-
     private openContentInModal(shouldDetach: boolean = false) {
         const currentFile = this.app.workspace.getActiveFile()?.path || '';
         const file = this.app.vault.getAbstractFileByPath(currentFile);
-        if (!(file instanceof TFile)) {
-            return;
-        }
-        
         const activeLeaf = this.app.workspace.getLeaf(false);
+    
         if (!activeLeaf) {
             return;
         }
-        
+
         const surfPlugin = (this.app as any).plugins.plugins["surfing"];
         const frameSelector = surfPlugin ? '.wb-frame' : 'iframe';
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
-        
+
         new ModalWindow(
             this,
             linkValue,
-            file,
+            file instanceof TFile ? file : undefined,
             "",
             this.settings.modalWidth,
             this.settings.modalHeight
         ).open();
-        
+
         if (shouldDetach) {
             activeLeaf.detach();
         }
