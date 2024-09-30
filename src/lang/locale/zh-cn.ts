@@ -16,7 +16,7 @@ export default {
     // General settings
     'Open with':'打开方式',
     'Drag & Drop':'拖拽（仅阅读视图）',
-    'Middle mouse button':'鼠标中键（仅阅读视图）',
+    // 'Middle mouse button':'鼠标中键（仅阅读视图）',
     'Alt & Left click':'Alt＋左键',
     'Both':'全部',
 

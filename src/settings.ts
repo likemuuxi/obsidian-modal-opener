@@ -3,7 +3,8 @@ import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
 export interface ModalOpenerPluginSettings {
-	openMethod: "drag" | "middle" | "altclick" | "both";
+	// openMethod: "drag" | "middle" | "altclick" | "both";
+	openMethod: "drag" | "altclick" | "both";
 	fileOpenMode: 'current' | 'source' | 'preview';
 	modalWidth: string;
 	modalHeight: string;
@@ -93,10 +94,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.addDropdown((dd) => dd
 					.addOption("both", t("Both"))
 					.addOption("drag", t("Drag & Drop"))
-					.addOption("middle", t("Middle mouse button"))
+					// .addOption("middle", t("Middle mouse button"))
 					.addOption("altclick", t("Alt & Left click"))
 					.setValue(this.plugin.settings.openMethod)
-					.onChange(async (value: "drag" | "middle" | "altclick" | "both") => { // 更新类型
+					// .onChange(async (value: "drag" | "middle" | "altclick" | "both") => {
+					.onChange(async (value: "drag" | "altclick" | "both") => {
 						this.plugin.settings.openMethod = value;
 						await this.plugin.saveSettings();
 						await this.reloadPlugin();

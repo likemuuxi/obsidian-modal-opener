@@ -16,7 +16,7 @@ export default {
   // General settings
   'Open with':'Open with',
   'Drag & Drop':'Drag & Drop(Only reading view)',
-  'Middle mouse button':'Middle mouse button(Only reading view)',
+  // 'Middle mouse button':'Middle mouse button(Only reading view)',
   'Alt & Left click':'Alt & Left click',
   'Both':'Both',
 

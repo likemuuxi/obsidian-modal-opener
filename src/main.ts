@@ -13,33 +13,26 @@ export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     id: string;
     pinned: boolean;
     parent: { id: string };
-  };
+};
 
 export default class ModalOpenerPlugin extends Plugin {
     settings: ModalOpenerPluginSettings;
     private draggedLink: string | null = null;
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
-    private middleClickHandler: ((evt: MouseEvent) => void) | undefined;
-    private middleClickExecuteHandler: ((evt: MouseEvent) => void) | undefined;
+    // private middleClickHandler: ((evt: MouseEvent) => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
-    private altClickExecuteHandler: ((evt: MouseEvent) => void) | undefined;
-    private contextMenuListener: ((event: MouseEvent) => void) | undefined;
-    private mouseHoverListener: ((event: MouseEvent) => void) | undefined;
 
-    private currentAnchor: string | null = null;
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
-    private hoverDebounceTimer: NodeJS.Timeout | null = null;
-    private linkCache: Map<HTMLElement, string> = new Map();
+
 
     async onload() {
         await this.loadSettings();
 
         this.registerOpenHandler();
         this.registerContextMenuHandler();
-        this.setupHoverListener();
-        this.setupContextMenuListener();
+        
         this.applyStyles();
         this.registerCustomCommands();
         this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
@@ -89,9 +82,6 @@ export default class ModalOpenerPlugin extends Plugin {
 
     onunload() {
         this.removeEventListeners();
-        if (this.hoverDebounceTimer) {
-            clearTimeout(this.hoverDebounceTimer);
-        }
     }
 
     async loadSettings() {
@@ -171,21 +161,13 @@ export default class ModalOpenerPlugin extends Plugin {
             document.removeEventListener('dragend', this.dragHandler);
             this.dragHandler = undefined; // Clear reference
         }
-        if (this.middleClickHandler) {
-            document.removeEventListener('mousedown', this.middleClickHandler, { capture: true });
-            this.middleClickHandler = undefined;
-        }
+        // if (this.middleClickHandler) {
+        //     document.removeEventListener('mousedown', this.middleClickHandler, { capture: true });
+        //     this.middleClickHandler = undefined;
+        // }
         if (this.altClickHandler) {
             document.removeEventListener('click', this.altClickHandler, { capture: true });
             this.altClickHandler = undefined;
-        }
-        if (this.contextMenuListener) {
-            document.removeEventListener('contextmenu', this.contextMenuListener);
-            this.contextMenuListener = undefined; // Clear reference
-        }
-        if (this.mouseHoverListener) {
-            document.removeEventListener('mouseover', this.mouseHoverListener);
-            this.mouseHoverListener = undefined; // Clear reference
         }
     }
 
@@ -197,9 +179,9 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.settings.openMethod === "drag" || this.settings.openMethod === "both") {
             this.registerDragHandler();
         }
-        if (this.settings.openMethod === "middle" || this.settings.openMethod === "both") {
-            this.registerMouseMiddleClickHandler();
-        }
+        // if (this.settings.openMethod === "middle" || this.settings.openMethod === "both") {
+        //     this.registerMouseMiddleClickHandler();
+        // }
         if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
             this.registerAltClickHandler();
         }
@@ -289,20 +271,20 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
     
-    private registerMouseMiddleClickHandler() {
-        this.middleClickHandler = (evt: MouseEvent) => {
-            if (evt.button === 1) {
-                const target = evt.target as HTMLElement;
-                // if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
-                if (this.isPreviewModeLink(target)) {
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    this.handlePreviewModeLink(evt);
-                }
-            }
-        };
-        document.addEventListener('mousedown', this.middleClickHandler, { capture: true });
-    }
+    // private registerMouseMiddleClickHandler() {
+    //     this.middleClickHandler = (evt: MouseEvent) => {
+    //         if (evt.button === 1) {
+    //             const target = evt.target as HTMLElement;
+    //             // if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
+    //             if (this.isPreviewModeLink(target)) {
+    //                 evt.preventDefault();
+    //                 evt.stopPropagation();
+    //                 this.handlePreviewModeLink(evt);
+    //             }
+    //         }
+    //     };
+    //     document.addEventListener('mousedown', this.middleClickHandler, { capture: true });
+    // }
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
@@ -332,19 +314,6 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
-    }
-    
-    private findLinkAtPosition(line: string, position: number): string | null {
-        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)/g;
-        let match;
-        
-        while ((match = linkRegex.exec(line)) !== null) {
-            if (match.index <= position && position <= match.index + match[0].length) {
-                return match[1] || match[3] || null;
-            }
-        }
-        
-        return null;
     }
 
     private registerContextMenuHandler() {
@@ -403,7 +372,29 @@ export default class ModalOpenerPlugin extends Plugin {
     private addFileFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
-                this.openInFloatPreview(this.currentAnchor || link);
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (activeView && activeView.getMode() === 'source') {
+                    const editor = activeView.editor;
+                    const cursor = editor.getCursor();
+                    const line = editor.getLine(cursor.line);
+                    const foundLink = this.findLinkAtPosition(line, cursor.ch);
+                    console.log("foundLink", foundLink);
+                    if (foundLink) {
+                        this.openInFloatPreview(foundLink);
+                    } else {
+                        this.openInFloatPreview(link);
+                    }
+                } else {
+                    const selection = window.getSelection();
+                    if (selection && selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        const linkElement = range.startContainer.parentElement?.closest('a') as HTMLAnchorElement;
+                        if (linkElement) {
+                            link = linkElement.getAttribute('data-href') || linkElement.getAttribute('href') || link;
+                            this.openInFloatPreview(link);
+                        }
+                    }
+                }
             }
         });
     }
@@ -422,65 +413,6 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.openInFloatPreview(link);
             }
         });
-    }
-
-    
-    private setupHoverListener() {
-        this.registerDomEvent(document, 'mouseover', this.debouncedHoverHandler.bind(this));
-    }
-
-    private debouncedHoverHandler(event: MouseEvent) {
-        if (this.hoverDebounceTimer) {
-            clearTimeout(this.hoverDebounceTimer);
-        }
-        this.hoverDebounceTimer = setTimeout(() => {
-            this.handleHover(event);
-        }, 100); // 100ms 延迟
-    }
-
-    private handleHover(event: MouseEvent) {
-        const target = event.target as HTMLElement;
-        if (target.matches('.cn-hmd-internal-link, .cm-hmd-internal-link, .cm-link-alias, .cm-link-alias-pipe')) {
-            if (this.linkCache.has(target)) {
-                this.currentAnchor = this.linkCache.get(target)!;
-                return;
-            }
-
-            let linkText = this.extractLinkText(target);
-            this.linkCache.set(target, linkText);
-            this.currentAnchor = linkText;
-        }
-    }
-
-    private extractLinkText(element: HTMLElement): string {
-        let linkText = '';
-        let currentElement: HTMLElement | null = element;
-        while (currentElement && 
-                (currentElement.matches('.cn-hmd-internal-link') ||
-                currentElement.matches('.cm-hmd-internal-link') ||
-                currentElement.matches('.cm-link-alias-pipe') ||
-                currentElement.matches('.cm-link-alias'))) {
-            linkText = currentElement.innerText + linkText;
-            currentElement = currentElement.previousElementSibling as HTMLElement;
-        }
-        if (linkText.includes('|')) {
-            linkText = linkText.split('|')[0];
-        }
-        return linkText;
-    }
-
-    private setupContextMenuListener() {
-        // Create a context menu listener
-        this.contextMenuListener = (event: MouseEvent) => {
-            const target = (event.target as HTMLElement).closest('a[data-href]');
-            if (target) {
-                this.currentAnchor = target.getAttribute('data-href') || target.getAttribute('href') || '';
-            } else {
-                this.currentAnchor = null;
-            }
-        };
-
-        document.addEventListener('contextmenu', this.contextMenuListener);
     }
 
     private async openInFloatPreview(link: string) {
@@ -519,7 +451,6 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.settings.modalWidth,
                 this.settings.modalHeight
             ).open();
-            this.currentAnchor = null;
         } catch (error) {
             new Notice(t("Open in modal window error"));
         }
@@ -1070,6 +1001,19 @@ export default class ModalOpenerPlugin extends Plugin {
     
     //     return linkText;
     // }
+
+    private findLinkAtPosition(line: string, position: number): string | null {
+        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)/g;
+        let match;
+        
+        while ((match = linkRegex.exec(line)) !== null) {
+            if (match.index <= position && position <= match.index + match[0].length) {
+                return match[1] || match[3] || null;
+            }
+        }
+        
+        return null;
+    }
 
     private isValidURL = (url: string) => 
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
