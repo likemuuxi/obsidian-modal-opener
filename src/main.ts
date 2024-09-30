@@ -999,12 +999,14 @@ export default class ModalOpenerPlugin extends Plugin {
     // }
 
     private findLinkAtPosition(line: string, position: number): string | null {
-        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)/g;
+        // 匹配内部链接、Markdown 链接和普通 URL
+        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)/g;
         let match;
         
         while ((match = linkRegex.exec(line)) !== null) {
             if (match.index <= position && position <= match.index + match[0].length) {
-                return match[1] || match[3] || null;
+                // 返回内部链接、Markdown 链接的 URL，或直接的 URL
+                return match[1] || match[3] || match[4] || null;
             }
         }
         
