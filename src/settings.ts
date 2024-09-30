@@ -123,11 +123,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.setDesc(t('Select the default mode for opening files in the modal window'))
 			.addDropdown(dropdown => dropdown
 				.addOption('current', t('Current file'))
-				.addOption('source', t('Edit'))
-				.addOption('preview', t('Preview'))
+				.addOption('preview', t('Reading'))
+				.addOption('source', t('Editing'))
 				.setValue(this.plugin.settings.fileOpenMode)
 				.onChange(async (value) => {
-					this.plugin.settings.fileOpenMode = value as 'default' | 'source' | 'preview';
+					this.plugin.settings.fileOpenMode = value as 'default' | 'preview' | 'source';
 					await this.plugin.saveSettings();
 				}));
 

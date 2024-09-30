@@ -15,16 +15,17 @@ export default {
     "Open in modal window": "在模态窗口中打开",
     // General settings
     'Open with':'打开方式',
-    'Drag & Drop':'拖拽',
+    'Drag & Drop':'拖拽（仅阅读视图）',
+    'Middle mouse button':'鼠标中键（仅阅读视图）',
     'Alt & Left click':'Alt＋左键',
-    'Middle mouse button':'鼠标中键',
     'Both':'全部',
 
     'Default editing mode':'默认编辑模式',
     'Select the default mode for opening files in the modal window':'选择打开文件的默认模式',
     'Current file':'当前文件',
-    'Edit':'编辑模式',
-    'Preview':'阅读模式',
+    'Reading':'阅读模式',
+    'Editing':'编辑模式',
+ 
 
     "Drag and drop time threshold":'拖拽时间阈值',
     "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'设置触发链接打开的最小拖放时间（以毫秒为单位）',

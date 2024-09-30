@@ -176,7 +176,7 @@ export default class ModalOpenerPlugin extends Plugin {
             this.middleClickHandler = undefined;
         }
         if (this.altClickHandler) {
-            document.removeEventListener('mousedown', this.altClickHandler, { capture: true });
+            document.removeEventListener('click', this.altClickHandler, { capture: true });
             this.altClickHandler = undefined;
         }
         if (this.contextMenuListener) {
@@ -281,7 +281,7 @@ export default class ModalOpenerPlugin extends Plugin {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
-        
+
         if (linkMatch) {
             this.openInFloatPreview(linkMatch);
         } else {
@@ -314,29 +314,20 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (activeView) {
                     // 从点击的元素开始，向上查找 .view-content 类
                     let targetElement = evt.target as HTMLElement;
-                    let isInViewContent = false;
-                    while (targetElement && targetElement !== document.body) {
-                        if (targetElement.classList.contains('view-content')) {
-                            isInViewContent = true;
-                            break;
-                        }
-                        if (targetElement && targetElement.parentElement) {
-                            targetElement = targetElement.parentElement;
-                        } else {
-                            break;
-                        }
-                    }
-                    if (isInViewContent) {
+
+                    if (targetElement.classList.contains('view-header-breadcrumb')) {
+                        this.handlePreviewModeLink(evt);
+                    } else {
                         if (activeView.getMode() === 'source') {
-                            this.handleEditModeLink(activeView.editor);
+                            if (targetElement.classList.contains('internal-link')) {
+                                this.handlePreviewModeLink(evt);
+                            } else {
+                                this.handleEditModeLink(activeView.editor);
+                            }
                         } else {
                             this.handlePreviewModeLink(evt);
                         }
-                    } else {
-                        this.handlePreviewModeLink(evt);
                     }
-                } else {
-                    this.handlePreviewModeLink(evt);
                 }
             }
         };

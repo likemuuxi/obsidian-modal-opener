@@ -15,16 +15,17 @@ export default {
   "Open in modal window": "Open in modal window",
   // General settings
   'Open with':'Open with',
-  'Drag & Drop':'Drag & Drop',
+  'Drag & Drop':'Drag & Drop(Only reading view)',
+  'Middle mouse button':'Middle mouse button(Only reading view)',
   'Alt & Left click':'Alt & Left click',
-  'Middle mouse button':'Middle mouse button',
   'Both':'Both',
 
   'Default editing mode':'Default editing mode',
   'Select the default mode for opening files in the modal window':'Select the default mode for opening files in the modal window',
   'Current file':'Current file',
-  'Edit':'Edit',
-  'Preview':'Preview',
+  'Reading':'Reading',
+  'Editing':'Editing',
+
 
   "Drag and drop time threshold":'Drag and drop time threshold',
   "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'Set the minimum drag and drop time (in milliseconds) to trigger the link to open',
@@ -54,7 +55,7 @@ export default {
 
   'Custom commands':'Custom commands',
   'Add custom command':'Add custom command',
-  'Add a new custom command':'Commands can be used with other plug-ins, such as Commander',
+  'Add a new custom command':'Commands can be used with other plugins, such as Commander',
   'Add':'Add',
   'Command name':'Input the command name',
   'Command':'Command',
