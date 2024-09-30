@@ -11,6 +11,7 @@ export default {
     "Unsupported file or link format": "不支持的文件或链接格式",
     "Drag duration too short": "拖拽时间太短",
     "The file does not exist: ": "文件或链接不存在: ",
+    "Failed to create file: ": "创建文件失败: ",
     "Open in modal window error": "在模态窗口中打开错误",
     "Open in modal window": "在模态窗口中打开",
     // General settings

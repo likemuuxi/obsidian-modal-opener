@@ -11,6 +11,7 @@ export default {
   "Unsupported file or link format": "Unsupported file or link format",
   "Drag duration too short": "Drag duration too short",
   "The file or link does not exist: ": "The file or link does not exist: ",
+  "Failed to create file: ": "Failed to create file: ",
   "Open in modal window error": "Open in modal window error",
   "Open in modal window": "Open in modal window",
   // General settings

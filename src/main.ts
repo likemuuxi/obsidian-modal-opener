@@ -854,7 +854,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
             this.insertLinkToActiveFile(newFilePath, displayName, isEmbed);
         } catch (error) {
-            new Notice(`Failed to create file: ${error.message}`);
+            new Notice(t("Failed to create file: ") + error.message);
         }
     }
 
