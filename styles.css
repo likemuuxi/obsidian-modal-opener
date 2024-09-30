@@ -2,6 +2,18 @@
     display: none !important;
 } */
 
+.modal-bg.modal-opener-bg.closable {
+    cursor: pointer;
+}
+
+.modal-bg.modal-opener-bg:not(.closable) {
+    pointer-events: none;
+}
+
+.modal.modal-opener {
+    pointer-events: auto;
+}
+
 .modal-iframe {
     width: 100%;
     height: 98%;
