@@ -293,15 +293,11 @@ export default class ModalOpenerPlugin extends Plugin {
                     // 从点击的元素开始，向上查找 .view-content 类
                     let targetElement = evt.target as HTMLElement;
 
-                    if (targetElement.classList.contains('view-header-breadcrumb') || targetElement.classList.contains('metadata-link-inner')) {
+                    if (this.isPreviewModeLink(evt.target as HTMLElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
                         if (activeView.getMode() === 'source') {
-                            if (targetElement.classList.contains('internal-link')) {
-                                this.handlePreviewModeLink(evt);
-                            } else {
-                                this.handleEditModeLink(activeView.editor);
-                            }
+                            this.handleEditModeLink(activeView.editor);
                         } else {
                             this.handlePreviewModeLink(evt);
                         }
@@ -954,7 +950,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private isPreviewModeLink(target: HTMLElement): boolean {
         return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
-            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button");
+            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb');
     }
 
     private getPreviewModeLinkText(target: HTMLElement): string {
