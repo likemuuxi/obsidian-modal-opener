@@ -93,8 +93,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.setName(t("Open with"))
 			.addDropdown((dd) => dd
 					.addOption("both", t("Both"))
-					.addOption("drag", t("Drag & Drop"))
 					// .addOption("middle", t("Middle mouse button"))
+					.addOption("drag", t("Drag & Drop"))
 					.addOption("altclick", t("Alt & Left click"))
 					.setValue(this.plugin.settings.openMethod)
 					// .onChange(async (value: "drag" | "middle" | "altclick" | "both") => {
@@ -147,26 +147,26 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-		.setName(t('Prevents duplicate tabs'))
-		.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)'))
-		.addToggle(toggle => toggle
-			.setValue(this.plugin.settings.preventsDuplicateTabs)
-			.onChange(async (value) => {
-			this.plugin.settings.preventsDuplicateTabs = value;
-			await this.plugin.saveSettings();
-			}));
+			.setName(t('Prevents duplicate tabs'))
+			.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.preventsDuplicateTabs)
+				.onChange(async (value) => {
+					this.plugin.settings.preventsDuplicateTabs = value;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl)
-		.setName(t('Delay time'))
-		.setDesc(t('Delay in milliseconds before performing operations'))
-		.addSlider(slider => slider
-			.setLimits(100, 500, 100)
-			.setValue(this.plugin.settings.delayInMs)
-			.setDynamicTooltip()
-			.onChange(async (value) => {
-			this.plugin.settings.delayInMs = value;
-			await this.plugin.saveSettings();
-			}));
+			.setName(t('Delay time'))
+			.setDesc(t('Delay in milliseconds before performing operations'))
+			.addSlider(slider => slider
+				.setLimits(100, 500, 100)
+				.setValue(this.plugin.settings.delayInMs)
+				.setDynamicTooltip()
+				.onChange(async (value) => {
+					this.plugin.settings.delayInMs = value;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
@@ -200,7 +200,19 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.enableAnimation = value;
 					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
 				}));
+
+		new Setting(containerEl)
+			.setName(t('Show metadata'))
+			.setDesc(t('Show file metadata in the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showMetadata)
+				.onChange(async (value) => {
+					this.plugin.settings.showMetadata = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+			}));
 
 		new Setting(containerEl)
 			.setName(t('Show view header of the file'))
@@ -220,17 +232,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.showLinkViewHeader)
 				.onChange(async (value) => {
 					this.plugin.settings.showLinkViewHeader = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				}));
-
-		new Setting(containerEl)
-			.setName(t('Show metadata'))
-			.setDesc(t('Show file metadata in the modal window'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.showMetadata)
-				.onChange(async (value) => {
-					this.plugin.settings.showMetadata = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));

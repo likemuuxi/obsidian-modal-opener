@@ -37,13 +37,6 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
         this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
 
-        // 监听设置变化
-        this.registerEvent(
-            this.app.workspace.on('layout-change', () => {
-                this.applyStyles();
-            })
-        );
-
         this.app.workspace.onLayoutReady(() => {
             this.registerEvent(
                 this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this))
@@ -868,7 +861,7 @@ export default class ModalOpenerPlugin extends Plugin {
     // no dupe leaf
     private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
         if (!this.settings.preventsDuplicateTabs || activeLeaf.view.containerEl.closest('.modal-opener')) {
-            return; // 如果如果功能未启用，直接返回或是模态窗口，不处理
+            return;
         }
 
         const { id } = activeLeaf;
