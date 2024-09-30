@@ -35,7 +35,7 @@ export default {
 
     'Behavior':'行为',
     'Prevents duplicate tabs':'防止重复标签页',
-    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
+    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
     'Delay time':'延迟时间',
     'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
 

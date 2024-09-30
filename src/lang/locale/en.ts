@@ -35,7 +35,7 @@ export default {
 
   'Behavior':'Behavior',
   'Prevents duplicate tabs':'Prevents duplicate tabs',
-  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
+  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
   'Delay time':'Delay time',
   'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
 

@@ -148,7 +148,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t('Prevents duplicate tabs'))
-			.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin)'))
+			.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.preventsDuplicateTabs)
 				.onChange(async (value) => {
