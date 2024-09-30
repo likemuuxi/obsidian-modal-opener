@@ -193,6 +193,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(t('Hide tab header'))
+			.setDesc(t('Hides the tab header associated with the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideTabHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.hideTabHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				}));
+
+		new Setting(containerEl)
 			.setName(t('Enable animation and blur'))
 			.setDesc(t('Toggle to enable or disable animation and blur effects'))
 			.addToggle(toggle => toggle
@@ -232,17 +243,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.showLinkViewHeader)
 				.onChange(async (value) => {
 					this.plugin.settings.showLinkViewHeader = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				}));
-
-		new Setting(containerEl)
-			.setName(t('Hide tab header'))
-			.setDesc(t('Hides the tab header associated with the modal window'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideTabHeader)
-				.onChange(async (value) => {
-					this.plugin.settings.hideTabHeader = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
