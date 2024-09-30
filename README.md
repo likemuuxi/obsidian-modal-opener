@@ -25,13 +25,13 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 
 - Reading mode
 
-  - Right click menu
   - Drag and drop
-  - Middle mouse button
+  - Right click menu
   - `alt` + Left mouse button
 - Edit mode
 
   - Right click menu
+  - `alt` + Left mouse button
 
 # 🪒How to install
 
