@@ -43,6 +43,12 @@ export class ModalWindow extends Modal {
         }
     }
 
+    private handleBackgroundClick = (event: MouseEvent) => {
+        if (event.target === event.currentTarget) {
+            this.close();
+        }
+    }
+
     async onOpen() {
         if (!this.contentEl) {
             return;
@@ -50,18 +56,14 @@ export class ModalWindow extends Modal {
 
         this.containerEl.addEventListener('click', this.handleInternalLinkClick, true);
 
-        const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg") as HTMLElement;
+        const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg");
         if (modalBgElement) {
-            modalBgElement.addEventListener("click", (event) => {
-                if (this.plugin.settings.onlyCloseButton) {
-                    if (event.target === modalBgElement) {
-                        event.stopImmediatePropagation();
-                        event.preventDefault();
-                    }
-                } else {
-                    this.close();
-                }
-            }, true);
+            if (this.plugin.settings.onlyCloseButton) {
+                modalBgElement.classList.remove('closable');
+            } else {
+                modalBgElement.classList.add('closable');
+                modalBgElement.addEventListener('click', this.handleBackgroundClick);
+            }
         }
 
         // Modal Size
@@ -114,6 +116,11 @@ export class ModalWindow extends Modal {
     }
 
     onClose() {
+        const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg");
+        if (modalBgElement) {
+            modalBgElement.removeEventListener('click', this.handleBackgroundClick);
+        }
+
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
