@@ -3,7 +3,7 @@
 	"name": "Modal Opener",
 	"version": "0.6.6",
 	"minAppVersion": "1.0.0",
-	"description": "Uses modal windows to open files and links.",
+	"description": "Open files and links in modal windows, or create and edit compatible files in modal windows.",
 	"author": "Muuxi",
 	"authorUrl": "https://github.com/likemuuxi",
 	"isDesktopOnly": false
