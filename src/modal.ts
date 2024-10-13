@@ -181,7 +181,10 @@ export class ModalWindow extends Modal {
         let scrollPosition: any;
         if (view.getMode() === "preview") {
             scrollPosition = view.previewMode.getScroll();
-            view.previewMode.rerender(true);
+            // refresh the previewView.
+            setTimeout(() => {
+                view.previewMode.rerender(true);
+            }, 100);
         } else if (view.getMode() === "source") {
             const editView = view.currentMode;
             if (editView && typeof editView.getScroll === 'function') {
@@ -189,31 +192,27 @@ export class ModalWindow extends Modal {
             } else if (view.editor) {
                 scrollPosition = view.editor.getScrollInfo();
             }
+            // refresh the editView.
+            const editor = view.editor;
+            const content = editor.getValue();
+            // 第一步：移除所有 ![[]] 中的感叹号
+            const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
+            editor.setValue(modifiedContent);
+            
+            // 第二步：重新添加感叹号到原本是 ![[]] 的链接
+            setTimeout(() => {
+                const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
+                    // 检查原始内容中是否存在 ![[p1]]
+                    return content.includes(`![[${p1}]]`) ? `![[${p1}]]` : `[[${p1}]]`;
+                });
+                editor.setValue(finalContent);
+                // 保持光标位置不变
+                const cursor = editor.getCursor();
+                editor.setCursor(cursor);
+            }, 100);
         }
 
-        // refresh the hostView.
-        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!activeView?.editor) return;
-        const editor = activeView.editor;
-        const content = editor.getValue();
-        
-        // 第一步：移除所有 ![[]] 中的感叹号
-        const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
-        editor.setValue(modifiedContent);
-        
-        // 第二步：重新添加感叹号到原本是 ![[]] 的链接
-        setTimeout(() => {
-            const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
-                // 检查原始内容中是否存在 ![[p1]]
-                return content.includes(`![[${p1}]]`) ? `![[${p1}]]` : `[[${p1}]]`;
-            });
-            editor.setValue(finalContent);
-            // 保持光标位置不变
-            const cursor = editor.getCursor();
-            editor.setCursor(cursor);
-        }, 300);
-
-        // 处理后滚动条回去
+        // 处理后滚动条滚动回去
         setTimeout(() => {
             const editView = view.currentMode;
             editView.applyScroll(scrollPosition);
