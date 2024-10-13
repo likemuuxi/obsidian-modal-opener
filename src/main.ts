@@ -210,12 +210,21 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private handlePreviewModeLink(evt: MouseEvent) {
-        const target = evt.target as HTMLElement;
+        let target = evt.target as HTMLElement;
+    
+        // 向上查找包含 'internal-embed' 类的父元素
+        if (target.classList.contains('canvas-minimap') 
+            || target.classList.contains('file-embed-title') 
+            || target.classList.contains('markdown-embed-link')
+            || target.closest('svg')) 
+        {
+            target = target.closest('.internal-embed') as HTMLElement || target;
+        }
+    
         if (this.isPreviewModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
             const link = this.getPreviewModeLinkText(target);
-            
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -227,26 +236,6 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     }
-
-    // private handlePreviewModeLink(evt: MouseEvent) {
-    //     const target = evt.target as HTMLElement;
-    //     if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
-    //         evt.preventDefault();
-    //         evt.stopImmediatePropagation();
-
-    //         const link = this.isEditModeLink(target) ? this.getEditModeLinkText(target) : this.getPreviewModeLinkText(target);
-
-    //         const isFolderLink = target.classList.contains('has-folder-note');
-    //         const app = this.app as any;
-    //         const folderPlugin = app.plugins.plugins["folder-notes"];
-            
-    //         if (!folderPlugin || !isFolderLink) {
-    //             this.openInFloatPreview(link);
-    //         } else {
-    //             this.folderNoteOpenInFloatPreview(link);
-    //         }
-    //     }
-    // }
 
     private handleEditModeLink(editor: Editor) {
         const cursor = editor.getCursor();
@@ -286,10 +275,19 @@ export default class ModalOpenerPlugin extends Plugin {
                     // 从点击的元素开始，向上查找 .view-content 类
                     let targetElement = evt.target as HTMLElement;
 
-                    if (this.isPreviewModeLink(evt.target as HTMLElement)) {
+                    // 调试信息：打印点击的元素和其类名
+                    // console.log("Clicked element:", targetElement);
+                    // console.log("Classes:", targetElement.classList);
+
+                    if (this.isPreviewModeLink(targetElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
                         if (activeView.getMode() === 'source') {
+                            // 适配markmind在编辑模式下嵌入视图的alt点击
+                            if (targetElement.closest('svg')) {
+                                this.handlePreviewModeLink(evt);
+                                return;
+                            }
                             this.handleEditModeLink(activeView.editor);
                         } else {
                             this.handlePreviewModeLink(evt);
@@ -300,6 +298,7 @@ export default class ModalOpenerPlugin extends Plugin {
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
+    
 
     private registerContextMenuHandler() {
         // Handle file menu
@@ -363,13 +362,13 @@ export default class ModalOpenerPlugin extends Plugin {
                     const cursor = editor.getCursor();
                     const line = editor.getLine(cursor.line);
                     const foundLink = this.findLinkAtPosition(line, cursor.ch);
-                    console.log("foundLink", foundLink);
+                    // console.log("foundLink", foundLink);
                     if (foundLink) {
                         this.openInFloatPreview(foundLink);
                     } else {
                         this.openInFloatPreview(link);
                     }
-                } else {
+                } else if (activeView && activeView.getMode() === 'preview') {
                     const selection = window.getSelection();
                     if (selection && selection.rangeCount > 0) {
                         const range = selection.getRangeAt(0);
@@ -379,6 +378,8 @@ export default class ModalOpenerPlugin extends Plugin {
                             this.openInFloatPreview(link);
                         }
                     }
+                } else {
+                    this.openInFloatPreview(link);
                 }
             }
         });
@@ -558,7 +559,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excel")
                         .setIcon("table")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("excel:excel-autocreate");
+                            await this.createFileAndInsertLink("excel:excel-autocreate", false);
                         })
                 );
             }
@@ -569,7 +570,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Sheet Plus")
                         .setIcon("grid")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation");
+                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", false);
                         })
                 );
             }
@@ -594,14 +595,14 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("MarkMind")
                         .setIcon("brain-circuit")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap");
+                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap", true);
                         })
                 );
             }
         });
     }
 
-    private async createFileAndInsertLink(commandId: string) {
+    private async createFileAndInsertLink(commandId: string, isEmbed: boolean) {
         // 保存当前活动编辑器的信息
         const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
     
@@ -623,7 +624,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (activeFile && previousEditor && previousCursor) {
             const fileName = activeFile.name;
             const filePath = activeFile.path;
-            const linkText = `[[${filePath}|${fileName}]]`;
+            const linkText = isEmbed ? `![[${filePath}|${fileName}]]` : `[[${filePath}|${fileName}]]`;
             
             if (previousView) {
                 this.app.workspace.setActiveLeaf(previousView.leaf, { focus: true });
@@ -752,8 +753,13 @@ export default class ModalOpenerPlugin extends Plugin {
             input.select();
     
             const select = inputContainer.createEl("select", { cls: 'new-file-select' });
-            select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
-            select.createEl("option", { text: t("Embed link"), value: "embed" });
+            if (fileType == "canvas") {
+                select.createEl("option", { text: t("Embed link"), value: "embed" });
+                select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
+            } else {
+                select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
+                select.createEl("option", { text: t("Embed link"), value: "embed" });
+            }
     
             const buttonContainer = container.createDiv({ cls: 'new-file-button-container' });
     
@@ -943,49 +949,21 @@ export default class ModalOpenerPlugin extends Plugin {
     private isPreviewModeLink(target: HTMLElement): boolean {
         return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
-            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb');
+            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb')
+            || target.classList.contains('internal-embed')
+            || target.classList.contains('file-embed-title')
+            || target.classList.contains('embed-title')
+            || target.classList.contains('markdown-embed-link')
+            || target.classList.contains('markdown-embed-content')
+            || target.classList.contains('canvas-minimap')
+            || target.classList.contains('excalidraw-svg')
+            || target.classList.contains('svg');
     }
 
     private getPreviewModeLinkText(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') 
+        || target.getAttribute('filesource') || target.getAttribute('src') || target.textContent?.trim() || '';
     }
-
-    // private isEditModeLink(target: HTMLElement): boolean {
-    //     return target.classList.contains('cm-hmd-internal-link') ||
-    //             target.classList.contains('cm-link') ||
-    //             target.classList.contains('cm-url') ||
-    //             target.classList.contains('cm-underline')||
-    //             target.classList.contains('cm-link-alias');
-    // }
-    
-    // private getEditModeLinkText(target: HTMLElement): string {
-    //     let linkText = '';
-    //     let currentElement: HTMLElement | null = target;
-    
-    //     // 向前查找链接的其他部分
-    //     while (currentElement && this.isEditModeLink(currentElement)) {
-    //         linkText = currentElement.textContent + linkText;
-    //         currentElement = currentElement.previousElementSibling as HTMLElement;
-    //     }
-    
-    //     // 向后查找链接的其他部分
-    //     currentElement = target.nextElementSibling as HTMLElement;
-    //     while (currentElement && this.isEditModeLink(currentElement)) {
-    //         linkText += currentElement.textContent;
-    //         currentElement = currentElement.nextElementSibling as HTMLElement;
-    //     }
-    
-    //     // 处理 Markdown 格式的外部链接
-    //     const markdownLinkMatch = linkText.match(/\[([^\]]+)\]\(([^)]+)\)/);
-    //     if (markdownLinkMatch) {
-    //         return markdownLinkMatch[2]; // 返回链接 URL
-    //     }
-    
-    //     // 处理内部链接
-    //     linkText = linkText.replace(/^\[*|\]*$/g, '').replace(/\|.*$/, '');
-    
-    //     return linkText;
-    // }
 
     private findLinkAtPosition(line: string, position: number): string | null {
         // 匹配内部链接、Markdown 链接和普通 URL

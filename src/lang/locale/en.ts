@@ -16,7 +16,7 @@ export default {
   "Open in modal window": "Open in modal window",
   // General settings
   'Open with':'Open with',
-  'Drag & Drop':'Drag & Drop(Only reading view)',
+  'Drag & Drop':'Drag & Drop',
   // 'Middle mouse button':'Middle mouse button(Only reading view)',
   'Alt & Left click':'Alt & Left click',
   'Both':'Both',
@@ -26,7 +26,6 @@ export default {
   'Current file':'Current file',
   'Reading':'Reading',
   'Editing':'Editing',
-
 
   "Drag and drop time threshold":'Drag and drop time threshold',
   "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'Set the minimum drag and drop time (in milliseconds) to trigger the link to open',
