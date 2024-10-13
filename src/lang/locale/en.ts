@@ -29,12 +29,14 @@ export default {
 
   "Drag and drop time threshold":'Drag and drop time threshold',
   "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'Set the minimum drag and drop time (in milliseconds) to trigger the link to open',
-  'Disable external click close':'Disable external click close',
-  'Use only the "Close" button and "Esc" to close.':'Use only the "Close" button and "Esc" to close',
 
   'Behavior':'Behavior',
+  'Disable external click close':'Disable external click close',
+  'Use only the "Close" button and "Esc" to close.':'Use only the "Close" button and "Esc" to close',
+  'Refresh view on close': 'Refresh view on close',
+  'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': 'Refresh views when closing modal, currently only refreshing after editing Canvas and Markmind file',
   'Prevents duplicate tabs':'Prevents duplicate tabs',
-  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from mononote plugin',
+  'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin',
   'Delay time':'Delay time',
   'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
 

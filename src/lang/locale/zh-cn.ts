@@ -30,12 +30,14 @@ export default {
 
     "Drag and drop time threshold":'拖拽时间阈值',
     "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'设置触发链接打开的最小拖放时间（以毫秒为单位）',
-    'Disable external click close':'禁用外部点击关闭',
-    'Use only the "Close" button and "Esc" to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
 
     'Behavior':'行为',
+    'Disable external click close':'禁用外部点击关闭',
+    'Use only the "Close" button and "Esc" to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
+    'Refresh view on close': '关闭后刷新视图',
+    'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': '关闭模态窗口时刷新视图，目前仅在编辑Canvas和Markmind文件后刷新',
     'Prevents duplicate tabs':'防止重复标签页',
-    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自mononote插件）',
+    'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)':'防止重复标签页打开笔记（兼容Modal-Opener，功能来自Mononote插件）',
     'Delay time':'延迟时间',
     'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
 

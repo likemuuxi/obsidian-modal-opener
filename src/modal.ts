@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf , MarkdownView, Notice , Scope, requestUrl, RequestUrlResponse } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf , MarkdownView, MarkdownEditView , Scope, requestUrl, RequestUrlResponse } from "obsidian";
 import ModalOpenerPlugin from "./main";
 
 export class ModalWindow extends Modal {
@@ -116,6 +116,20 @@ export class ModalWindow extends Modal {
     }
 
     onClose() {
+        // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
+        const modalOpener = this.containerEl.querySelector('.modal-opener');
+        if (modalOpener && this.plugin.settings.enableRefreshOnClose) { // 添加条件检查
+            const workspaceLeafContent = modalOpener.querySelector('.workspace-leaf-content');
+            if (workspaceLeafContent) {
+                const dataType = workspaceLeafContent.getAttribute('data-type');
+                if (dataType === 'canvas' || dataType === 'mindmapview') {
+                    setTimeout(() => {
+                        this.refreshMarkdownViews();
+                    }, this.plugin.settings.delayInMs);
+                }
+            }
+        }
+
         const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg");
         if (modalBgElement) {
             modalBgElement.removeEventListener('click', this.handleBackgroundClick);
@@ -143,7 +157,7 @@ export class ModalWindow extends Modal {
         contentEl.empty();
         // document.body.removeClass('modal-tab-header-hidden');
 
-        // 检查是否所有模态窗口都已关闭
+        // 检查是否所有模态窗口都已关闭，退出多光标模式
         if (document.querySelectorAll('.modal-opener').length === 0) {
             setTimeout(() => {
                 this.exitMultiCursorMode();
@@ -158,6 +172,52 @@ export class ModalWindow extends Modal {
             const cursor = editor.getCursor();
             editor.setCursor(cursor);
         }
+    }
+
+    private refreshMarkdownViews = async () => {
+        // 获取处理前滚动条位置百分比
+        const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view) return;
+        let scrollPosition: any;
+        if (view.getMode() === "preview") {
+            scrollPosition = view.previewMode.getScroll();
+            view.previewMode.rerender(true);
+        } else if (view.getMode() === "source") {
+            const editView = view.currentMode;
+            if (editView && typeof editView.getScroll === 'function') {
+                scrollPosition = editView.getScroll();
+            } else if (view.editor) {
+                scrollPosition = view.editor.getScrollInfo();
+            }
+        }
+
+        // refresh the hostView.
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!activeView?.editor) return;
+        const editor = activeView.editor;
+        const content = editor.getValue();
+        
+        // 第一步：移除所有 ![[]] 中的感叹号
+        const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
+        editor.setValue(modifiedContent);
+        
+        // 第二步：重新添加感叹号到原本是 ![[]] 的链接
+        setTimeout(() => {
+            const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
+                // 检查原始内容中是否存在 ![[p1]]
+                return content.includes(`![[${p1}]]`) ? `![[${p1}]]` : `[[${p1}]]`;
+            });
+            editor.setValue(finalContent);
+            // 保持光标位置不变
+            const cursor = editor.getCursor();
+            editor.setCursor(cursor);
+        }, 300);
+
+        // 处理后滚动条回去
+        setTimeout(() => {
+            const editView = view.currentMode;
+            editView.applyScroll(scrollPosition);
+        }, 500);
     }
 
     private handleActiveLeafChange() {

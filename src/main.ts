@@ -267,14 +267,12 @@ export default class ModalOpenerPlugin extends Plugin {
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
-                evt.preventDefault();
-                evt.stopPropagation();
     
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
                     // 从点击的元素开始，向上查找 .view-content 类
                     let targetElement = evt.target as HTMLElement;
-
+                    let altText = targetElement.getAttribute("alt");
                     // 调试信息：打印点击的元素和其类名
                     // console.log("Clicked element:", targetElement);
                     // console.log("Classes:", targetElement.classList);
@@ -286,6 +284,11 @@ export default class ModalOpenerPlugin extends Plugin {
                             // 适配markmind在编辑模式下嵌入视图的alt点击
                             if (targetElement.closest('svg')) {
                                 this.handlePreviewModeLink(evt);
+                                return;
+                            }
+                            // 适配diagram.net svg 类型的文件 alt + 点击不做处理
+                            if (altText && altText.endsWith(".svg")) {
+                                // console.log("altText", altText);
                                 return;
                             }
                             this.handleEditModeLink(activeView.editor);

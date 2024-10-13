@@ -18,6 +18,7 @@ export interface ModalOpenerPluginSettings {
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
+	enableRefreshOnClose: boolean;
 }
 
 interface CustomCommand {
@@ -41,6 +42,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	hideTabHeader: true,
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
+	enableRefreshOnClose: true,
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -59,6 +61,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
+	enableRefreshOnClose: boolean;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -134,7 +137,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
-
 		
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
@@ -145,6 +147,16 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.onlyCloseButton = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+            .setName(t('Refresh view on close'))
+            .setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableRefreshOnClose)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableRefreshOnClose = value;
+                    await this.plugin.saveSettings();
+                }));
 
 		new Setting(containerEl)
 			.setName(t('Prevents duplicate tabs'))
