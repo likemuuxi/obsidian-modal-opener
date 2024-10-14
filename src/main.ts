@@ -267,7 +267,6 @@ export default class ModalOpenerPlugin extends Plugin {
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
-    
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 if (activeView) {
                     // 从点击的元素开始，向上查找 .view-content 类
@@ -286,7 +285,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                 this.handlePreviewModeLink(evt);
                                 return;
                             }
-                            // 适配diagram.net svg 类型的文件 alt + 点击不做处理
+                            // 适配diagram.net svg 类型的文件 alt + 点击  不做处理
                             if (altText && altText.endsWith(".svg")) {
                                 // console.log("altText", altText);
                                 return;
@@ -511,7 +510,8 @@ export default class ModalOpenerPlugin extends Plugin {
                 );
             }
             const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
-            if (excalidrawPlugin) {
+            const excalidrawymjrPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
+            if (excalidrawPlugin || excalidrawymjrPlugin) {
                 subMenu.addSeparator();
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
@@ -519,7 +519,13 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("swords")
                         .onClick(async () => {
                             const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                            (this.app as any).commands.executeCommandById("obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab");
+                            let commandId;
+                            if (excalidrawPlugin) {
+                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab";
+                            } else if (excalidrawymjrPlugin) {
+                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-and-embed-new-tab";
+                            }
+                            (this.app as any).commands.executeCommandById(commandId);
                             const waitForNewLeaf = () => {
                                 return new Promise<void>((resolve) => {
                                     const checkLeaf = () => {
@@ -538,7 +544,6 @@ export default class ModalOpenerPlugin extends Plugin {
                             setTimeout(() => {
                                 this.openCurrentContentInModal();
                             }, 150);
-
                             // await this.createFileAndInsertLink("obsidian-excalidraw-plugin:excalidraw-autocreate-on-current");
                         })
                 );
