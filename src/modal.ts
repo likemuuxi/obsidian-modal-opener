@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf , MarkdownView, MarkdownEditView , Scope, requestUrl, RequestUrlResponse } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon } from "obsidian";
 import ModalOpenerPlugin from "./main";
 
 export class ModalWindow extends Modal {
@@ -258,17 +258,21 @@ export class ModalWindow extends Modal {
         }
     }
 
-
     async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
             return;
         }
         
         this.contentEl.empty();
+
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
         fileContainer.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
-
         this.setContainerHeight(fileContainer, false);
+
+        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
+        if (this.plugin.settings.showFloatingButton) {
+            this.addOpenInNewLeafButton(wrapperContainer);
+        }
 
         let mode: 'source' | 'preview';
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -334,43 +338,22 @@ export class ModalWindow extends Modal {
         this.contentEl.focus();
     }
 
-    private setupToolbarObserver() {
-        // 首先移除任何现有的重复工具栏
-        this.ensureSingleToolbar();
-
-        // 设置 MutationObserver 来监听 DOM 变化
-        this.observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList') {
-                    this.ensureSingleToolbar();
-                }
-            }
-        });
-
-        // 开始观察 modal-opener 的子元素变化
-        this.observer.observe(this.contentEl, { childList: true, subtree: true });
-    }
-
-    private ensureSingleToolbar() {
-        const toolbars = this.contentEl.querySelectorAll('.cg-note-toolbar-container');
-        if (toolbars.length > 1) {
-            // console.log(`Found ${toolbars.length} toolbars, keeping only the first one`);
-            // 保留第一个工具栏，移除其他的
-            for (let i = 1; i < toolbars.length; i++) {
-                toolbars[i].remove();
-            }
-        }
-    }
 
     displayLinkContent(link:string) {
         if (!this.contentEl) {
             return;
         }
         this.contentEl.empty();
-        
+        // 创建一个包装器来容纳文件内容和浮动按钮
+        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
         const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
         linkContainer.setAttribute("data-src", this.link);
     
+        if (this.plugin.settings.showFloatingButton) {
+            wrapperContainer.appendChild(linkContainer);
+            this.addFloatingButton(wrapperContainer);
+        }
+        
         const surfPlugin = this.getPlugin("surfing");
         if (surfPlugin) {
             window.open(link);
@@ -576,6 +559,126 @@ export class ModalWindow extends Modal {
             return false;
         } catch {
             return false;
+        }
+    }
+    // 适配NoteToolBar
+    private setupToolbarObserver() {
+        // 首先移除任何现有的重复工具栏
+        this.ensureSingleToolbar();
+
+        // 设置 MutationObserver 来监听 DOM 变化
+        this.observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    this.ensureSingleToolbar();
+                }
+            }
+        });
+
+        // 开始观察 modal-opener 的子元素变化
+        this.observer.observe(this.contentEl, { childList: true, subtree: true });
+    }
+
+    private ensureSingleToolbar() {
+        const toolbars = this.contentEl.querySelectorAll('.cg-note-toolbar-container');
+        if (toolbars.length > 1) {
+            // console.log(`Found ${toolbars.length} toolbars, keeping only the first one`);
+            // 保留第一个工具栏，移除其他的
+            for (let i = 1; i < toolbars.length; i++) {
+                toolbars[i].remove();
+            }
+        }
+    }
+
+    // 添加悬浮按钮
+    private addOpenInNewLeafButton(container: HTMLElement) {
+        const buttonContainer = container.createEl('div', { cls: 'floating-button-container' });
+        const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
+        
+        setIcon(openButton, 'panel-top');
+        openButton.setAttribute('title', '在新标签页中打开');
+    
+        openButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openInNewTab();
+        });
+    }
+
+    private addFloatingButton(container: HTMLElement) {
+        const buttonContainer = container.createEl('div', { cls: 'floating-menu-container' });
+        const mainButton = buttonContainer.createEl('button', { cls: 'floating-button main-button' });
+        
+        setIcon(mainButton, 'more-vertical');
+        mainButton.setAttribute('title', '更多选项');
+    
+        const menuItems = buttonContainer.createEl('div', { cls: 'floating-menu-items' });
+
+        const surfPlugin = this.getPlugin("surfing");
+        if(surfPlugin) {
+            this.createMenuItem(menuItems, 'sun-moon', '切换夜间模式', () => this.toggleDarkMode());
+        }
+        this.createMenuItem(menuItems, 'compass', '在浏览器打开', () => this.openInBrowser());
+        this.createMenuItem(menuItems, 'panel-top', '在新标签页中打开', () => this.openInNewTab());
+
+        // 显示/隐藏菜单
+        let timeoutId: NodeJS.Timeout | null = null;
+    
+        buttonContainer.addEventListener('mouseenter', () => {
+            if (timeoutId) clearTimeout(timeoutId);
+            menuItems.style.display = 'flex';
+        });
+    
+        buttonContainer.addEventListener('mouseleave', () => {
+            timeoutId = setTimeout(() => {
+                menuItems.style.display = 'none';
+            }, 300); // 300ms 延迟，给用户一些时间移动到菜单项上
+        });
+    
+        menuItems.addEventListener('mouseenter', () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        });
+    
+        menuItems.addEventListener('mouseleave', () => {
+            timeoutId = setTimeout(() => {
+                menuItems.style.display = 'none';
+            }, 300);
+        });
+    }
+    
+    private createMenuItem(container: HTMLElement, icon: string, title: string, onClick: () => void): HTMLElement {
+        const button = container.createEl('button', { cls: 'floating-button menu-item' });
+        setIcon(button, icon);
+        button.setAttribute('title', title);
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onClick();
+        });
+        return button;
+    }
+    
+    private toggleDarkMode() {
+        const surfPlugin = this.getPlugin("surfing");
+        if(surfPlugin) {
+            (this.app as any).commands.executeCommandById("surfing:toggle-dark-mode");
+        }
+    }
+
+    private openInBrowser() {
+        const modalElement = this.containerEl.querySelector('.modal-opener');
+        if (!modalElement) return;
+        const modalContainer = modalElement.querySelector('.modal-opener-content');
+    
+        if (modalContainer) {
+            const src = modalContainer.getAttribute('data-src') || '';
+            if (this.isValidURL(src)) {
+                const surfPlugin = this.getPlugin("surfing");
+                if(surfPlugin) {
+                    (this.app as any).commands.executeCommandById("surfing:open-current-url-with-external-browser");
+                } else {
+                    window.open(src);
+                }
+                // this.close();
+            }
         }
     }
 }

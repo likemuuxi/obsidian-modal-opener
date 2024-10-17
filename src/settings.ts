@@ -19,6 +19,7 @@ export interface ModalOpenerPluginSettings {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
+	showFloatingButton: boolean;
 }
 
 interface CustomCommand {
@@ -43,6 +44,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
 	enableRefreshOnClose: true,
+	showFloatingButton: true,
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -62,6 +64,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
+	showFloatingButton: boolean;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -136,8 +139,18 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl)
+            .setName(t("Add hover button"))
+            .setDesc(t("Add hover button for accessibility functions in the modal window"))
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.showFloatingButton)
+                .onChange(async (value) => {
+                    this.plugin.settings.showFloatingButton = value;
+                    await this.plugin.saveSettings();
+                }));
+
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
-		
+
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
 			.setDesc(t('Use only the "Close" button and "Esc" to close.'))

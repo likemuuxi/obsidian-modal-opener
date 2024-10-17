@@ -1,3 +1,4 @@
+
 /* .modal-tab-header-hidden .workspace-tab-header.is-active {
     display: none !important;
 } */
@@ -35,7 +36,7 @@
 }
 
 .modal-opener .modal-content {
-    padding-top: 16px;
+    padding-top: 5px;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -61,11 +62,11 @@
     padding: 0;
 }
 
-body:not(.show-file-view-header) .modal-opener-content .view-header {
+body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content[data-type="markdown"] .view-header {
     display: none;
 }
 
-body:not(.show-link-view-header) .modal-opener-content .view-header,
+body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="surfing-view"] .view-header,
 body:not(.show-link-view-header) .modal-opener-content .wb-bookmark-bar {
     display: none;
 }
@@ -141,4 +142,53 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 
 .custom-command-input {
     width: 220px !important;
+}
+
+/* float button */
+
+.modal-opener .modal-opener-content {
+    width: 100%;
+    height: 100%;
+}
+
+.modal-opener .floating-button-container,
+.modal-opener .floating-menu-container {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.modal-opener .floating-button {
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.modal-opener .floating-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.modal-opener .floating-menu-items {
+    display: none;
+    flex-direction: column;
+    position: absolute;
+    bottom: 50px;
+    right: -10px;
+    border: 0;
+    padding: 5px;
+    background-color: transparent;
+}
+
+.modal-opener .menu-item {
+    margin: 5px;
 }

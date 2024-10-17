@@ -31,6 +31,8 @@ export default {
   "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'Set the minimum drag and drop time (in milliseconds) to trigger the link to open',
 
   'Behavior':'Behavior',
+  'Add hover button':'Add hover button',
+  'Add hover button for accessibility functions in the modal window':'Add hover button for accessibility functions in the modal window',
   'Disable external click close':'Disable external click close',
   'Use only the "Close" button and "Esc" to close.':'Use only the "Close" button and "Esc" to close',
   'Refresh view on close': 'Refresh view on close',
