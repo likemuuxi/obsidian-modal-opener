@@ -160,7 +160,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 }
 
 .modal-opener .floating-button {
-    color: var(--text-on-accent);
     border: none;
     border-radius: 50%;
     width: 40px;
