@@ -270,7 +270,7 @@ export class ModalWindow extends Modal {
         this.setContainerHeight(fileContainer, false);
 
         const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
-        if (this.plugin.settings.showFloatingButton) {
+        if (this.plugin.settings.showFloatingButton == 'both' || this.plugin.settings.showFloatingButton == 'file') {
             this.addOpenInNewLeafButton(wrapperContainer);
         }
 
@@ -349,7 +349,7 @@ export class ModalWindow extends Modal {
         const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
         linkContainer.setAttribute("data-src", this.link);
     
-        if (this.plugin.settings.showFloatingButton) {
+        if (this.plugin.settings.showFloatingButton == 'both' || this.plugin.settings.showFloatingButton == 'link') {
             wrapperContainer.appendChild(linkContainer);
             this.addFloatingButton(wrapperContainer);
         }

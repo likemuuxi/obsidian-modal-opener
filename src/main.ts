@@ -264,6 +264,41 @@ export default class ModalOpenerPlugin extends Plugin {
     //     document.addEventListener('mousedown', this.middleClickHandler, { capture: true });
     // }
 
+    // 等canvas alt+click和其他类型一样表现为选取链接 可以改用此方法
+    // private registerAltClickHandler() {
+    //     this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+    //         if (evt.altKey && evt.button === 0) {
+    //             // 使用 setTimeout 来确保我们的处理在默认操作之后执行
+    //             setTimeout(() => {
+    //                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+    //                 if (activeView) {
+    //                     let targetElement = evt.target as HTMLElement;
+    //                     let altText = targetElement.getAttribute("alt");
+    
+    //                     if (this.isPreviewModeLink(targetElement)) {
+    //                         this.handlePreviewModeLink(evt);
+    //                     } else {
+    //                         if (activeView.getMode() === 'source') {
+    //                             // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
+    //                             if (targetElement.closest('svg')) {
+    //                                 this.handlePreviewModeLink(evt);
+    //                                 return;
+    //                             }
+    //                             // 适配diagram.net svg 类型的文件 alt+点击  不做处理
+    //                             if (altText && altText.endsWith(".svg")) {
+    //                                 return;
+    //                             }
+    //                             this.handleEditModeLink(activeView.editor);
+    //                         } else {
+    //                             this.handlePreviewModeLink(evt);
+    //                         }
+    //                     }
+    //                 }
+    //             }, 10);
+    //         }
+    //     });
+    // }
+
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
@@ -280,17 +315,20 @@ export default class ModalOpenerPlugin extends Plugin {
                         this.handlePreviewModeLink(evt);
                     } else {
                         if (activeView.getMode() === 'source') {
-                            // 适配markmind在编辑模式下嵌入视图的alt点击
+                            // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
                             if (targetElement.closest('svg')) {
                                 this.handlePreviewModeLink(evt);
                                 return;
                             }
-                            // 适配diagram.net svg 类型的文件 alt + 点击  不做处理
+                            // 适配diagram.net svg 类型的文件 alt+点击  不做处理
                             if (altText && altText.endsWith(".svg")) {
                                 // console.log("altText", altText);
                                 return;
                             }
                             this.handleEditModeLink(activeView.editor);
+                            // 阻止surfing弹出下载框
+                            evt.preventDefault();
+                            evt.stopImmediatePropagation();
                         } else {
                             this.handlePreviewModeLink(evt);
                         }
@@ -301,7 +339,6 @@ export default class ModalOpenerPlugin extends Plugin {
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
     
-
     private registerContextMenuHandler() {
         // Handle file menu
         this.registerEvent(

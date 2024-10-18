@@ -19,7 +19,7 @@ export interface ModalOpenerPluginSettings {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
-	showFloatingButton: boolean;
+	showFloatingButton: string;
 }
 
 interface CustomCommand {
@@ -44,7 +44,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
 	enableRefreshOnClose: true,
-	showFloatingButton: true,
+	showFloatingButton: "both",
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -64,7 +64,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
-	showFloatingButton: boolean;
+	showFloatingButton: string;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -80,14 +80,15 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		this.customCommands = this.plugin.settings.customCommands;
 		this.showFileViewHeader = this.plugin.settings.showFileViewHeader;
 		this.showLinkViewHeader = this.plugin.settings.showLinkViewHeader;
+		this.showFloatingButton = this.plugin.settings.showFloatingButton
 	}
 
 	async reloadPlugin() {
 		await this.plugin.saveSettings();
 		const app = this.plugin.app as any;
-		await app.plugins.disablePlugin("obsidian-modal-plugin");
-		await app.plugins.enablePlugin("obsidian-modal-plugin");
-		app.setting.openTabById("obsidian-modal-plugin").display();
+		await app.plugins.disablePlugin("modal-opener");
+		await app.plugins.enablePlugin("modal-opener");
+		app.setting.openTabById("modal-opener").display();
 	}
 
 	display(): void {
@@ -140,14 +141,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-            .setName(t("Add hover button"))
+            .setName(t("Add hover button to"))
             .setDesc(t("Add hover button for accessibility functions in the modal window"))
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.showFloatingButton)
-                .onChange(async (value) => {
-                    this.plugin.settings.showFloatingButton = value;
-                    await this.plugin.saveSettings();
-                }));
+			.addDropdown(dropdown => dropdown
+				.addOption('both', t('Both'))
+				.addOption('file', t('File view'))
+				.addOption('link', t('Link view'))
+				.setValue(this.plugin.settings.showFloatingButton)
+				.onChange(async (value) => {
+					this.plugin.settings.showFloatingButton = value as 'both' | 'file' | 'link';
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 

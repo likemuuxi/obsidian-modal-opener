@@ -98,7 +98,10 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     opacity: 1;
 }
 
-/* 在现有样式的末尾添加以下内容 */
+.modal-opener .setting-item-control
+
+
+/* new file */
 
 .new-file-modal-container {
     display: flex;
