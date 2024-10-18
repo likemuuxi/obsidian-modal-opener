@@ -62,7 +62,7 @@
     padding: 0;
 }
 
-body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content[data-type="markdown"] .view-header {
+body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content:not([data-type="surfing-view"]) .view-header {
     display: none;
 }
 
