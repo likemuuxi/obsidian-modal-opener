@@ -29,7 +29,8 @@ export default {
 
   "Drag and drop time threshold":'Drag and drop time threshold',
   "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'Set the minimum drag and drop time (in milliseconds) to trigger the link to open',
-
+  
+  'Add hover button':'Add hover button',
   'Add hover button to':'Add hover button to',
   'Add hover button for accessibility functions in the modal window':'Add hover button for accessibility functions in the modal window',
   'File view': 'File view',

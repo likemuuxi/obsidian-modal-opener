@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, Platform } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -19,7 +19,8 @@ export interface ModalOpenerPluginSettings {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
-	showFloatingButton: string;
+	showFloatingButton: boolean;
+	viewOfDisplayButton: string;
 }
 
 interface CustomCommand {
@@ -44,7 +45,8 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
 	enableRefreshOnClose: true,
-	showFloatingButton: "both",
+	showFloatingButton: true,
+	viewOfDisplayButton: 'both',
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -64,7 +66,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	enableRefreshOnClose: boolean;
-	showFloatingButton: string;
+	showFloatingButton: boolean;
+	viewOfDisplayButton: string;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -80,15 +83,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		this.customCommands = this.plugin.settings.customCommands;
 		this.showFileViewHeader = this.plugin.settings.showFileViewHeader;
 		this.showLinkViewHeader = this.plugin.settings.showLinkViewHeader;
-		this.showFloatingButton = this.plugin.settings.showFloatingButton
-	}
-
-	async reloadPlugin() {
-		await this.plugin.saveSettings();
-		const app = this.plugin.app as any;
-		await app.plugins.disablePlugin("modal-opener");
-		await app.plugins.enablePlugin("modal-opener");
-		app.setting.openTabById("modal-opener").display();
+		this.showFloatingButton = this.plugin.settings.showFloatingButton;
+		this.viewOfDisplayButton = this.plugin.settings.viewOfDisplayButton;
 	}
 
 	display(): void {
@@ -139,19 +135,32 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.fileOpenMode = value as 'default' | 'preview' | 'source';
 					await this.plugin.saveSettings();
 				}));
-
-		new Setting(containerEl)
-            .setName(t("Add hover button to"))
-            .setDesc(t("Add hover button for accessibility functions in the modal window"))
-			.addDropdown(dropdown => dropdown
-				.addOption('both', t('Both'))
-				.addOption('file', t('File view'))
-				.addOption('link', t('Link view'))
-				.setValue(this.plugin.settings.showFloatingButton)
-				.onChange(async (value) => {
-					this.plugin.settings.showFloatingButton = value as 'both' | 'file' | 'link';
-					await this.plugin.saveSettings();
-				}));
+		if (!Platform.isMobile) {
+			new Setting(containerEl)
+				.setName(t("Add hover button"))
+				.setDesc(t("Add hover button for accessibility functions in the modal window"))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.showFloatingButton)
+					.onChange(async (value) => {
+						this.plugin.settings.showFloatingButton = value;
+						await this.plugin.saveSettings();
+						await this.reloadPlugin();
+					}));
+		
+			if (this.plugin.settings.showFloatingButton) {
+				new Setting(containerEl)
+					.setName(t("Add hover button to"))
+					.addDropdown(dropdown => dropdown
+						.addOption('both', t('Both'))
+						.addOption('file', t('File view'))
+						.addOption('link', t('Link view'))
+						.setValue(this.plugin.settings.viewOfDisplayButton)
+						.onChange(async (value) => {
+							this.plugin.settings.viewOfDisplayButton = value as 'both' | 'file' | 'link';
+							await this.plugin.saveSettings();
+						}));
+			}
+		}
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
@@ -367,5 +376,13 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		this.reloadPlugin();
 		this.display();
 		new Notice(t("Command deleted successfully. Please restart Obsidian for changes to take full effect."));
+	}
+
+	async reloadPlugin() {
+		await this.plugin.saveSettings();
+		const app = this.plugin.app as any;
+		await app.plugins.disablePlugin("modal-opener");
+		await app.plugins.enablePlugin("modal-opener");
+		app.setting.openTabById("modal-opener").display();
 	}
 }

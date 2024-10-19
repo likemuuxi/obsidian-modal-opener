@@ -26,16 +26,17 @@ export default {
     'Current file':'当前文件',
     'Reading':'阅读模式',
     'Editing':'编辑模式',
- 
 
     "Drag and drop time threshold":'拖拽时间阈值',
     "Set the minimum drag and drop time (in milliseconds) to trigger the link to open.":'设置触发链接打开的最小拖放时间（以毫秒为单位）',
 
-    'Behavior':'行为',
+    'Add hover button':'添加悬浮按钮',
     'Add hover button to':'添加悬浮按钮的视图',
     'Add hover button for accessibility functions in the modal window':'在模态窗口中添加用于辅助功能的悬停按钮',
     'File view': '文件视图',
     'Link view': '链接视图',
+
+    'Behavior':'行为',
     'Disable external click close':'禁用外部点击关闭',
     'Use only the "Close" button and "Esc" to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
     'Refresh view on close': '关闭后刷新视图',
