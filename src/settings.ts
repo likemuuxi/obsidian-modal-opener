@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, Platform } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -135,33 +135,32 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.fileOpenMode = value as 'default' | 'preview' | 'source';
 					await this.plugin.saveSettings();
 				}));
-		if (!Platform.isMobile) {
-			new Setting(containerEl)
-				.setName(t("Add hover button"))
-				.setDesc(t("Add hover button for accessibility functions in the modal window"))
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.showFloatingButton)
-					.onChange(async (value) => {
-						this.plugin.settings.showFloatingButton = value;
-						await this.plugin.saveSettings();
-						await this.reloadPlugin();
-					}));
-		
-			if (this.plugin.settings.showFloatingButton) {
-				new Setting(containerEl)
-					.setName(t("Add hover button to"))
-					.addDropdown(dropdown => dropdown
-						.addOption('both', t('Both'))
-						.addOption('file', t('File view'))
-						.addOption('link', t('Link view'))
-						.setValue(this.plugin.settings.viewOfDisplayButton)
-						.onChange(async (value) => {
-							this.plugin.settings.viewOfDisplayButton = value as 'both' | 'file' | 'link';
-							await this.plugin.saveSettings();
-						}));
-			}
-		}
 
+		new Setting(containerEl)
+			.setName(t("Add hover button"))
+			.setDesc(t("Add hover button for accessibility functions in the modal window"))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showFloatingButton)
+				.onChange(async (value) => {
+					this.plugin.settings.showFloatingButton = value;
+					await this.plugin.saveSettings();
+					await this.reloadPlugin();
+				}));
+	
+		if (this.plugin.settings.showFloatingButton) {
+			new Setting(containerEl)
+				.setName(t("Add hover button to"))
+				.addDropdown(dropdown => dropdown
+					.addOption('both', t('Both'))
+					.addOption('file', t('File view'))
+					.addOption('link', t('Link view'))
+					.setValue(this.plugin.settings.viewOfDisplayButton)
+					.onChange(async (value) => {
+						this.plugin.settings.viewOfDisplayButton = value as 'both' | 'file' | 'link';
+						await this.plugin.saveSettings();
+					}));
+		}
+		
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
 		new Setting(containerEl)

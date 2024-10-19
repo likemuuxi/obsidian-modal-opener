@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform } from "obsidian";
 import ModalOpenerPlugin from "./main";
 
 export class ModalWindow extends Modal {
@@ -273,7 +273,7 @@ export class ModalWindow extends Modal {
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
                 this.addOpenInNewLeafButton(wrapperContainer);
-            }    
+            }
         }
 
         let mode: 'source' | 'preview';
@@ -599,7 +599,8 @@ export class ModalWindow extends Modal {
         const buttonContainer = container.createEl('div', { cls: 'floating-button-container' });
         const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
         
-        setIcon(openButton, 'panel-top');
+        const isMobile = Platform.isMobile;
+        setIcon(openButton, isMobile ? 'airplay' : 'panel-top');
         openButton.setAttribute('title', '在新标签页中打开');
     
         openButton.addEventListener('click', (e) => {
@@ -611,18 +612,20 @@ export class ModalWindow extends Modal {
     private addFloatingButton(container: HTMLElement) {
         const buttonContainer = container.createEl('div', { cls: 'floating-menu-container' });
         const mainButton = buttonContainer.createEl('button', { cls: 'floating-button main-button' });
-        
-        setIcon(mainButton, 'more-vertical');
+        const isMobile = Platform.isMobile;
+
+        setIcon(mainButton, isMobile ? 'alingn center' : 'more-vertical');
         mainButton.setAttribute('title', '更多选项');
     
         const menuItems = buttonContainer.createEl('div', { cls: 'floating-menu-items' });
 
         const surfPlugin = this.getPlugin("surfing");
+
         if(surfPlugin) {
-            this.createMenuItem(menuItems, 'sun-moon', '切换夜间模式', () => this.toggleDarkMode());
+            this.createMenuItem(menuItems, isMobile ? 'moon' : 'sun-moon', '切换夜间模式', () => this.toggleDarkMode());
         }
-        this.createMenuItem(menuItems, 'compass', '在浏览器打开', () => this.openInBrowser());
-        this.createMenuItem(menuItems, 'panel-top', '在新标签页中打开', () => this.openInNewTab());
+        this.createMenuItem(menuItems, isMobile ? 'external link' : 'compass', '在浏览器打开', () => this.openInBrowser());
+        this.createMenuItem(menuItems, isMobile ? 'airplay' : 'panel-top', '在新标签页中打开', () => this.openInNewTab());
 
         // 显示/隐藏菜单
         let timeoutId: NodeJS.Timeout | null = null;
