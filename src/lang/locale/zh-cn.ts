@@ -35,6 +35,11 @@ export default {
     'Add hover button for accessibility functions in the modal window':'在模态窗口中添加用于辅助功能的悬停按钮',
     'File view': '文件视图',
     'Link view': '链接视图',
+    'Opens in new tab': '在新标签页中打开',
+    'Open in browser': '在浏览器打开',
+    'Switch dark mode': '切换夜间模式',
+    'More options': '更多选项',
+
 
     'Behavior':'行为',
     'Disable external click close':'禁用外部点击关闭',

@@ -1,5 +1,6 @@
 import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform } from "obsidian";
 import ModalOpenerPlugin from "./main";
+import { t } from "./lang/helpers"
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -599,9 +600,8 @@ export class ModalWindow extends Modal {
         const buttonContainer = container.createEl('div', { cls: 'floating-button-container' });
         const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
         
-        const isMobile = Platform.isMobile;
-        setIcon(openButton, isMobile ? 'airplay' : 'panel-top');
-        openButton.setAttribute('title', '在新标签页中打开');
+        setIcon(openButton, 'lucide-panel-top');
+        openButton.setAttribute('title',  t('Opens in new tab'));
     
         openButton.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -612,20 +612,18 @@ export class ModalWindow extends Modal {
     private addFloatingButton(container: HTMLElement) {
         const buttonContainer = container.createEl('div', { cls: 'floating-menu-container' });
         const mainButton = buttonContainer.createEl('button', { cls: 'floating-button main-button' });
-        const isMobile = Platform.isMobile;
 
-        setIcon(mainButton, isMobile ? 'alingn center' : 'more-vertical');
-        mainButton.setAttribute('title', '更多选项');
-    
+        setIcon(mainButton, 'lucide-more-vertical');
+        mainButton.setAttribute('title', t("More options"));
+        
         const menuItems = buttonContainer.createEl('div', { cls: 'floating-menu-items' });
-
         const surfPlugin = this.getPlugin("surfing");
-
+        
         if(surfPlugin) {
-            this.createMenuItem(menuItems, isMobile ? 'moon' : 'sun-moon', '切换夜间模式', () => this.toggleDarkMode());
+            this.createMenuItem(menuItems, 'lucide-sun-moon', t('Switch dark mode'), () => this.toggleDarkMode());
         }
-        this.createMenuItem(menuItems, isMobile ? 'external link' : 'compass', '在浏览器打开', () => this.openInBrowser());
-        this.createMenuItem(menuItems, isMobile ? 'airplay' : 'panel-top', '在新标签页中打开', () => this.openInNewTab());
+        this.createMenuItem(menuItems, 'lucide-compass', t('Open in browser'), () => this.openInBrowser());
+        this.createMenuItem(menuItems, 'lucide-panel-top', t('Opens in new tab'), () => this.openInNewTab());
 
         // 显示/隐藏菜单
         let timeoutId: NodeJS.Timeout | null = null;
@@ -655,6 +653,7 @@ export class ModalWindow extends Modal {
     private createMenuItem(container: HTMLElement, icon: string, title: string, onClick: () => void): HTMLElement {
         const button = container.createEl('button', { cls: 'floating-button menu-item' });
         setIcon(button, icon);
+
         button.setAttribute('title', title);
         button.addEventListener('click', (e) => {
             e.stopPropagation();

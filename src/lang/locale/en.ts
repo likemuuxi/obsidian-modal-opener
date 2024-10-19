@@ -35,6 +35,10 @@ export default {
   'Add hover button for accessibility functions in the modal window':'Add hover button for accessibility functions in the modal window',
   'File view': 'File view',
   'Link view': 'Link view',
+  'Opens in new tab': 'Opens in new tab',
+  'Open in browser': 'Open in browser',
+  'Switch dark mode': 'Switch dark mode',
+  'More options': 'More options',
 
   'Behavior':'Behavior',
   'Disable external click close':'Disable external click close',
