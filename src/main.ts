@@ -7,8 +7,8 @@ import ModalOpenerPluginSettings, { DEFAULT_SETTINGS } from "./settings";
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
     history: {
-      back: () => void;
-      backHistory: any[];
+        back: () => void;
+        backHistory: any[];
     };
     id: string;
     pinned: boolean;
@@ -408,6 +408,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         this.openInFloatPreview(link);
                     }
                 } else if (activeView && activeView.getMode() === 'preview') {
+                    // 不直接采用openInFloatPreview的原因 是适配带锚点的链接
                     const selection = window.getSelection();
                     if (selection && selection.rangeCount > 0) {
                         const range = selection.getRangeAt(0);
@@ -416,6 +417,9 @@ export default class ModalOpenerPlugin extends Plugin {
                             link = linkElement.getAttribute('data-href') || linkElement.getAttribute('href') || link;
                             this.openInFloatPreview(link);
                         }
+                    } else {
+                        // 修复 Components 数据视图右键选项
+                        this.openInFloatPreview(link);
                     }
                 } else {
                     this.openInFloatPreview(link);

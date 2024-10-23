@@ -508,29 +508,22 @@ export class ModalWindow extends Modal {
     }
 
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
-        let adjustedModalHeight: string;
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
-        
+        let heightAdjustment = 5; // 默认调整值
+    
         if (isLinkView) {
-            if (!this.plugin.settings.showLinkViewHeader) { 
-                const hasBookmarkBar = this.containerEl.querySelector('.wb-bookmark-bar') !== null;
-                if (hasBookmarkBar) {
-                    adjustedModalHeight = `${baseHeight + 1}vh`;
-                } else {
-                    adjustedModalHeight = `${baseHeight - 2}vh`;
-                }
-            } else {
-                adjustedModalHeight = `${baseHeight - 5}vh`;
+            if (!this.plugin.settings.showLinkViewHeader) {
+                heightAdjustment = this.containerEl.querySelector('.wb-bookmark-bar') ? -1 : 2;
             }
         } else {
-            const editingPlugin = this.getPlugin("editing-toolbar");
             if (!this.plugin.settings.showFileViewHeader) {
-                adjustedModalHeight = `${baseHeight - (editingPlugin ? 2 : 1)}vh`;
-            } else {
-                adjustedModalHeight = `${baseHeight - 5}vh`;
+                const editingPlugin = this.getPlugin("editing-toolbar");
+                const toolbarPlugin = this.getPlugin("note-toolbar");
+                heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 2 : 1);
             }
         }
-
+    
+        const adjustedModalHeight = `${baseHeight - heightAdjustment}vh`;
         container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
     }
 
