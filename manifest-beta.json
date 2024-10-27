@@ -1,7 +1,7 @@
 {
 	"id": "modal-opener",
 	"name": "Modal Opener",
-	"version": "0.7.2",
+	"version": "0.7.3",
 	"minAppVersion": "1.0.0",
 	"description": "Open files and links in modal windows, or create and edit compatible files in modal windows.",
 	"author": "Muuxi",
