@@ -303,14 +303,13 @@ export default class ModalOpenerPlugin extends Plugin {
         this.altClickHandler = (evt: MouseEvent) => {
             if (evt.altKey && evt.button === 0) {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                // 从点击的元素开始，向上查找 .view-content 类
+                let targetElement = evt.target as HTMLElement;
+                let altText = targetElement.getAttribute("alt");
+                // 调试信息：打印点击的元素和其类名
+                console.log("Clicked element:", targetElement);
+                console.log("Classes:", targetElement.classList);
                 if (activeView) {
-                    // 从点击的元素开始，向上查找 .view-content 类
-                    let targetElement = evt.target as HTMLElement;
-                    let altText = targetElement.getAttribute("alt");
-                    // 调试信息：打印点击的元素和其类名
-                    // console.log("Clicked element:", targetElement);
-                    // console.log("Classes:", targetElement.classList);
-
                     if (this.isPreviewModeLink(targetElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
@@ -332,6 +331,12 @@ export default class ModalOpenerPlugin extends Plugin {
                         } else {
                             this.handlePreviewModeLink(evt);
                         }
+                    }
+                } else {
+                    // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
+                    const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
+                    if(link) {
+                        this.openInFloatPreview(link);
                     }
                 }
             }
