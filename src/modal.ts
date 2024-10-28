@@ -268,7 +268,6 @@ export class ModalWindow extends Modal {
 
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
         fileContainer.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
-        this.setContainerHeight(fileContainer, false);
 
         const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
         if (this.plugin.settings.showFloatingButton) {
@@ -330,12 +329,13 @@ export class ModalWindow extends Modal {
             this.leaf = leaf;
             this.associatedLeaf = leaf;
         }
+        this.setContainerHeight(fileContainer, false);
 
         const noteToolbarPlugin = this.getPlugin("note-toolbar");
         if(noteToolbarPlugin) {
             this.setupToolbarObserver();
         }
-
+        
         this.setupDoubleClickHandler();
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
@@ -517,16 +517,43 @@ export class ModalWindow extends Modal {
             }
         } else {
             if (!this.plugin.settings.showFileViewHeader) {
-                const editingPlugin = this.getPlugin("editing-toolbar");
-                const toolbarPlugin = this.getPlugin("note-toolbar");
-                heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 2 : 1);
+                // 针对特殊文件调整样式
+                const leafContent = this.containerEl.querySelector('.modal-opener-content .workspace-leaf-content');
+                if (leafContent) {
+                    const dataType = leafContent.getAttribute('data-type');
+                    if (dataType == "canvas" || dataType == "excalidraw") {
+                        heightAdjustment = dataType === 'canvas' ? 1 : dataType === 'excalidraw' ? 2 : 1;
+                    } else {
+                        const editingPlugin = this.getPlugin("editing-toolbar");
+                        const toolbarPlugin = this.getPlugin("note-toolbar");
+                        if(editingPlugin || toolbarPlugin) {
+                            heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 2 : 1);
+                        }
+                    }
+                }
+            } else {
+                // 针对特殊文件调整样式
+                const leafContent = this.containerEl.querySelector('.modal-opener-content .workspace-leaf-content');
+                if (leafContent) {
+                    const dataType = leafContent.getAttribute('data-type');
+                    if (dataType == "canvas" || dataType == "excalidraw") {
+                        heightAdjustment = dataType === 'canvas' ? 5 : dataType === 'excalidraw' ? 5 : 2;
+                    } else {
+                        const editingPlugin = this.getPlugin("editing-toolbar");
+                        const toolbarPlugin = this.getPlugin("note-toolbar");
+                        if(editingPlugin || toolbarPlugin) {
+                            heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 5 : 4);
+                        }
+                    }
+                }
             }
         }
-    
+        
         const adjustedModalHeight = `${baseHeight - heightAdjustment}vh`;
+        // console.log(`Adjusted Modal Height: ${adjustedModalHeight}`);
         container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
     }
-
+    
     private getPlugin(pluginId: string) {
         const app = this.plugin.app as any;
         return app.plugins.plugins[pluginId];
