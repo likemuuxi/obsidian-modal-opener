@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -644,6 +644,7 @@ export class ModalWindow extends Modal {
         }
         this.createMenuItem(menuItems, 'lucide-compass', t('Open in browser'), () => this.openInBrowser());
         this.createMenuItem(menuItems, 'lucide-panel-top', t('Opens in new tab'), () => this.openInNewTab());
+        this.createMenuItem(menuItems, 'lucide-copy', t('Copy web link'), () => this.copyWebLink());
 
         // 显示/隐藏菜单
         let timeoutId: NodeJS.Timeout | null = null;
@@ -689,6 +690,17 @@ export class ModalWindow extends Modal {
         }
     }
 
+    private copyWebLink() {
+        const modalElement = this.containerEl.querySelector('.modal-opener-content');
+        if (!modalElement) return;
+    
+        const dataSrc = modalElement.getAttribute('data-src');
+        if (dataSrc) {
+            navigator.clipboard.writeText(dataSrc)
+                .then(() => new Notice(t("Copied to clipboard")));
+        } 
+    }
+    
     private openInBrowser() {
         const modalElement = this.containerEl.querySelector('.modal-opener');
         if (!modalElement) return;

@@ -37,8 +37,10 @@ export default {
   'Link view': 'Link view',
   'Opens in new tab': 'Opens in new tab',
   'Open in browser': 'Open in browser',
+  'Copy web link': 'Copy web link',
   'Switch dark mode': 'Switch dark mode',
   'More options': 'More options',
+  'Copied to clipboard': 'Link copied to clipboard',
 
   'Behavior':'Behavior',
   'Disable external click close':'Disable external click close',

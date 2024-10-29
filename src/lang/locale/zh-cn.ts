@@ -37,9 +37,10 @@ export default {
     'Link view': '链接视图',
     'Opens in new tab': '在新标签页中打开',
     'Open in browser': '在浏览器打开',
+    'Copy web link': '复制网页链接',
     'Switch dark mode': '切换夜间模式',
     'More options': '更多选项',
-
+    'Copied to clipboard': '链接已复制到剪切板',
 
     'Behavior':'行为',
     'Disable external click close':'禁用外部点击关闭',
