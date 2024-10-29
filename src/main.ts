@@ -211,7 +211,6 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private handlePreviewModeLink(evt: MouseEvent) {
         let target = evt.target as HTMLElement;
-    
         // 向上查找包含 'internal-embed' 类的父元素
         if (target.classList.contains('canvas-minimap') 
             || target.classList.contains('file-embed-title') 
@@ -222,6 +221,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     
         if (this.isPreviewModeLink(target)) {
+            console.log("111111");
             evt.preventDefault();
             evt.stopImmediatePropagation();
             const link = this.getPreviewModeLinkText(target);
@@ -823,7 +823,7 @@ export default class ModalOpenerPlugin extends Plugin {
             });
             const cancelButton = buttonContainer.createEl("button", { 
                 text: t("Cancel"), 
-                cls: 'new-file-button'
+                cls: 'new-file-button cancel'
             });
     
             const confirmAction = () => {
@@ -1010,10 +1010,10 @@ export default class ModalOpenerPlugin extends Plugin {
             || target.classList.contains('markdown-embed-link')
             || target.classList.contains('markdown-embed-content')
             || target.classList.contains('canvas-minimap')
-            || target.classList.contains('excalidraw-svg')
+            || Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))
             || target.classList.contains('svg');
     }
-
+    
     private getPreviewModeLinkText(target: HTMLElement): string {
         return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') 
         || target.getAttribute('filesource') || target.getAttribute('src') || target.textContent?.trim() || '';

@@ -135,8 +135,14 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 }
 
 .new-file-button.confirm {
+    margin-top: 10px;
+    margin-right: 5px;
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
+}
+
+.new-file-button.cancel {
+    margin-top: 10px;
 }
 
 .new-file-modal-container .new-file-button-container .new-file-button.confirm:hover {
