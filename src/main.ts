@@ -301,6 +301,10 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
+            // 如果按下了 ctrl + alt + click，则保持默认行为
+            if (evt.altKey && evt.ctrlKey && evt.button === 0) {
+                return;
+            }
             if (evt.altKey && evt.button === 0) {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 // 从点击的元素开始，向上查找 .view-content 类
