@@ -14,6 +14,13 @@ export default {
     "Failed to create file: ": "创建文件失败: ",
     "Open in modal window error": "在模态窗口中打开错误",
     "Open in modal window": "在模态窗口中打开",
+
+    "Delete linked attachment": "删除链接附件",
+    "Confirm deletion": "确认删除",
+    "Are you sure you want to delete: ": "确定要删除？",
+    "File moved to trash": "文件移至废纸篓",
+    "Failed to delete file": "删除文件失败",
+
     // General settings
     'Open with':'打开方式',
     'Drag & Drop':'拖拽',

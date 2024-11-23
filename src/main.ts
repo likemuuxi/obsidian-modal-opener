@@ -298,6 +298,20 @@ export default class ModalOpenerPlugin extends Plugin {
     //         }
     //     });
     // }
+    private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
+        const currentLine = pos.line;
+        let fenceCount = 0;
+        
+        // 只检查当前行之前的内容
+        for (let i = 0; i <= currentLine; i++) {
+            const line = editor.getLine(i).trim();
+            if (line.startsWith("```")) {
+                fenceCount++;
+            }
+        }
+        
+        return fenceCount % 2 === 1;
+    }
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
@@ -306,6 +320,42 @@ export default class ModalOpenerPlugin extends Plugin {
                 return;
             }
             if (evt.altKey && evt.button === 0) {
+                // 如果在Code Block中
+                const activefileView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (!activefileView) return;
+                const editor = activefileView.editor;
+                const cursor = editor.getCursor();
+                if (this.isInFencedCodeBlock(editor, cursor)) {
+                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                    
+                    // 监听 modal 创建
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            console.log("Mutation:", mutation);  // 调试信息
+                            mutation.addedNodes.forEach((node) => {
+                                console.log("Added node:", node);  // 调试信息
+                                if (node instanceof HTMLElement) {
+                                    console.log("Node classes:", node.classList);  // 调试信息
+                                    if (node.classList.contains('modal')) {
+                                        console.log("Found modal, adding classes");  // 调试信息
+                                        node.classList.add('modal');
+                                        node.classList.add('modal-opener');
+                                        observer.disconnect();
+                                    }
+                                }
+                            });
+                        });
+                    });
+                
+                    // 开始观察 DOM 变化
+                    observer.observe(document.body, {
+                        childList: true,
+                        subtree: true
+                    });
+                    
+                    return;
+                }
+
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 // 从点击的元素开始，向上查找 .view-content 类
                 let targetElement = evt.target as HTMLElement;
@@ -383,6 +433,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     parentPath = view.file.parent.path;
                 }
                 this.addCreateFileMenuItem(menu, parentPath);
+                this.addDeleteAttachmentMenuItem(menu, editor);
             })
         );
     }
@@ -617,7 +668,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excel")
                         .setIcon("table")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("excel:excel-autocreate", false);
+                            await this.createFileAndInsertLink("excel:excel-autocreate", true);
                         })
                 );
             }
@@ -628,14 +679,13 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Sheet Plus")
                         .setIcon("grid")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", false);
+                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", true);
                         })
                 );
             }
             
             const vscodePlugin = this.getPlugin("vscode-editor");
-            const codePlugin = this.getPlugin("code-files");
-            if (vscodePlugin || codePlugin) {
+            if (vscodePlugin) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Code File")
@@ -660,6 +710,66 @@ export default class ModalOpenerPlugin extends Plugin {
         });
     }
 
+    private addDeleteAttachmentMenuItem(menu: Menu, editor: Editor) {
+        const cursor = editor.getCursor();
+        const line = editor.getLine(cursor.line);
+        const linkMatch = this.findLinkAtPosition(line, cursor.ch);
+        
+        if (linkMatch) {
+            // 处理可能包含别名和锚点的链接文本
+            const [filePath] = linkMatch.split('|');  // 先处理别名
+            const [filePathWithoutAnchor] = filePath.split('#');  // 再处理锚点
+            const file = this.app.metadataCache.getFirstLinkpathDest(filePathWithoutAnchor, "");
+            
+            if (file && file instanceof TFile) {
+                menu.addItem((item) => {
+                    item
+                        .setTitle(t("Delete linked attachment"))
+                        .setIcon("trash")
+                        .onClick(() => {
+                            const modal = new Modal(this.app);
+                            modal.titleEl.setText(t("Confirm deletion"));
+                            
+                            const content = modal.contentEl.createDiv();
+                            content.setText(t("Are you sure you want to delete: ") + file.path);
+                            
+                            const buttonContainer = content.createDiv({ cls: 'modal-button-container' });
+                            
+                            buttonContainer.createEl('button', { text: t("Cancel") })
+                                .onclick = () => modal.close();
+                            
+                            buttonContainer.createEl('button', 
+                                { text: t("Delete"), cls: 'mod-warning' })
+                                .onclick = async () => {
+                                    try {
+                                        await this.app.fileManager.trashFile(file);
+                                        // 检查是否包含感叹号
+                                        const startIndex = line.indexOf("![[");
+                                        const isEmbed = startIndex !== -1;
+                                        
+                                        const from = { 
+                                            line: cursor.line, 
+                                            ch: isEmbed ? startIndex : line.indexOf("[[") 
+                                        };
+                                        const to = { 
+                                            line: cursor.line, 
+                                            ch: line.indexOf("]]") + 2 
+                                        };
+                                        editor.replaceRange("", from, to);
+                                        new Notice(t("File moved to trash"));
+                                        modal.close();
+                                    } catch (error) {
+                                        new Notice(t("Failed to delete file"));
+                                    }
+                                };
+                            
+                            modal.open();
+                        });
+                });
+            }
+        }
+    }
+
     private async createFileAndInsertLink(commandId: string, isEmbed: boolean) {
         // 保存当前活动编辑器的信息
         const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -671,11 +781,10 @@ export default class ModalOpenerPlugin extends Plugin {
             previousEditor = previousView.editor;
             previousCursor = previousEditor.getCursor();
         }
-    
+        (this.app as any).commands.executeCommandById(commandId);
+
         const newLeaf = this.app.workspace.getLeaf(true);
         this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
-    
-        (this.app as any).commands.executeCommandById(commandId);
     
         const activeFile = await this.waitForActiveFile();
     
@@ -775,10 +884,6 @@ export default class ModalOpenerPlugin extends Plugin {
             // 设置监听器后执行命令
             setTimeout(() => {
                 (this.app as any).commands.executeCommandById("vscode-editor:create");
-                const codePlugin = this.getPlugin("code-files");
-                if (codePlugin) {
-                    (this.app as any).commands.executeCommandById("code-files:create");
-                }
             }, 0);
     
             // 设置超时检查
@@ -863,7 +968,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (activeView) {
             const editor = activeView.editor;
             const cursor = editor.getCursor();
-            const linkText = `[[${filePath}]]`;
+            const linkText = `![[${filePath}]]`;
             editor.replaceRange(linkText, cursor);
         }
     }
@@ -1024,13 +1129,13 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private findLinkAtPosition(line: string, position: number): string | null {
-        // 匹配内部链接、Markdown 链接和普通 URL
-        const linkRegex = /\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)/g;
+        // 匹配![[]]和[[]]格式的内部链接、Markdown链接和URL
+        const linkRegex = /!?\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)/g;
         let match;
         
         while ((match = linkRegex.exec(line)) !== null) {
             if (match.index <= position && position <= match.index + match[0].length) {
-                // 返回内部链接、Markdown 链接的 URL，或直接的 URL
+                // 返回内部链接、Markdown链接的URL，或直接的URL
                 return match[1] || match[3] || match[4] || null;
             }
         }

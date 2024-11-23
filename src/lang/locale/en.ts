@@ -14,6 +14,13 @@ export default {
   "Failed to create file: ": "Failed to create file: ",
   "Open in modal window error": "Open in modal window error",
   "Open in modal window": "Open in modal window",
+  
+  "Delete linked attachment": "Delete linked attachment",
+  "Confirm deletion": "Confirm deletion",
+  "Are you sure you want to delete: ": "Are you sure you want to delete: ",
+  "File moved to trash": "File moved to trash",
+  "Failed to delete file": "Failed to delete file",
+
   // General settings
   'Open with':'Open with',
   'Drag & Drop':'Drag & Drop',
