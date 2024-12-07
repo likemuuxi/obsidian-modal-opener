@@ -221,7 +221,6 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     
         if (this.isPreviewModeLink(target)) {
-            console.log("111111");
             evt.preventDefault();
             evt.stopImmediatePropagation();
             const link = this.getPreviewModeLinkText(target);
@@ -301,15 +300,15 @@ export default class ModalOpenerPlugin extends Plugin {
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         const currentLine = pos.line;
         let fenceCount = 0;
-        
-        // 只检查当前行之前的内容
+    
+        // 检查围栏标记
         for (let i = 0; i <= currentLine; i++) {
             const line = editor.getLine(i).trim();
             if (line.startsWith("```")) {
                 fenceCount++;
             }
         }
-        
+    
         return fenceCount % 2 === 1;
     }
 
@@ -320,50 +319,24 @@ export default class ModalOpenerPlugin extends Plugin {
                 return;
             }
             if (evt.altKey && evt.button === 0) {
-                // 如果在Code Block中
-                const activefileView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (!activefileView) return;
-                const editor = activefileView.editor;
-                const cursor = editor.getCursor();
-                if (this.isInFencedCodeBlock(editor, cursor)) {
-                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                    
-                    // 监听 modal 创建
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            console.log("Mutation:", mutation);  // 调试信息
-                            mutation.addedNodes.forEach((node) => {
-                                console.log("Added node:", node);  // 调试信息
-                                if (node instanceof HTMLElement) {
-                                    console.log("Node classes:", node.classList);  // 调试信息
-                                    if (node.classList.contains('modal')) {
-                                        console.log("Found modal, adding classes");  // 调试信息
-                                        node.classList.add('modal');
-                                        node.classList.add('modal-opener');
-                                        observer.disconnect();
-                                    }
-                                }
-                            });
-                        });
-                    });
-                
-                    // 开始观察 DOM 变化
-                    observer.observe(document.body, {
-                        childList: true,
-                        subtree: true
-                    });
-                    
-                    return;
-                }
-
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                 // 从点击的元素开始，向上查找 .view-content 类
                 let targetElement = evt.target as HTMLElement;
                 let altText = targetElement.getAttribute("alt");
                 // 调试信息：打印点击的元素和其类名
-                console.log("Clicked element:", targetElement);
-                console.log("Classes:", targetElement.classList);
+                // console.log("Clicked element:", targetElement);
+                // console.log("Classes:", targetElement.classList);
                 if (activeView) {
+                    // 如果在 Code Block中
+                    if (activeView.getMode() === 'source') {
+                        const editor = activeView.editor;
+                        const cursor = editor.getCursor();
+                        if (this.isInFencedCodeBlock(editor, cursor)) {
+                            (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                            return;
+                        }
+                    }
+
                     if (this.isPreviewModeLink(targetElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
@@ -387,9 +360,15 @@ export default class ModalOpenerPlugin extends Plugin {
                         }
                     }
                 } else {
+                    const canvasView = this.app.workspace.getLeavesOfType("canvas").first()?.view;
+                    const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
+                    // 适配canvas视图
+                    if (canvasView && this.isPreviewModeLink(targetElement)) {
+                        this.handlePreviewModeLink(evt);
+                    }
                     // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
                     const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
-                    if(link) {
+                    if(excalidrawView && link) {
                         this.openInFloatPreview(link);
                     }
                 }

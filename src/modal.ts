@@ -92,6 +92,13 @@ export class ModalWindow extends Modal {
         
         // 恢复 ESC 键的默认行为
         this.scope.register([], 'Escape', (evt: KeyboardEvent) => {
+            // 检查当前内容是否为 Excalidraw
+            const leafContent = this.containerEl.querySelector('.workspace-leaf-content');
+            if (this.plugin.settings.disableExcalidrawEsc && leafContent && 
+                leafContent.getAttribute('data-type') === 'excalidraw') {
+                return; // 仅在设置开启时禁用 Excalidraw 的 ESC 关闭
+            }
+            
             evt.preventDefault();
             this.close();
         });

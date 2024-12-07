@@ -11,6 +11,7 @@ export interface ModalOpenerPluginSettings {
 	dragThreshold: number;
 	enableAnimation: boolean;
 	onlyCloseButton: boolean;
+	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
@@ -37,6 +38,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	dragThreshold: 200,
 	enableAnimation: true,
 	onlyCloseButton: false,
+	disableExcalidrawEsc: true,
 	customCommands: [],
 	showFileViewHeader: false,
 	showLinkViewHeader: false,
@@ -58,6 +60,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	dragThreshold: number;
 	enableAnimation: boolean;
 	onlyCloseButton: boolean;
+	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
@@ -165,11 +168,20 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
-			.setDesc(t('Use only the "Close" button and "Esc" to close.'))
+			.setDesc(t('Use only the Close button and Esc to close.'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.onlyCloseButton)
 				.onChange(async (value) => {
 					this.plugin.settings.onlyCloseButton = value;
+					await this.plugin.saveSettings();
+				}));
+		new Setting(containerEl)
+			.setName(t('Disable Excalidraw Esc'))
+			.setDesc(t('Disable Esc key to close modal when editing Excalidraw'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.disableExcalidrawEsc)
+				.onChange(async (value) => {
+					this.plugin.settings.disableExcalidrawEsc = value;
 					await this.plugin.saveSettings();
 				}));
 

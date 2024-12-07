@@ -51,7 +51,9 @@ export default {
 
   'Behavior':'Behavior',
   'Disable external click close':'Disable external click close',
-  'Use only the "Close" button and "Esc" to close.':'Use only the "Close" button and "Esc" to close',
+  'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
+  'Disable Excalidraw Esc': 'Disable Excalidraw Esc',
+  'Disable Esc key to close modal when editing Excalidraw': 'Disable Esc key to close modal when editing Excalidraw',
   'Refresh view on close': 'Refresh view on close',
   'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': 'Refresh views when closing modal, currently only refreshing after editing Canvas and Markmind file',
   'Prevents duplicate tabs':'Prevents duplicate tabs',

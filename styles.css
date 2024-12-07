@@ -2,6 +2,9 @@
 /* .modal-tab-header-hidden .workspace-tab-header.is-active {
     display: none !important;
 } */
+.popover.hover-popover{
+    z-index: 9999 !important;
+}
 
 .modal-bg.modal-opener-bg.closable {
     cursor: pointer;

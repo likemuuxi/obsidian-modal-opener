@@ -51,7 +51,9 @@ export default {
 
     'Behavior':'行为',
     'Disable external click close':'禁用外部点击关闭',
-    'Use only the "Close" button and "Esc" to close.':'仅使用 “关闭” 按钮和 Esc 关闭',
+    'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',
+    'Disable Excalidraw Esc': '禁用 Excalidraw Esc',
+    'Disable Esc key to close modal when editing Excalidraw': '在编辑 Excalidraw 时禁用 Esc 键关闭模态窗口',
     'Refresh view on close': '关闭后刷新视图',
     'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': '关闭模态窗口时刷新视图，目前仅在编辑Canvas和Markmind文件后刷新',
     'Prevents duplicate tabs':'防止重复标签页',
