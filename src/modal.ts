@@ -93,9 +93,8 @@ export class ModalWindow extends Modal {
         // 恢复 ESC 键的默认行为
         this.scope.register([], 'Escape', (evt: KeyboardEvent) => {
             // 检查当前内容是否为 Excalidraw
-            const leafContent = this.containerEl.querySelector('.workspace-leaf-content');
-            if (this.plugin.settings.disableExcalidrawEsc && leafContent && 
-                leafContent.getAttribute('data-type') === 'excalidraw') {
+            const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
+            if (this.plugin.settings.disableExcalidrawEsc && excalidrawView) {
                 return; // 仅在设置开启时禁用 Excalidraw 的 ESC 关闭
             }
             
@@ -127,14 +126,12 @@ export class ModalWindow extends Modal {
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
         const modalOpener = this.containerEl.querySelector('.modal-opener');
         if (modalOpener && this.plugin.settings.enableRefreshOnClose) { // 添加条件检查
-            const workspaceLeafContent = modalOpener.querySelector('.workspace-leaf-content');
-            if (workspaceLeafContent) {
-                const dataType = workspaceLeafContent.getAttribute('data-type');
-                if (dataType === 'canvas' || dataType === 'mindmapview') {
-                    setTimeout(() => {
-                        this.refreshMarkdownViews();
-                    }, this.plugin.settings.delayInMs);
-                }
+            const canvasView = this.app.workspace.getLeavesOfType("canvas").first()?.view;
+            const mindmapView = this.app.workspace.getLeavesOfType("mindmapview").first()?.view;
+            if (canvasView || mindmapView) {
+                setTimeout(() => {
+                    this.refreshMarkdownViews();
+                }, this.plugin.settings.delayInMs);
             }
         }
 

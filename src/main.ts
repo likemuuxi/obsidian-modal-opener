@@ -227,7 +227,7 @@ export default class ModalOpenerPlugin extends Plugin {
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
-            
+            console.log(link);
             if (!folderPlugin || !isFolderLink) {
                 this.openInFloatPreview(link);
             } else {
@@ -336,13 +336,18 @@ export default class ModalOpenerPlugin extends Plugin {
                             return;
                         }
                     }
-
+                    
                     if (this.isPreviewModeLink(targetElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
                         if (activeView.getMode() === 'source') {
                             // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
                             if (targetElement.closest('svg')) {
+                                this.handlePreviewModeLink(evt);
+                                return;
+                            }
+                            // 适配在编辑模式下 richfoot 的 alt 点击
+                            if (targetElement.closest('.rich-foot')) {
                                 this.handlePreviewModeLink(evt);
                                 return;
                             }
@@ -1092,6 +1097,7 @@ export default class ModalOpenerPlugin extends Plugin {
         return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
             || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb')
+            || target.classList.contains('cm-hmd-internal-link')
             || target.classList.contains('internal-embed')
             || target.classList.contains('file-embed-title')
             || target.classList.contains('embed-title')
