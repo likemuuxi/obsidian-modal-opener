@@ -35,9 +35,13 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 
 # 🪒How to install
 
+## Install from community
+
+[obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
+
 ## Manual installation
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/modal-opener/`.
 
 ## Install by BRAT
 
