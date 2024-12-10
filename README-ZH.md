@@ -18,26 +18,28 @@
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
   ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
 
-  > Diagrams的使用需要安装我的修改版插件：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+  > Diagrams的使用需要安装我的修改版：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
   >
 
 # 🎯How to use
 
 - 阅读模式
-
   - 拖拽链接
   - 右键菜单
   - `alt` + 鼠标左键
 - 编辑模式
-
   - 右键菜单
   - `alt` + 鼠标左键
 
 # 🪒如何安装
 
+## 从社区安装
+
+[obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
+
 ## 手动安装
 
-复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径 `VaultFolder/.obsidian/plugins/obsidian-modal-plugin/`.
+复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径 `VaultFolder/.obsidian/plugins/modal-opener/`.
 
 ## 通过 BRAT 安装
 
