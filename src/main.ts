@@ -216,8 +216,12 @@ export default class ModalOpenerPlugin extends Plugin {
             || target.classList.contains('file-embed-title') 
             || target.classList.contains('markdown-embed-link')
             || target.closest('svg') 
-            || target.closest('.ptl-tldraw-image') ) 
-        {
+            || target.closest('.ptl-tldraw-image-container') 
+            || target.closest('.dataloom-padding')
+            || target.closest('.dataloom-bottom-bar')
+            || target.closest('[data-viewport-type="element"]')
+            || target.closest('.dataloom-bottom-bar')
+        ) {
             target = target.closest('.internal-embed') as HTMLElement || target;
         }
     
@@ -228,7 +232,7 @@ export default class ModalOpenerPlugin extends Plugin {
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
-            console.log(link);
+            // console.log(link);
             if (!folderPlugin || !isFolderLink) {
                 this.openInFloatPreview(link);
             } else {
@@ -692,7 +696,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Code File")
                         .setIcon("file-code")
                         .onClick(async () => {
-                            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+                            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
                             await this.createCodeFileAndOpenInModal();
                         })
                 );
@@ -1137,7 +1141,6 @@ export default class ModalOpenerPlugin extends Plugin {
             || target.classList.contains('canvas-minimap')
             || Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))
             || target.classList.contains('svg')
-            || target.classList.contains('ptl-tldraw-image');
     }
     
     private getPreviewModeLinkText(target: HTMLElement): string {
