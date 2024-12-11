@@ -1,4 +1,4 @@
-# 🎉Obsidian Modal Plugin
+# 🎉Obsidian Modal Opener
 
 English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/blob/main/README-ZH.md)
 
