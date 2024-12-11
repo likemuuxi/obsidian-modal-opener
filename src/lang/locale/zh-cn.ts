@@ -16,8 +16,7 @@ export default {
     "Open in modal window": "在模态窗口中打开",
 
     "Delete linked attachment": "删除链接附件",
-    "Confirm deletion": "确认删除",
-    "Are you sure you want to delete: ": "确定要删除？",
+    "Confirm deletion?": "确认删除？",
     "File moved to trash": "文件移至废纸篓",
     "Failed to delete file": "删除文件失败",
 

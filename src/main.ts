@@ -215,7 +215,8 @@ export default class ModalOpenerPlugin extends Plugin {
         if (target.classList.contains('canvas-minimap') 
             || target.classList.contains('file-embed-title') 
             || target.classList.contains('markdown-embed-link')
-            || target.closest('svg')) 
+            || target.closest('svg') 
+            || target.closest('.ptl-tldraw-image') ) 
         {
             target = target.closest('.internal-embed') as HTMLElement || target;
         }
@@ -336,7 +337,7 @@ export default class ModalOpenerPlugin extends Plugin {
                             return;
                         }
                     }
-                    
+
                     if (this.isPreviewModeLink(targetElement)) {
                         this.handlePreviewModeLink(evt);
                     } else {
@@ -644,6 +645,22 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
+            const tldrawPlugin = this.getPlugin("tldraw");
+            if (tldrawPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Tldraw")
+                        .setIcon("shapes")
+                        .onClick(async () => {
+                            await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
+                            setTimeout(() => {
+                                this.openCurrentContentInModal();
+                            }, 500);
+                            
+                            // await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
+                        })
+                );
+            }
             subMenu.addSeparator();
             const excelPlugin = this.getPlugin("excel");
             if (excelPlugin) {
@@ -675,6 +692,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Code File")
                         .setIcon("file-code")
                         .onClick(async () => {
+                            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
                             await this.createCodeFileAndOpenInModal();
                         })
                 );
@@ -688,6 +706,19 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("brain-circuit")
                         .onClick(async () => {
                             await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap", true);
+                        })
+                );
+            }
+
+            const dataloomPlugin = this.getPlugin("notion-like-tables");
+            if (dataloomPlugin) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Dataloom")
+                        .setIcon("container")
+                        .onClick(async () => {
+                            // await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
+                            await this.createFileAndInsertLink("notion-like-tables:create", true);
                         })
                 );
             }
@@ -712,10 +743,10 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("trash")
                         .onClick(() => {
                             const modal = new Modal(this.app);
-                            modal.titleEl.setText(t("Confirm deletion"));
+                            modal.titleEl.setText(t("Confirm deletion?"));
                             
                             const content = modal.contentEl.createDiv();
-                            content.setText(t("Are you sure you want to delete: ") + file.path);
+                            content.setText(file.path);
                             
                             const buttonContainer = content.createDiv({ cls: 'modal-button-container' });
                             
@@ -1105,7 +1136,8 @@ export default class ModalOpenerPlugin extends Plugin {
             || target.classList.contains('markdown-embed-content')
             || target.classList.contains('canvas-minimap')
             || Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))
-            || target.classList.contains('svg');
+            || target.classList.contains('svg')
+            || target.classList.contains('ptl-tldraw-image');
     }
     
     private getPreviewModeLinkText(target: HTMLElement): string {

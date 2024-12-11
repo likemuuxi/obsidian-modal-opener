@@ -525,8 +525,14 @@ export class ModalWindow extends Modal {
                 const leafContent = this.containerEl.querySelector('.modal-opener-content .workspace-leaf-content');
                 if (leafContent) {
                     const dataType = leafContent.getAttribute('data-type');
-                    if (dataType == "canvas" || dataType == "excalidraw") {
-                        heightAdjustment = dataType === 'canvas' ? 1 : dataType === 'excalidraw' ? 2 : 1;
+                    if (dataType == "canvas" || dataType == "excalidraw" || dataType == "tldraw-view") {
+                        if(dataType === 'canvas'){
+                            heightAdjustment = 1;
+                        } else if(dataType === 'excalidraw') {
+                            heightAdjustment = 2;
+                        } else if(dataType === 'tldraw-view') {
+                            heightAdjustment = -1;
+                        }
                     } else {
                         const editingPlugin = this.getPlugin("editing-toolbar");
                         const toolbarPlugin = this.getPlugin("note-toolbar");
