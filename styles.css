@@ -38,7 +38,7 @@
     position: absolute;
     top: 10px;
     right: 10px;
-    /* z-index: 1000; */
+    z-index: 1000;
 }
 
 .modal-opener .modal-content {
@@ -85,7 +85,9 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     display: none !important;
 } 
 
-.modal-animation-enabled .modal-container:has(.modal-opener-content) {
+.modal-animation-enabled .modal-container:has(.modal-opener-content),
+.modal-animation-enabled .modal-container:has(.monaco-editor),
+.modal-animation-enabled .modal-container:has(.diagrams-modal) {
     backdrop-filter: blur(10px);
     border: 1px solid var(--background-modifier-border);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

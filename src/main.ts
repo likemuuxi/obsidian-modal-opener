@@ -302,6 +302,7 @@ export default class ModalOpenerPlugin extends Plugin {
     //         }
     //     });
     // }
+    
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         const currentLine = pos.line;
         let fenceCount = 0;
