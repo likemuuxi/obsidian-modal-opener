@@ -51,7 +51,7 @@ export default {
   'Behavior':'Behavior',
   'Disable external click close':'Disable external click close',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
-  'Disable Excalidraw Esc': 'Disable Excalidraw Esc',
+  'Excalidraw Disables the Esc key': 'Excalidraw Disables the Esc key',
   'Disable Esc key to close modal when editing Excalidraw': 'Disable Esc key to close modal when editing Excalidraw',
   'Refresh view on close': 'Refresh view on close',
   'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': 'Refresh views when closing modal, currently only refreshing after editing Canvas and Markmind file',
@@ -74,6 +74,9 @@ export default {
   'Show file metadata in the modal window':'Show file metadata in the modal window',
   'Hide tab header':'Hide tab header',
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
+
+  'Menu item':'Menu item',
+  'Toggle menu items to show or hide in the right-click context menu':'Toggle menu items to show or hide in the right-click context menu',
 
   'Custom commands':'Custom commands',
   'Add custom command':'Add custom command',

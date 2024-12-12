@@ -51,7 +51,7 @@ export default {
     'Behavior':'行为',
     'Disable external click close':'禁用外部点击关闭',
     'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',
-    'Disable Excalidraw Esc': '禁用 Excalidraw Esc',
+    'Excalidraw Disables the Esc key': 'Excalidraw 禁用 Esc 键',
     'Disable Esc key to close modal when editing Excalidraw': '在编辑 Excalidraw 时禁用 Esc 键关闭模态窗口',
     'Refresh view on close': '关闭后刷新视图',
     'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': '关闭模态窗口时刷新视图，目前仅在编辑Canvas和Markmind文件后刷新',
@@ -74,6 +74,9 @@ export default {
     'Show file metadata in the modal window':'在模态窗口中显示文件元数据',
     'Hide tab header':'隐藏标签页头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
+
+    'Menu item':'菜单项',
+    'Toggle menu items to show or hide in the right-click context menu':'切换菜单项以在右键单击上下文菜单中显示或隐藏',
 
     'Custom commands':'自定义命令',
     'Add custom command':'添加自定义命令',

@@ -326,7 +326,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             if (evt.altKey && evt.button === 0) {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                // 从点击的元素开始，向上查找 .view-content 类
+                // 从点击的��素开始，向上查找 .view-content 类
                 let targetElement = evt.target as HTMLElement;
                 let altText = targetElement.getAttribute("alt");
                 // 调试信息：打印点击的元素和其类名
@@ -580,17 +580,19 @@ export default class ModalOpenerPlugin extends Plugin {
 
             const subMenu = (item as any).setSubmenu();
     
-            subMenu.addItem((subItem: MenuItem) =>
-                subItem
-                    .setTitle("Markdown")
-                    .setIcon("file")
-                    .onClick(() => {
-                        this.createFileAndEditInModal(parentPath, "md");
-                    })
-            );
+            if (this.settings.enabledCommands.markdown) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Markdown")
+                        .setIcon("file")
+                        .onClick(() => {
+                            this.createFileAndEditInModal(parentPath, "md");
+                        })
+                );
+            }
 
             const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
-            if (canvasPlugin) {
+            if (canvasPlugin && this.settings.enabledCommands.canvas) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Canvas")
@@ -602,7 +604,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
             const excalidrawymjrPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
-            if (excalidrawPlugin || excalidrawymjrPlugin) {
+            if ((excalidrawPlugin || excalidrawymjrPlugin) && this.settings.enabledCommands.excalidraw) {
                 subMenu.addSeparator();
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
@@ -640,7 +642,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 );
             }
             const diagramsPlugin = this.getPlugin("obsidian-diagrams-net");
-            if (diagramsPlugin) {
+            if (diagramsPlugin && this.settings.enabledCommands.diagrams) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Diagrams")
@@ -651,7 +653,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 );
             }
             const tldrawPlugin = this.getPlugin("tldraw");
-            if (tldrawPlugin) {
+            if (tldrawPlugin && this.settings.enabledCommands.tldraw) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Tldraw")
@@ -668,7 +670,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             subMenu.addSeparator();
             const excelPlugin = this.getPlugin("excel");
-            if (excelPlugin) {
+            if (excelPlugin && this.settings.enabledCommands.excel) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Excel")
@@ -679,7 +681,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 );
             }
             const SheetPlugin = this.getPlugin("sheet-plus");
-            if (SheetPlugin) {
+            if (SheetPlugin && this.settings.enabledCommands.sheetPlus) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Sheet Plus")
@@ -691,7 +693,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             
             const vscodePlugin = this.getPlugin("vscode-editor");
-            if (vscodePlugin) {
+            if (vscodePlugin && this.settings.enabledCommands.vscode) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Code File")
@@ -704,7 +706,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             
             const markmindPlugin = this.getPlugin("obsidian-markmind");
-            if (markmindPlugin) {
+            if (markmindPlugin && this.settings.enabledCommands.markmind) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("MarkMind")
@@ -716,7 +718,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             const dataloomPlugin = this.getPlugin("notion-like-tables");
-            if (dataloomPlugin) {
+            if (dataloomPlugin && this.settings.enabledCommands.dataloom) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Dataloom")
@@ -1167,7 +1169,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private isValidURL = (url: string) => 
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
 
-    private getPlugin(pluginId: string) {
+    public getPlugin(pluginId: string) {
         const app = this.app as any;
         return app.plugins.plugins[pluginId];
     }
