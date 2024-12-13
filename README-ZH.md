@@ -19,7 +19,9 @@
   ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
 
   > `Diagrams` 的使用需要安装我的修改版：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
-  > 使用 `alt+click` 进入模态窗口编辑代码块需要使用 `VSCode Edit` 插件修改版：
+  > 
+  > 使用 `alt+click` 进入模态窗口编辑代码块需要使用 `VSCode Edit` 插件修改版：[下载链接](https://github.com/likemuuxi/obsidian-modal-opener/releases/tag/0.7.8)
+  > 
 
 # 🎯How to use
 
