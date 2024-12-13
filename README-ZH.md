@@ -18,8 +18,8 @@
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
   ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
 
-  > Diagrams的使用需要安装我的修改版：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
-  >
+  > `Diagrams` 的使用需要安装我的修改版：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+  > 使用 `alt+click` 进入模态窗口编辑代码块需要使用 `VSCode Edit` 插件修改版：
 
 # 🎯How to use
 
