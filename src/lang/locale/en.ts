@@ -77,6 +77,8 @@ export default {
 
   'Menu item':'Menu item',
   'Toggle menu items to show or hide in the right-click context menu':'Toggle menu items to show or hide in the right-click context menu',
+  'Plugin is not enabled or installed':'Plugin is not enabled or installed',
+  'Details':'Details',
 
   'Custom commands':'Custom commands',
   'Add custom command':'Add custom command',

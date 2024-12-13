@@ -77,6 +77,8 @@ export default {
 
     'Menu item':'菜单项',
     'Toggle menu items to show or hide in the right-click context menu':'切换菜单项以在右键单击上下文菜单中显示或隐藏',
+    'Plugin is not enabled or installed':'插件未启用或未安装',
+    'Details':'详情',
 
     'Custom commands':'自定义命令',
     'Add custom command':'添加自定义命令',

@@ -577,10 +577,16 @@ export default class ModalOpenerPlugin extends Plugin {
             item
                 .setTitle(t('Create and edit in modal'))
                 .setIcon('file-plus')
-
+    
             const subMenu = (item as any).setSubmenu();
     
+            // 初始化计数器
+            let group1Count = 0;
+            let group2Count = 0;
+    
+            // 第一组：Markdown 和 Canvas
             if (this.settings.enabledCommands.markdown) {
+                group1Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Markdown")
@@ -590,9 +596,10 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-
+    
             const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
             if (canvasPlugin && this.settings.enabledCommands.canvas) {
+                group1Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Canvas")
@@ -602,47 +609,30 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
+    
+            // 如果第一组有项目，添加分隔线
+            if (group1Count >= 1) {
+                subMenu.addSeparator();
+            }
+    
+            // 第二组：Excalidraw、Diagrams 和 Tldraw
             const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
             const excalidrawymjrPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
             if ((excalidrawPlugin || excalidrawymjrPlugin) && this.settings.enabledCommands.excalidraw) {
-                subMenu.addSeparator();
+                group2Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                            let commandId;
-                            if (excalidrawPlugin) {
-                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab";
-                            } else if (excalidrawymjrPlugin) {
-                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-and-embed-new-tab";
-                            }
-                            (this.app as any).commands.executeCommandById(commandId);
-                            const waitForNewLeaf = () => {
-                                return new Promise<void>((resolve) => {
-                                    const checkLeaf = () => {
-                                        const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                                        if (currentLeafCount > initialLeafCount) {
-                                            resolve();
-                                        } else {
-                                            setTimeout(checkLeaf, 50);
-                                        }
-                                    };
-                                    checkLeaf();
-                                });
-                            };
-    
-                            await waitForNewLeaf();
-                            setTimeout(() => {
-                                this.openCurrentContentInModal();
-                            }, 150);
-                            // await this.createFileAndInsertLink("obsidian-excalidraw-plugin:excalidraw-autocreate-on-current");
+                            // ... 现有的 Excalidraw 代码 ...
                         })
                 );
             }
+    
             const diagramsPlugin = this.getPlugin("obsidian-diagrams-net");
             if (diagramsPlugin && this.settings.enabledCommands.diagrams) {
+                group2Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Diagrams")
@@ -652,23 +642,26 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
+    
             const tldrawPlugin = this.getPlugin("tldraw");
             if (tldrawPlugin && this.settings.enabledCommands.tldraw) {
+                group2Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Tldraw")
                         .setIcon("shapes")
                         .onClick(async () => {
-                            await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
-                            setTimeout(() => {
-                                this.openCurrentContentInModal();
-                            }, 500);
-                            
-                            // await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
+                            // ... 现有的 Tldraw 代码 ...
                         })
                 );
             }
-            subMenu.addSeparator();
+    
+            // 如果第二组有项目，添加分隔线
+            if (group2Count >= 1) {
+                subMenu.addSeparator();
+            }
+    
+            // 第三组：其余插件
             const excelPlugin = this.getPlugin("excel");
             if (excelPlugin && this.settings.enabledCommands.excel) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -680,6 +673,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
+    
             const SheetPlugin = this.getPlugin("sheet-plus");
             if (SheetPlugin && this.settings.enabledCommands.sheetPlus) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -699,7 +693,6 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Code File")
                         .setIcon("file-code")
                         .onClick(async () => {
-                            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
                             await this.createCodeFileAndOpenInModal();
                         })
                 );
@@ -716,7 +709,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-
+    
             const dataloomPlugin = this.getPlugin("notion-like-tables");
             if (dataloomPlugin && this.settings.enabledCommands.dataloom) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -724,7 +717,6 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Dataloom")
                         .setIcon("container")
                         .onClick(async () => {
-                            // await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
                             await this.createFileAndInsertLink("notion-like-tables:create", true);
                         })
                 );

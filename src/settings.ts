@@ -135,18 +135,18 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName(t("Open with"))
 			.addDropdown((dd) => dd
-					.addOption("both", t("Both"))
-					// .addOption("middle", t("Middle mouse button"))
-					.addOption("drag", t("Drag & Drop"))
-					.addOption("altclick", t("Alt & Left click"))
-					.setValue(this.plugin.settings.openMethod)
-					// .onChange(async (value: "drag" | "middle" | "altclick" | "both") => {
-					.onChange(async (value: "drag" | "altclick" | "both") => {
-						this.plugin.settings.openMethod = value;
-						await this.plugin.saveSettings();
-						await this.reloadPlugin();
-						this.display();
-					}));
+				.addOption("both", t("Both"))
+				// .addOption("middle", t("Middle mouse button"))
+				.addOption("drag", t("Drag & Drop"))
+				.addOption("altclick", t("Alt & Left click"))
+				.setValue(this.plugin.settings.openMethod)
+				// .onChange(async (value: "drag" | "middle" | "altclick" | "both") => {
+				.onChange(async (value: "drag" | "altclick" | "both") => {
+					this.plugin.settings.openMethod = value;
+					await this.plugin.saveSettings();
+					await this.reloadPlugin();
+					this.display();
+				}));
 
 		if (this.plugin.settings.openMethod === "drag" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
@@ -365,117 +365,68 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		}
 		
 		// Excalidraw
-		const excalidrawPlugin = this.plugin.getPlugin("obsidian-excalidraw-plugin");
-		const excalidrawymjrPlugin = this.plugin.getPlugin("obsidian-excalidraw-plugin-ymjr");
-		if (excalidrawPlugin || excalidrawymjrPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Excalidraw')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.excalidraw)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.excalidraw = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"obsidian-excalidraw-plugin",
+			"Excalidraw",
+			"excalidraw"
+		);
 
 		// Diagrams
-		const diagramsPlugin = this.plugin.getPlugin("obsidian-diagrams-net");
-		if (diagramsPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Diagrams')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.diagrams)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.diagrams = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"obsidian-diagrams-net",
+			"Diagrams",
+			"diagrams"
+		);
 
 		// Tldraw
-		const tldrawPlugin = this.plugin.getPlugin("tldraw");
-		if (tldrawPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Tldraw')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.tldraw)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.tldraw = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"tldraw",
+			"Tldraw",
+			"tldraw"
+		);
 
 		// Excel
-		const excelPlugin = this.plugin.getPlugin("excel");
-		if (excelPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Excel')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.excel)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.excel = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"excel",
+			"Excel",
+			"excel"
+		);
 
 		// Sheet Plus
-		const SheetPlugin = this.plugin.getPlugin("sheet-plus");
-		if (SheetPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Sheet Plus')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.sheetPlus)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.sheetPlus = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"sheet-plus",
+			"Sheet Plus",
+			"sheetPlus"
+		);
 
 		// VSCode
-		const vscodePlugin = this.plugin.getPlugin("vscode-editor");
-		if (vscodePlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Code File')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.vscode)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.vscode = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"vscode-editor",
+			"Code File",
+			"vscode"
+		);
 
 		// Markmind
-		const markmindPlugin = this.plugin.getPlugin("obsidian-markmind");
-		if (markmindPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('MarkMind')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.markmind)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.markmind = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"obsidian-markmind",
+			"MarkMind",
+			"markmind"
+		);
 
 		// Dataloom
-		const dataloomPlugin = this.plugin.getPlugin("notion-like-tables");
-		if (dataloomPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Dataloom')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.dataloom)
-					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.dataloom = value;
-						await this.plugin.saveSettings();
-					}));
-		}
+		this.createPluginSetting(
+			commandsContainer,
+			"notion-like-tables",
+			"Dataloom",
+			"dataloom"
+		);
 
 		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 
@@ -576,5 +527,43 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		await app.plugins.disablePlugin("modal-opener");
 		await app.plugins.enablePlugin("modal-opener");
 		app.setting.openTabById("modal-opener").display();
+	}
+
+	// 添加一个通用的创建插件设置的函数
+	private createPluginSetting(
+		container: HTMLElement,
+		pluginId: string,
+		displayName: string,
+		settingKey: keyof typeof this.plugin.settings.enabledCommands
+	) {
+		const plugin = this.plugin.getPlugin(pluginId);
+		const setting = new Setting(container).setClass('command-toggle-item');
+		
+		if (plugin) {
+			// 如果插件存在且选项未设置过,则默认启用
+			if (this.plugin.settings.enabledCommands[settingKey] === undefined) {
+				this.plugin.settings.enabledCommands[settingKey] = true;
+				this.plugin.saveSettings();
+			}
+	
+			setting
+				.setName(displayName)
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.enabledCommands[settingKey])
+					.onChange(async (value) => {
+						this.plugin.settings.enabledCommands[settingKey] = value;
+						await this.plugin.saveSettings();
+					}));
+		} else {
+			setting
+				.setName(displayName)
+				.setDesc(t('Plugin is not enabled or installed'))
+				.addButton(button => button
+					.setButtonText(t('Details'))
+					.onClick(() => {
+						window.open(`https://obsidian.md/plugins?id=${pluginId}`, '_blank');
+					}));
+		}
+		return setting;
 	}
 }
