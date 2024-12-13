@@ -20,6 +20,7 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
   ![image](https://github.com/user-attachments/assets/a6303d46-10a1-4f82-a758-5dd6ddfbec40)
 
 > The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+> Using `alt+click` to enter the modal window to Edit the code block requires a modified version using the `VSCode Edit` plugin: 
 
 # 🎯How to use
 
