@@ -352,6 +352,11 @@ export default class ModalOpenerPlugin extends Plugin {
                                 this.handlePreviewModeLink(evt);
                                 return;
                             }
+                            // 适配 tldraw 编辑模式下嵌入视图
+                            if (targetElement.closest('img')) {
+                                this.handlePreviewModeLink(evt);
+                                return;
+                            }
                             // 适配在编辑模式下 richfoot 的 alt 点击
                             if (targetElement.closest('.rich-foot')) {
                                 this.handlePreviewModeLink(evt);
