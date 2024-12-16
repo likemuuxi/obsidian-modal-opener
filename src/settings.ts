@@ -372,6 +372,14 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			"excalidraw"
 		);
 
+		// Excalidraw
+		this.createPluginSetting(
+			commandsContainer,
+			"obsidian-excalidraw-plugin-ymjr",
+			"Excalidraw-ymjr",
+			"excalidraw"
+		);
+
 		// Diagrams
 		this.createPluginSetting(
 			commandsContainer,
@@ -560,8 +568,15 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.setDesc(t('Plugin is not enabled or installed'))
 				.addButton(button => button
 					.setButtonText(t('Details'))
-					.onClick(() => {
-						window.open(`https://obsidian.md/plugins?id=${pluginId}`, '_blank');
+					.onClick(async () => {
+						// (this.app as any).setting.open();
+						// (this.app as any).setting.openTabById('community-plugins');
+						// new Notice('Please search and install the plugin: ' + displayName);
+						// window.open(`https://obsidian.md/plugins?id=${pluginId}`, '_blank');
+						const repoUrl = pluginId === "obsidian-excalidraw-plugin-ymjr" 
+                        ? "https://github.com/Bowen-0x00/obsidian-excalidraw-plugin-ymjr"
+                        : `https://obsidian.md/plugins?id=${pluginId}`;
+                    	window.open(repoUrl, '_blank');
 					}));
 		}
 		return setting;

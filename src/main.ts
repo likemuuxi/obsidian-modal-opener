@@ -625,7 +625,33 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            // ... 现有的 Excalidraw 代码 ...
+                            const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                            let commandId;
+                            if (excalidrawPlugin) {
+                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab";
+                            } else if (excalidrawymjrPlugin) {
+                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-and-embed-new-tab";
+                            }
+                            (this.app as any).commands.executeCommandById(commandId);
+                            const waitForNewLeaf = () => {
+                                return new Promise<void>((resolve) => {
+                                    const checkLeaf = () => {
+                                        const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                                        if (currentLeafCount > initialLeafCount) {
+                                            resolve();
+                                        } else {
+                                            setTimeout(checkLeaf, 50);
+                                        }
+                                    };
+                                    checkLeaf();
+                                });
+                            };
+    
+                            await waitForNewLeaf();
+                            setTimeout(() => {
+                                this.openCurrentContentInModal();
+                            }, 150);
+                            // await this.createFileAndInsertLink("obsidian-excalidraw-plugin:excalidraw-autocreate-on-current");
                         })
                 );
             }
@@ -651,7 +677,12 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Tldraw")
                         .setIcon("shapes")
                         .onClick(async () => {
-                            // ... 现有的 Tldraw 代码 ...
+                            await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
+                            setTimeout(() => {
+                                this.openCurrentContentInModal();
+                            }, 500);
+                            
+                            // await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
                         })
                 );
             }
@@ -717,6 +748,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Dataloom")
                         .setIcon("container")
                         .onClick(async () => {
+                            // await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
                             await this.createFileAndInsertLink("notion-like-tables:create", true);
                         })
                 );
