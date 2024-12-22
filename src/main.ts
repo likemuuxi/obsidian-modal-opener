@@ -326,12 +326,12 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             if (evt.altKey && evt.button === 0) {
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                // 从点击的��素开始，向上查找 .view-content 类
+                // 从点击的元素开始，向上查找 .view-content 类
                 let targetElement = evt.target as HTMLElement;
                 let altText = targetElement.getAttribute("alt");
                 // 调试信息：打印点击的元素和其类名
-                // console.log("Clicked element:", targetElement);
-                // console.log("Classes:", targetElement.classList);
+                console.log("Clicked element:", targetElement);
+                console.log("Classes:", targetElement.classList);
                 if (activeView) {
                     // 如果在 Code Block中
                     if (activeView.getMode() === 'source') {
@@ -344,6 +344,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     }
 
                     if (this.isPreviewModeLink(targetElement)) {
+
                         this.handlePreviewModeLink(evt);
                     } else {
                         if (activeView.getMode() === 'source') {
@@ -376,16 +377,13 @@ export default class ModalOpenerPlugin extends Plugin {
                         }
                     }
                 } else {
-                    const canvasView = this.app.workspace.getLeavesOfType("canvas").first()?.view;
                     const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-                    // 适配canvas视图
-                    if (canvasView && this.isPreviewModeLink(targetElement)) {
-                        this.handlePreviewModeLink(evt);
-                    }
                     // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
                     const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
                     if(excalidrawView && link) {
                         this.openInFloatPreview(link);
+                    } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
+                        this.handlePreviewModeLink(evt);
                     }
                 }
             }
@@ -450,42 +448,45 @@ export default class ModalOpenerPlugin extends Plugin {
     private addFileFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
+                // console.log("file link: " + link);
                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                if (activeView && activeView.getMode() === 'source') {
-                    const editor = activeView.editor;
-                    const cursor = editor.getCursor();
-                    const line = editor.getLine(cursor.line);
-                    const foundLink = this.findLinkAtPosition(line, cursor.ch);
-                    // console.log("foundLink", foundLink);
-                    if (foundLink) {
-                        this.openInFloatPreview(foundLink);
-                    } else {
-                        this.openInFloatPreview(link);
-                    }
-                } else if (activeView && activeView.getMode() === 'preview') {
-                    // 不直接采用openInFloatPreview的原因 是适配带锚点的链接
-                    const selection = window.getSelection();
-                    if (selection && selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0);
-                        const linkElement = range.startContainer.parentElement?.closest('a') as HTMLAnchorElement;
-                        if (linkElement) {
-                            link = linkElement.getAttribute('data-href') || linkElement.getAttribute('href') || link;
-                            this.openInFloatPreview(link);
+                // 如果是有效的视图
+                if (activeView) {
+                    const mode = activeView.getMode();
+                    let linkToPreview = link; // 默认为传入的 link
+                    if (mode === 'source') {
+                        const editor = activeView.editor;
+                        const cursor = editor.getCursor();
+                        const line = editor.getLine(cursor.line);
+                        const foundLink = this.findLinkAtPosition(line, cursor.ch);
+                        // 如果找到了链接，使用找到的链接
+                        if (foundLink) {
+                            linkToPreview = foundLink;
                         }
-                    } else {
-                        // 修复 Components 数据视图右键选项
-                        this.openInFloatPreview(link);
+                    } else if (mode === 'preview') {
+                        const selection = window.getSelection();
+                        if (selection && selection.rangeCount > 0) {
+                            const range = selection.getRangeAt(0);
+                            const linkElement = range.startContainer.parentElement?.closest('a');
+                            if (linkElement) {
+                                linkToPreview = linkElement.getAttribute('data-href') || linkElement.getAttribute('href') || linkToPreview;
+                            }
+                        }
                     }
+                    // 统一调用 openInFloatPreview
+                    this.openInFloatPreview(linkToPreview);
                 } else {
+                    // 如果没有有效的视图，直接打开链接
                     this.openInFloatPreview(link);
                 }
-            }
+            }            
         });
     }
     
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
+                console.log("folder");
                 this.folderNoteOpenInFloatPreview(link);
             }
         });
@@ -494,6 +495,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
+                console.log("link");
                 this.openInFloatPreview(link);
             }
         });
