@@ -49,6 +49,8 @@ export default {
     'Copied to clipboard': '链接已复制到剪切板',
 
     'Behavior':'行为',
+    'Single-click trigger':'单击触发（测试）',
+    'If enabled, clicking links will open them in modal without holding Alt. If disabled, you need to hold Alt while clicking.':'如果启用，点击链接将在模式中打开链接，而不需要按住Alt键。如果禁用，你需要在点击时按住Alt键。',
     'Disable external click close':'禁用外部点击关闭',
     'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',
     'Excalidraw Disables the Esc key': 'Excalidraw 禁用 Esc 键',

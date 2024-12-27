@@ -11,6 +11,7 @@ export interface ModalOpenerPluginSettings {
 	modalHeight: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
+	clickWithoutAlt: boolean;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
@@ -50,6 +51,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	modalHeight: "86vh",
 	dragThreshold: 200,
 	enableAnimation: true,
+	clickWithoutAlt: false,
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
 	customCommands: [],
@@ -84,6 +86,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	modalHeight: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
+	clickWithoutAlt: boolean;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
@@ -203,6 +206,19 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
+		if (this.plugin.settings.openMethod === "altclick" || this.plugin.settings.openMethod === "both") {
+			new Setting(containerEl)
+				.setName(t("Single-click trigger"))
+				.setDesc(t("If enabled, clicking links will open them in modal without holding Alt. If disabled, you need to hold Alt while clicking."))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.clickWithoutAlt)
+					.onChange(async (value) => {
+						this.plugin.settings.clickWithoutAlt = value;
+						await this.plugin.saveSettings();
+						await this.reloadPlugin();
+					}));
+		}
+		
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
 			.setDesc(t('Use only the Close button and Esc to close.'))

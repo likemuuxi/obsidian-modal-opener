@@ -320,70 +320,160 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
-            // 如果按下了 ctrl + alt + click，则保持默认行为
-            if (evt.altKey && evt.ctrlKey && evt.button === 0) {
-                return;
-            }
-            if (evt.altKey && evt.button === 0) {
-                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                // 从点击的元素开始，向上查找 .view-content 类
-                let targetElement = evt.target as HTMLElement;
-                let altText = targetElement.getAttribute("alt");
-                // 调试信息：打印点击的元素和其类名
-                console.log("Clicked element:", targetElement);
-                console.log("Classes:", targetElement.classList);
-                if (activeView) {
-                    // 如果在 Code Block中
-                    if (activeView.getMode() === 'source') {
-                        const editor = activeView.editor;
-                        const cursor = editor.getCursor();
-                        if (this.isInFencedCodeBlock(editor, cursor)) {
-                            (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                            return;
-                        }
-                    }
+            const shouldTrigger = this.settings.clickWithoutAlt ? 
+            (evt.button === 0) : // 如果启用了无Alt点击,则只需要左键点击
+            (evt.altKey && evt.button === 0); // 如果没启用,则需要alt+左键点击
 
-                    if (this.isPreviewModeLink(targetElement)) {
-
-                        this.handlePreviewModeLink(evt);
-                    } else {
-                        if (activeView.getMode() === 'source') {
-                            // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
-                            if (targetElement.closest('svg')) {
+            if (shouldTrigger) {
+                if (evt.ctrlKey && evt.button === 0) {
+                    return;
+                }
+                if (evt.altKey && evt.ctrlKey && evt.button === 0) {
+                    return;
+                }
+                if(this.settings.clickWithoutAlt) {
+                    const target = evt.target as HTMLElement;
+                    // 检查是否点击了双链或其他相关链接元素
+                    const isInternalLink = target.classList.contains('internal-link') || 
+                    target.classList.contains('external-link') ||
+                    target.classList.contains('cm-underline') ||
+                    target.classList.contains('cm-hmd-internal-link') ||
+                    target.classList.contains('internal-embed') ||
+                    target.classList.contains('file-embed-title') ||
+                    target.classList.contains('embed-title') ||
+                    target.classList.contains('markdown-embed-link') ||
+                    target.classList.contains('markdown-embed-content') ||
+                    target.classList.contains('canvas-minimap') ||
+                    Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
+                    target.classList.contains('svg') || 
+                    target.classList.contains('ptl-markdown-embed');
+                    // 只有在点击双链时才执行后续操作
+                    if (isInternalLink) {
+                        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                        // 从点击的元素开始，向上查找 .view-content 类
+                        let targetElement = evt.target as HTMLElement;
+                        let altText = targetElement.getAttribute("alt");
+                        // 调试信息：打印点击的元素和其类名
+                        // console.log("Clicked element:", targetElement);
+                        // console.log("Classes:", targetElement.classList);
+                        if (activeView) {
+                            // 如果在 Code Block中
+                            if (activeView.getMode() === 'source') {
+                                const editor = activeView.editor;
+                                const cursor = editor.getCursor();
+                                if (this.isInFencedCodeBlock(editor, cursor)) {
+                                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                                    return;
+                                }
+                            }
+    
+                            if (this.isPreviewModeLink(targetElement)) {
+    
                                 this.handlePreviewModeLink(evt);
-                                return;
+                            } else {
+                                if (activeView.getMode() === 'source') {
+                                    // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
+                                    if (targetElement.closest('svg')) {
+                                        this.handlePreviewModeLink(evt);
+                                        return;
+                                    }
+                                    // 适配 tldraw 编辑模式下嵌入视图
+                                    if (targetElement.closest('img')) {
+                                        this.handlePreviewModeLink(evt);
+                                        return;
+                                    }
+                                    // 适配在编辑模式下 richfoot 的 alt 点击
+                                    if (targetElement.closest('.rich-foot')) {
+                                        this.handlePreviewModeLink(evt);
+                                        return;
+                                    }
+                                    // 适配diagram.net svg 类型的文件 alt+点击  不做处理
+                                    if (altText && altText.endsWith(".svg")) {
+                                        // console.log("altText", altText);
+                                        return;
+                                    }
+                                    this.handleEditModeLink(activeView.editor);
+                                    // 阻止surfing弹出下载框
+                                    evt.preventDefault();
+                                    evt.stopImmediatePropagation();
+                                } else {
+                                    this.handlePreviewModeLink(evt);
+                                }
                             }
-                            // 适配 tldraw 编辑模式下嵌入视图
-                            if (targetElement.closest('img')) {
-                                this.handlePreviewModeLink(evt);
-                                return;
-                            }
-                            // 适配在编辑模式下 richfoot 的 alt 点击
-                            if (targetElement.closest('.rich-foot')) {
-                                this.handlePreviewModeLink(evt);
-                                return;
-                            }
-                            // 适配diagram.net svg 类型的文件 alt+点击  不做处理
-                            if (altText && altText.endsWith(".svg")) {
-                                // console.log("altText", altText);
-                                return;
-                            }
-                            this.handleEditModeLink(activeView.editor);
-                            // 阻止surfing弹出下载框
-                            evt.preventDefault();
-                            evt.stopImmediatePropagation();
                         } else {
+                            const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
+                            // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
+                            const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
+                            if(excalidrawView && link) {
+                                this.openInFloatPreview(link);
+                            } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
+                                this.handlePreviewModeLink(evt);
+                            }
+                        }
+                    } else {
+                        return;
+                    } 
+                } else {
+                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                    // 从点击的元素开始，向上查找 .view-content 类
+                    let targetElement = evt.target as HTMLElement;
+                    let altText = targetElement.getAttribute("alt");
+                    // 调试信息：打印点击的元素和其类名
+                    // console.log("Clicked element:", targetElement);
+                    // console.log("Classes:", targetElement.classList);
+                    if (activeView) {
+                        // 如果在 Code Block中
+                        if (activeView.getMode() === 'source') {
+                            const editor = activeView.editor;
+                            const cursor = editor.getCursor();
+                            if (this.isInFencedCodeBlock(editor, cursor)) {
+                                (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                                return;
+                            }
+                        }
+
+                        if (this.isPreviewModeLink(targetElement)) {
+
+                            this.handlePreviewModeLink(evt);
+                        } else {
+                            if (activeView.getMode() === 'source') {
+                                // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
+                                if (targetElement.closest('svg')) {
+                                    this.handlePreviewModeLink(evt);
+                                    return;
+                                }
+                                // 适配 tldraw 编辑模式下嵌入视图
+                                if (targetElement.closest('img')) {
+                                    this.handlePreviewModeLink(evt);
+                                    return;
+                                }
+                                // 适配在编辑模式下 richfoot 的 alt 点击
+                                if (targetElement.closest('.rich-foot')) {
+                                    this.handlePreviewModeLink(evt);
+                                    return;
+                                }
+                                // 适配diagram.net svg 类型的文件 alt+点击  不做处理
+                                if (altText && altText.endsWith(".svg")) {
+                                    // console.log("altText", altText);
+                                    return;
+                                }
+                                this.handleEditModeLink(activeView.editor);
+                                // 阻止surfing弹出下载框
+                                evt.preventDefault();
+                                evt.stopImmediatePropagation();
+                            } else {
+                                this.handlePreviewModeLink(evt);
+                            }
+                        }
+                    } else {
+                        const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
+                        // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
+                        const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
+                        if(excalidrawView && link) {
+                            this.openInFloatPreview(link);
+                        } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
                             this.handlePreviewModeLink(evt);
                         }
-                    }
-                } else {
-                    const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-                    // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
-                    const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
-                    if(excalidrawView && link) {
-                        this.openInFloatPreview(link);
-                    } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
-                        this.handlePreviewModeLink(evt);
                     }
                 }
             }
