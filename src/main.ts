@@ -325,6 +325,9 @@ export default class ModalOpenerPlugin extends Plugin {
             (evt.altKey && evt.button === 0); // 如果没启用,则需要alt+左键点击
 
             if (shouldTrigger) {
+                if (evt.altKey && evt.button === 0) {
+                    return;
+                }
                 if (evt.ctrlKey && evt.button === 0) {
                     return;
                 }
@@ -334,19 +337,19 @@ export default class ModalOpenerPlugin extends Plugin {
                 if(this.settings.clickWithoutAlt) {
                     const target = evt.target as HTMLElement;
                     // 检查是否点击了双链或其他相关链接元素
-                    const isInternalLink = target.classList.contains('internal-link') || 
-                    target.classList.contains('external-link') ||
-                    target.classList.contains('cm-underline') ||
-                    target.classList.contains('cm-hmd-internal-link') ||
-                    target.classList.contains('internal-embed') ||
-                    target.classList.contains('file-embed-title') ||
-                    target.classList.contains('embed-title') ||
-                    target.classList.contains('markdown-embed-link') ||
-                    target.classList.contains('markdown-embed-content') ||
-                    target.classList.contains('canvas-minimap') ||
-                    Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
-                    target.classList.contains('svg') || 
-                    target.classList.contains('ptl-markdown-embed');
+                    const isInternalLink = (target.classList.contains('internal-link') && !target.closest('.block-language-table-of-contents')) || 
+                        target.classList.contains('external-link') ||
+                        target.classList.contains('cm-underline') ||
+                        target.classList.contains('cm-hmd-internal-link') ||
+                        target.classList.contains('internal-embed') ||
+                        target.classList.contains('file-embed-title') ||
+                        target.classList.contains('embed-title') ||
+                        target.classList.contains('markdown-embed-link') ||
+                        target.classList.contains('markdown-embed-content') ||
+                        target.classList.contains('canvas-minimap') ||
+                        Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
+                        target.classList.contains('svg') || 
+                        target.classList.contains('ptl-markdown-embed');
                     // 只有在点击双链时才执行后续操作
                     if (isInternalLink) {
                         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -354,21 +357,10 @@ export default class ModalOpenerPlugin extends Plugin {
                         let targetElement = evt.target as HTMLElement;
                         let altText = targetElement.getAttribute("alt");
                         // 调试信息：打印点击的元素和其类名
-                        // console.log("Clicked element:", targetElement);
-                        // console.log("Classes:", targetElement.classList);
+                        console.log("Clicked element:", targetElement);
+                        console.log("Classes:", targetElement.classList);
                         if (activeView) {
-                            // 如果在 Code Block中
-                            if (activeView.getMode() === 'source') {
-                                const editor = activeView.editor;
-                                const cursor = editor.getCursor();
-                                if (this.isInFencedCodeBlock(editor, cursor)) {
-                                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                                    return;
-                                }
-                            }
-    
                             if (this.isPreviewModeLink(targetElement)) {
-    
                                 this.handlePreviewModeLink(evt);
                             } else {
                                 if (activeView.getMode() === 'source') {
@@ -412,7 +404,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         }
                     } else {
                         return;
-                    } 
+                    }
                 } else {
                     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                     // 从点击的元素开始，向上查找 .view-content 类
