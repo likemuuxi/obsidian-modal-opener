@@ -209,7 +209,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		if (this.plugin.settings.openMethod === "altclick" || this.plugin.settings.openMethod === "both") {
 			new Setting(containerEl)
 				.setName(t("Single-click trigger"))
-				.setDesc(t("If enabled, clicking links will open them in modal without holding Alt. If disabled, you need to hold Alt while clicking."))
+				.setDesc(t("If enabled, clicking links will open them in modal window without holding Alt."))
 				.addToggle(toggle => toggle
 					.setValue(this.plugin.settings.clickWithoutAlt)
 					.onChange(async (value) => {

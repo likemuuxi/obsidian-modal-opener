@@ -325,9 +325,6 @@ export default class ModalOpenerPlugin extends Plugin {
             (evt.altKey && evt.button === 0); // 如果没启用,则需要alt+左键点击
 
             if (shouldTrigger) {
-                if (evt.altKey && evt.button === 0) {
-                    return;
-                }
                 if (evt.ctrlKey && evt.button === 0) {
                     return;
                 }
@@ -335,6 +332,9 @@ export default class ModalOpenerPlugin extends Plugin {
                     return;
                 }
                 if(this.settings.clickWithoutAlt) {
+                    if (evt.altKey && evt.button === 0) {
+                        return;
+                    }
                     const target = evt.target as HTMLElement;
                     // 检查是否点击了双链或其他相关链接元素
                     const isInternalLink = (target.classList.contains('internal-link') && !target.closest('.block-language-table-of-contents')) || 

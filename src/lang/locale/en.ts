@@ -50,7 +50,7 @@ export default {
 
   'Behavior':'Behavior',
   'Single-click trigger':'Single-click trigger (test)',
-  'If enabled, clicking links will open them in modal without holding Alt. If disabled, you need to hold Alt while clicking.':'If enabled, clicking links will open them in modal without holding Alt. If disabled, you need to hold Alt while clicking.',
+  'If enabled, clicking links will open them in modal window without holding Alt.':'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close':'Disable external click close',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
   'Excalidraw Disables the Esc key': 'Excalidraw Disables the Esc key',
