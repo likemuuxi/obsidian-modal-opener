@@ -49,7 +49,7 @@ export default {
     'Copied to clipboard': '链接已复制到剪切板',
 
     'Behavior':'行为',
-    'Single-click trigger':'单击触发（测试）',
+    'Single-click trigger':'单击触发',
     'If enabled, clicking links will open them in modal window without holding Alt.':'如果启用，点击链接将在模态窗口中打开链接，而不需要按住Alt键。',
     'Disable external click close':'禁用外部点击关闭',
     'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',

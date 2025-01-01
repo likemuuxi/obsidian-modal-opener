@@ -49,7 +49,7 @@ export default {
   'Copied to clipboard': 'Link copied to clipboard',
 
   'Behavior':'Behavior',
-  'Single-click trigger':'Single-click trigger (test)',
+  'Single-click trigger':'Single-click trigger',
   'If enabled, clicking links will open them in modal window without holding Alt.':'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close':'Disable external click close',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',

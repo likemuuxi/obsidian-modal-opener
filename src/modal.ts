@@ -122,7 +122,51 @@ export class ModalWindow extends Modal {
         }
     }
 
+	private isTabStacked = (element: HTMLElement) => {
+		const innerContainer = element.closest('.workspace-tab-header-container-inner');
+		const outerContainer = element.closest('.workspace-tab-container');
+
+		if (innerContainer) {
+			return false;
+		} else if (outerContainer) {
+			return true;
+		}
+		return false;
+	};
+
     onClose() {
+        // 当是isTabStacked时，检查右侧有无标签页，如果有，聚焦右侧标签页再聚焦回来
+        if (this.associatedLeaf) {
+            const tabHeaderEl = (this.associatedLeaf as any).tabHeaderEl;
+            if (tabHeaderEl && this.isTabStacked(tabHeaderEl)) {
+                // 获取当前标签页的父容器
+                const tabContainer = tabHeaderEl.closest('.workspace-tab-container');
+                if (tabContainer) {
+                    // 获取所有标签页
+                    const allTabs = Array.from(tabContainer.querySelectorAll('.workspace-tab-header'));
+                    // 找到当前标签页的索引
+                    const currentIndex = allTabs.findIndex(tab => tab === tabHeaderEl);
+                    // 获取右侧标签页
+                    const nextTab = allTabs[currentIndex + 1];
+                    
+                    if (nextTab) {
+                        // 保存当前活动的叶子
+                        const currentLeaf = this.app.workspace.activeLeaf;
+                        
+                        // 点击右侧标签页
+                        (nextTab as HTMLElement).click();
+                        
+                        // 延迟后再切回原来的标签页
+                        setTimeout(() => {
+                            if (currentLeaf) {
+                                this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
+                            }
+                        }, 50);
+                    }
+                }
+            }
+        }
+        
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
         const modalOpener = this.containerEl.querySelector('.modal-opener');
         if (modalOpener && this.plugin.settings.enableRefreshOnClose) { // 添加条件检查
