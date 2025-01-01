@@ -377,7 +377,10 @@ export class ModalWindow extends Modal {
             this.leaf = leaf;
             this.associatedLeaf = leaf;
         }
-        this.setContainerHeight(fileContainer, false);
+
+        setTimeout(() => {
+            this.setContainerHeight(fileContainer, false);
+        }, 100);
 
         const noteToolbarPlugin = this.getPlugin("note-toolbar");
         if(noteToolbarPlugin) {
@@ -582,6 +585,8 @@ export class ModalWindow extends Modal {
                         const toolbarPlugin = this.getPlugin("note-toolbar");
                         if(editingPlugin || toolbarPlugin) {
                             heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 2 : 1);
+                        } else {
+                            heightAdjustment = 1; // markdown
                         }
                     }
                 }
@@ -597,6 +602,8 @@ export class ModalWindow extends Modal {
                         const toolbarPlugin = this.getPlugin("note-toolbar");
                         if(editingPlugin || toolbarPlugin) {
                             heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 5 : 4);
+                        } else {
+                            heightAdjustment = 1; // markdown
                         }
                     }
                 }

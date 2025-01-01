@@ -66,6 +66,8 @@ export default {
     "Modal width":'窗口宽度',
     "Modal height":'窗口高度',
     "Enter any valid CSS unit":'输入任何有效的CSS单位',
+    'Enable modal window rounding':'启用模态窗口圆角',
+    'Toggle to enable or disable modal window rounding':'切换以启用或禁用模态窗口圆角效果',
     'Enable animation and blur':'启用动画和模糊',
     'Toggle to enable or disable animation and blur effects':'切换以启用或禁用动画和模糊效果',
     'Show view header of the file':'显示文件的视图标题',

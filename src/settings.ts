@@ -11,6 +11,7 @@ export interface ModalOpenerPluginSettings {
 	modalHeight: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
+	enableRounding: boolean;
 	clickWithoutAlt: boolean;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
@@ -51,6 +52,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	modalHeight: "86vh",
 	dragThreshold: 200,
 	enableAnimation: true,
+	enableRounding: false,
 	clickWithoutAlt: false,
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
@@ -86,6 +88,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	modalHeight: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
+	enableRounding: boolean;
 	clickWithoutAlt: boolean;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
@@ -228,6 +231,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.onlyCloseButton = value;
 					await this.plugin.saveSettings();
 				}));
+
 		new Setting(containerEl)
 			.setName(t('Excalidraw Disables the Esc key'))
 			.setDesc(t('Disable Esc key to close modal when editing Excalidraw'))
@@ -295,12 +299,12 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Hide tab header'))
-			.setDesc(t('Hides the tab header associated with the modal window'))
+			.setName(t('Enable modal window rounding'))
+			.setDesc(t('Toggle to enable or disable modal window rounding'))
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideTabHeader)
+				.setValue(this.plugin.settings.enableRounding)
 				.onChange(async (value) => {
-					this.plugin.settings.hideTabHeader = value;
+					this.plugin.settings.enableRounding = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
@@ -315,6 +319,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
+
+		new Setting(containerEl)
+			.setName(t('Hide tab header'))
+			.setDesc(t('Hides the tab header associated with the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideTabHeader)
+				.onChange(async (value) => {
+					this.plugin.settings.hideTabHeader = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+			}));
 
 		new Setting(containerEl)
 			.setName(t('Show metadata'))

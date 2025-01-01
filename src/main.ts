@@ -68,6 +68,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
     applyStyles() {
         document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+        document.body.classList.toggle('modal-rounding-enabled', this.settings.enableRounding);
         document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
         document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
         document.body.classList.toggle('show-metadata', this.settings.showMetadata);
@@ -339,14 +340,14 @@ export default class ModalOpenerPlugin extends Plugin {
                         target.classList.contains('cm-underline') ||
                         target.classList.contains('cm-hmd-internal-link') ||
                         target.classList.contains('internal-embed') ||
-                        target.classList.contains('file-embed-title') ||
-                        target.classList.contains('embed-title') ||
-                        target.classList.contains('markdown-embed-link') ||
-                        target.classList.contains('markdown-embed-content') ||
-                        target.classList.contains('canvas-minimap') ||
-                        Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
-                        target.classList.contains('svg') || 
-                        target.classList.contains('ptl-markdown-embed');
+                        target.classList.contains('file-embed-title') || // 文件嵌入
+                        target.classList.contains('embed-title') || // markdown嵌入
+                        target.classList.contains('markdown-embed-link') || // markdown嵌入link图标
+                        target.classList.contains('markdown-embed-content') || // markdown嵌入内容
+                        target.classList.contains('canvas-minimap') ||  // canvas嵌入
+                        Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) || // excalidraw嵌入
+                        target.closest('svg') || // markmind嵌入
+                        target.closest('img'); // tldraw嵌入
                     // 只有在点击双链时才执行后续操作
                     if (isInternalLink) {
                         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -354,8 +355,8 @@ export default class ModalOpenerPlugin extends Plugin {
                         let targetElement = evt.target as HTMLElement;
                         let altText = targetElement.getAttribute("alt");
                         // 调试信息：打印点击的元素和其类名
-                        console.log("Clicked element:", targetElement);
-                        console.log("Classes:", targetElement.classList);
+                        // console.log("Clicked element:", targetElement);
+                        // console.log("Classes:", targetElement.classList);
                         if (activeView) {
                             if (this.isPreviewModeLink(targetElement)) {
                                 this.handlePreviewModeLink(evt);

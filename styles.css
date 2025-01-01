@@ -36,8 +36,8 @@
 
 .modal-opener .modal-close-button {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 8px;
+    right: 8px;
     z-index: 1000;
 }
 
@@ -69,8 +69,14 @@
 }
 
 .modal.modal-opener:has(.workspace-leaf-content[data-type="markdown"]) {
-    padding: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
 }
+.modal-opener:has(.workspace-leaf-content[data-type="markdown"]) .modal-close-button {
+    top: 5px;
+    right: 5px;
+}
+
 
 body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content:not([data-type="surfing-view"]) .view-header {
     display: none;
@@ -84,6 +90,12 @@ body:not(.show-link-view-header) .modal-opener-content .wb-bookmark-bar {
 body:not(.show-metadata) .modal-opener-content .metadata-container {
     display: none !important;
 } 
+
+.modal-rounding-enabled .modal:has(.modal-opener-content),
+.modal-rounding-enabled .modal:has(.monaco-editor),
+.modal-rounding-enabled .modal:has(.diagrams-modal) {
+    border-radius: 20px;
+}
 
 .modal-animation-enabled .modal-container:has(.modal-opener-content),
 .modal-animation-enabled .modal-container:has(.monaco-editor),

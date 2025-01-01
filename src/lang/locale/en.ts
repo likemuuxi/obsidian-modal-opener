@@ -66,6 +66,8 @@ export default {
   "Modal width":'Modal width',
   "Modal height":'Modal height',
   "Enter any valid CSS unit":'Enter any valid CSS unit',
+  'Enable modal window rounding':'Enable modal window rounding',
+  'Toggle to enable or disable modal window rounding':'Toggle to enable or disable modal window rounding',
   'Enable animation and blur':'Enable animation and blur',
   'Toggle to enable or disable animation and blur effects':'Toggle to enable or disable animation and blur effects',
   'Show view header of the file':'Show view header of the file',
