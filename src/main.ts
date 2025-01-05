@@ -232,6 +232,9 @@ export default class ModalOpenerPlugin extends Plugin {
         if (linkElement && linkElement.hasAttribute('data-tooltip-position')) {
             target = linkElement;
         }
+        if (linkElement?.closest('.block-language-table-of-contents')) {
+            return;
+        }
 
         if (this.isPreviewModeLink(target)) {
             evt.preventDefault();
