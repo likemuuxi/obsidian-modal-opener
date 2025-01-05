@@ -375,7 +375,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.setName(t('Modal window open delay'))
 			.setDesc(t('Set the delay (in milliseconds) before opening modal window after creating new file.'))
 			.addSlider(slider => slider
-				.setLimits(0, 5000, 50)
+				.setLimits(0, 500, 50)
 				.setValue(this.plugin.settings.modalOpenDelay)
 				.setDynamicTooltip()
 				.onChange(async (value) => {
