@@ -554,7 +554,7 @@ export class ModalWindow extends Modal {
     
         if (isLinkView) {
             if (!this.plugin.settings.showLinkViewHeader) {
-                heightAdjustment = 2;
+                heightAdjustment = -1;
             } else {
                 heightAdjustment = 6;
             }

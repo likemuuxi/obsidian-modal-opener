@@ -360,18 +360,24 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private isValidInternalLink(target: HTMLElement): boolean {
         const linkElement = target.tagName === 'A' ? target : target.closest('a');
+    
+        // 如果在 block-language-table-of-contents 中，直接返回 false
+        if (linkElement?.closest('.block-language-table-of-contents')) {
+            return false;
+        }
+    
         return !!(
-            (linkElement && (
-                (linkElement.classList.contains('internal-link') && !linkElement.closest('.block-language-table-of-contents')) ||
+            linkElement && (
+                linkElement.classList.contains('internal-link') ||
                 linkElement.classList.contains('external-link') ||
                 linkElement.hasAttribute('data-tooltip-position')
-            )) ||
+            ) ||
             target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link') ||
             Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
             target.closest('svg, img')
         );
     }
-
+    
     private shouldSkipElement(target: HTMLElement): boolean {
         // 适配diagram.net svg 类型的文件 alt+点击  不做处理
         const altText = target.getAttribute("alt");
