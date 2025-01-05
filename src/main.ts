@@ -87,6 +87,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerOpenHandler();
         this.registerCustomCommands();
     }
+
     private openContentInModal(shouldDetach: boolean = false) {
         const currentFile = this.app.workspace.getActiveFile()?.path || '';
         const file = this.app.vault.getAbstractFileByPath(currentFile);
@@ -226,6 +227,12 @@ export default class ModalOpenerPlugin extends Plugin {
             target = target.closest('.internal-embed') as HTMLElement || target;
         }
     
+        // 检查是否是链接或链接内的元素
+        const linkElement = target.tagName === 'A' ? target : target.closest('a');
+        if (linkElement && linkElement.hasAttribute('data-tooltip-position')) {
+            target = linkElement;
+        }
+
         if (this.isPreviewModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
@@ -233,7 +240,6 @@ export default class ModalOpenerPlugin extends Plugin {
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
-            // console.log(link);
             if (!folderPlugin || !isFolderLink) {
                 this.openInFloatPreview(link);
             } else {
@@ -305,6 +311,10 @@ export default class ModalOpenerPlugin extends Plugin {
     // }
     
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
+        if (document.querySelector('.monaco-editor')) {
+            return false;
+        }
+
         const currentLine = pos.line;
         let fenceCount = 0;
     
@@ -321,154 +331,79 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
+            // 检查是否应该触发处理
             const shouldTrigger = this.settings.clickWithoutAlt ? 
-            (evt.button === 0) : // 如果启用了无Alt点击,则只需要左键点击
-            (evt.altKey && evt.button === 0); // 如果没启用,则需要alt+左键点击
+                (evt.button === 0) : (evt.altKey && evt.button === 0);
+            if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
 
-            if (shouldTrigger) {
-                if (evt.ctrlKey && evt.button === 0) {
-                    return;
-                }
-                if (evt.altKey && evt.ctrlKey && evt.button === 0) {
-                    return;
-                }
-                if(this.settings.clickWithoutAlt) {
-                    const target = evt.target as HTMLElement;
-                    // 检查是否点击了双链或其他相关链接元素
-                    const isInternalLink = (target.classList.contains('internal-link') && !target.closest('.block-language-table-of-contents')) || 
-                        target.classList.contains('external-link') ||
-                        target.classList.contains('cm-underline') ||
-                        target.classList.contains('cm-hmd-internal-link') ||
-                        target.classList.contains('internal-embed') ||
-                        target.classList.contains('file-embed-title') || // 文件嵌入
-                        target.classList.contains('embed-title') || // markdown嵌入
-                        target.classList.contains('markdown-embed-link') || // markdown嵌入link图标
-                        target.classList.contains('markdown-embed-content') || // markdown嵌入内容
-                        target.classList.contains('canvas-minimap') ||  // canvas嵌入
-                        Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) || // excalidraw嵌入
-                        target.closest('svg') || // markmind嵌入
-                        target.closest('img'); // tldraw嵌入
-                    // 只有在点击双链时才执行后续操作
-                    if (isInternalLink) {
-                        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                        // 从点击的元素开始，向上查找 .view-content 类
-                        let targetElement = evt.target as HTMLElement;
-                        let altText = targetElement.getAttribute("alt");
-                        // 调试信息：打印点击的元素和其类名
-                        // console.log("Clicked element:", targetElement);
-                        // console.log("Classes:", targetElement.classList);
-                        if (activeView) {
-                            if (this.isPreviewModeLink(targetElement)) {
-                                this.handlePreviewModeLink(evt);
-                            } else {
-                                if (activeView.getMode() === 'source') {
-                                    // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
-                                    if (targetElement.closest('svg')) {
-                                        this.handlePreviewModeLink(evt);
-                                        return;
-                                    }
-                                    // 适配 tldraw 编辑模式下嵌入视图
-                                    if (targetElement.closest('img')) {
-                                        this.handlePreviewModeLink(evt);
-                                        return;
-                                    }
-                                    // 适配在编辑模式下 richfoot 的 alt 点击
-                                    if (targetElement.closest('.rich-foot')) {
-                                        this.handlePreviewModeLink(evt);
-                                        return;
-                                    }
-                                    // 适配diagram.net svg 类型的文件 alt+点击  不做处理
-                                    if (altText && altText.endsWith(".svg")) {
-                                        // console.log("altText", altText);
-                                        return;
-                                    }
-                                    this.handleEditModeLink(activeView.editor);
-                                    // 阻止surfing弹出下载框
-                                    evt.preventDefault();
-                                    evt.stopImmediatePropagation();
-                                } else {
-                                    this.handlePreviewModeLink(evt);
-                                }
-                            }
-                        } else {
-                            const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-                            // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
-                            const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
-                            if(excalidrawView && link) {
-                                this.openInFloatPreview(link);
-                            } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
-                                this.handlePreviewModeLink(evt);
-                            }
-                        }
-                    } else {
-                        return;
-                    }
-                } else {
-                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-                    // 从点击的元素开始，向上查找 .view-content 类
-                    let targetElement = evt.target as HTMLElement;
-                    let altText = targetElement.getAttribute("alt");
-                    // 调试信息：打印点击的元素和其类名
-                    // console.log("Clicked element:", targetElement);
-                    // console.log("Classes:", targetElement.classList);
-                    if (activeView) {
-                        // 如果在 Code Block中
-                        if (activeView.getMode() === 'source') {
-                            const editor = activeView.editor;
-                            const cursor = editor.getCursor();
-                            if (this.isInFencedCodeBlock(editor, cursor)) {
-                                (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                                return;
-                            }
-                        }
+            const target = evt.target as HTMLElement;
+            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-                        if (this.isPreviewModeLink(targetElement)) {
-
-                            this.handlePreviewModeLink(evt);
-                        } else {
-                            if (activeView.getMode() === 'source') {
-                                // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
-                                if (targetElement.closest('svg')) {
-                                    this.handlePreviewModeLink(evt);
-                                    return;
-                                }
-                                // 适配 tldraw 编辑模式下嵌入视图
-                                if (targetElement.closest('img')) {
-                                    this.handlePreviewModeLink(evt);
-                                    return;
-                                }
-                                // 适配在编辑模式下 richfoot 的 alt 点击
-                                if (targetElement.closest('.rich-foot')) {
-                                    this.handlePreviewModeLink(evt);
-                                    return;
-                                }
-                                // 适配diagram.net svg 类型的文件 alt+点击  不做处理
-                                if (altText && altText.endsWith(".svg")) {
-                                    // console.log("altText", altText);
-                                    return;
-                                }
-                                this.handleEditModeLink(activeView.editor);
-                                // 阻止surfing弹出下载框
-                                evt.preventDefault();
-                                evt.stopImmediatePropagation();
-                            } else {
-                                this.handlePreviewModeLink(evt);
-                            }
-                        }
-                    } else {
-                        const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-                        // 适配 Excalidraw embedded file 目前无法处理嵌入文档的内部链接
-                        const link = targetElement.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
-                        if(excalidrawView && link) {
-                            this.openInFloatPreview(link);
-                        } else if(this.isPreviewModeLink(targetElement)) { // 适配canvas、markmind等其他视图
-                            this.handlePreviewModeLink(evt);
-                        }
-                    }
-                }
+            // 处理编辑器中的代码块
+            if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
+                (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                return;
             }
+
+            // 检查特殊元素
+            if (this.shouldSkipElement(target)) return;
+
+            // 如果启用无Alt点击，检查是否为有效链接
+            if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
+
+            // 处理链接点击
+            this.handleLinkClick(evt, target, activeView);
         };
+
         document.addEventListener('click', this.altClickHandler, { capture: true });
+    }
+
+    private isValidInternalLink(target: HTMLElement): boolean {
+        const linkElement = target.tagName === 'A' ? target : target.closest('a');
+        return !!(
+            (linkElement && (
+                (linkElement.classList.contains('internal-link') && !linkElement.closest('.block-language-table-of-contents')) ||
+                linkElement.classList.contains('external-link') ||
+                linkElement.hasAttribute('data-tooltip-position')
+            )) ||
+            target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link') ||
+            Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
+            target.closest('svg, img')
+        );
+    }
+
+    private shouldSkipElement(target: HTMLElement): boolean {
+        // 适配diagram.net svg 类型的文件 alt+点击  不做处理
+        const altText = target.getAttribute("alt");
+        return !!(altText?.endsWith(".svg"));
+    }
+
+    private handleLinkClick(evt: MouseEvent, target: HTMLElement, activeView: MarkdownView | null) {
+        if (activeView) {
+            if (this.isPreviewModeLink(target)) {
+                this.handlePreviewModeLink(evt);
+            } else if (activeView.getMode() === 'source') {
+                // 适配在编辑模式下 richfoot tldraw markmind 的 alt 点击
+                if (target.closest('svg, img, .rich-foot')) {
+                    this.handlePreviewModeLink(evt);
+                } else {
+                    this.handleEditModeLink(activeView.editor);
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                }
+            } else {
+                this.handlePreviewModeLink(evt);
+            }
+        } else {
+            const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
+            const link = target.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
+            
+            if (excalidrawView && link) {
+                this.openInFloatPreview(link);
+            } else if (this.isPreviewModeLink(target)) {
+                this.handlePreviewModeLink(evt);
+            }
+        }
     }
     
     private registerContextMenuHandler() {
@@ -566,7 +501,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
-                console.log("folder");
+                // console.log("folder");
                 this.folderNoteOpenInFloatPreview(link);
             }
         });
@@ -575,7 +510,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
-                console.log("link");
+                // console.log("link");
                 this.openInFloatPreview(link);
             }
         });
@@ -712,33 +647,36 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+                            // const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
                             let commandId;
                             if (excalidrawPlugin) {
-                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-and-embed-new-tab";
+                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-newtab";
                             } else if (excalidrawymjrPlugin) {
-                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-and-embed-new-tab";
+                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-newtab";
                             }
-                            (this.app as any).commands.executeCommandById(commandId);
-                            const waitForNewLeaf = () => {
-                                return new Promise<void>((resolve) => {
-                                    const checkLeaf = () => {
-                                        const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                                        if (currentLeafCount > initialLeafCount) {
-                                            resolve();
-                                        } else {
-                                            setTimeout(checkLeaf, 50);
-                                        }
-                                    };
-                                    checkLeaf();
-                                });
-                            };
+                            // (this.app as any).commands.executeCommandById(commandId);
+                            // const waitForNewLeaf = () => {
+                            //     return new Promise<void>((resolve) => {
+                            //         const checkLeaf = () => {
+                            //             const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
+                            //             if (currentLeafCount > initialLeafCount) {
+                            //                 resolve();
+                            //             } else {
+                            //                 setTimeout(checkLeaf, 50);
+                            //             }
+                            //         };
+                            //         checkLeaf();
+                            //     });
+                            // };
     
-                            await waitForNewLeaf();
-                            setTimeout(() => {
-                                this.openCurrentContentInModal();
-                            }, 150);
-                            // await this.createFileAndInsertLink("obsidian-excalidraw-plugin:excalidraw-autocreate-on-current");
+                            // await waitForNewLeaf();
+                            // setTimeout(() => {
+                            //     this.openCurrentContentInModal();
+                            // }, this.settings.modalOpenDelay);
+                            if (commandId) {
+                                await this.createFileAndInsertLink(commandId, true);
+                            }
                         })
                 );
             }
@@ -764,12 +702,12 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Tldraw")
                         .setIcon("shapes")
                         .onClick(async () => {
-                            await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
-                            setTimeout(() => {
-                                this.openCurrentContentInModal();
-                            }, 500);
+                            // await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
+                            // setTimeout(() => {
+                            //     this.openCurrentContentInModal();
+                            // },  this.settings.modalOpenDelay);
                             
-                            // await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
+                            await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
                         })
                 );
             }
@@ -939,7 +877,10 @@ export default class ModalOpenerPlugin extends Plugin {
             previousEditor.setCursor(newCursor);
             this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
         }
-        this.openCurrentContentInModal();
+
+        setTimeout(() => {
+            this.openCurrentContentInModal();
+        }, this.settings.modalOpenDelay);
     }
 
     private async waitForActiveFile(timeout: number = 5000): Promise<TFile | null> {
@@ -956,74 +897,43 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private async createCodeFileAndOpenInModal() {
         return new Promise<void>((resolve) => {
-            let fileName = '';
-            let fileExtension = '';
-    
             const observer = new MutationObserver((mutations, obs) => {
                 for (const mutation of mutations) {
                     for (const node of Array.from(mutation.addedNodes)) {
-                        if (node instanceof HTMLElement) {
-                            if (node.classList.contains('modal-container')) {
-                                const confirmButton = node.querySelector('.mod-cta');
-                                const inputElement = node.querySelector('input');
-                                let selectElement = node.querySelector('.modal_select') as HTMLSelectElement;
-                                const codePlugin = this.getPlugin("code-files");
-                                if (codePlugin) {
-                                    selectElement = node.querySelector('.dropdown') as HTMLSelectElement;
-                                }
-                                
-                                if (confirmButton && inputElement && selectElement) {
-                                    
-                                    // 监听输入框的变化
-                                    inputElement.addEventListener('input', () => {
-                                        fileName = inputElement.value || '';
-                                    });
-    
-                                    // 监听输入框的键盘事件
-                                    inputElement.addEventListener('keyup', () => {
-                                        fileName = inputElement.value || '';
-                                    });
-    
-                                    // 监听选择框的变化
-                                    selectElement.addEventListener('change', () => {
-                                        fileExtension = selectElement.value;
-                                    });
-    
-                                    confirmButton.addEventListener('click', async () => {
-                                        fileName = inputElement.value || fileName;
-                                        fileExtension = selectElement.value || fileExtension;
-                                        const fullFileName = `${fileName}.${fileExtension}|${fileName}`;
-
-                                        if (fileName != '') {
-                                            this.insertCodeFileLink(fullFileName, "");
-                                            setTimeout(() => {
-                                                this.openCurrentContentInModal();
-                                            }, 150);
-                                        }
-
-                                        obs.disconnect();
-                                        resolve();
-                                    });
-                                }
-                                return;
+                        if (node instanceof HTMLElement && node.classList.contains('modal-container')) {
+                            const confirmButton = node.querySelector('.mod-cta');
+                            const inputElement = node.querySelector('input');
+                            let selectElement = node.querySelector('.modal_select') as HTMLSelectElement;
+                            const codePlugin = this.getPlugin("code-files");
+                            if (codePlugin) {
+                                selectElement = node.querySelector('.dropdown') as HTMLSelectElement;
                             }
+                            
+                            if (confirmButton && inputElement && selectElement) {
+                                confirmButton.addEventListener('click', () => {
+                                    const fileName = inputElement.value;
+                                    const fileExtension = selectElement.value;
+                                    
+                                    if (fileName) {
+                                        const fullFileName = `${fileName}.${fileExtension}|${fileName}`;
+                                        this.insertCodeFileLink(fullFileName, "");
+                                        setTimeout(() => {
+                                            this.openCurrentContentInModal();
+                                        }, this.settings.modalOpenDelay);
+                                    }
+                                    
+                                    obs.disconnect();
+                                    resolve();
+                                });
+                            }
+                            return;
                         }
                     }
                 }
             });
     
             observer.observe(document.body, { childList: true, subtree: true });
-    
-            // 设置监听器后执行命令
-            setTimeout(() => {
-                (this.app as any).commands.executeCommandById("vscode-editor:create");
-            }, 0);
-    
-            // 设置超时检查
-            setTimeout(() => {
-                observer.disconnect();
-                resolve();
-            }, 10000);
+            (this.app as any).commands.executeCommandById("vscode-editor:create");
         });
     }
     
@@ -1243,7 +1153,7 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private isPreviewModeLink(target: HTMLElement): boolean {
-        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
+        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) 
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
             || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb')
             || target.classList.contains('cm-hmd-internal-link')

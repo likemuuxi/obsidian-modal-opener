@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, Platform } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -22,6 +22,7 @@ export interface ModalOpenerPluginSettings {
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
+	modalOpenDelay: number;
 	enableRefreshOnClose: boolean;
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
@@ -63,6 +64,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	hideTabHeader: true,
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
+	modalOpenDelay: 0,
 	enableRefreshOnClose: true,
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
@@ -99,6 +101,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
+	modalOpenDelay: number;
 	enableRefreshOnClose: boolean;
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
@@ -353,18 +356,33 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.applyStyles();
 				}));
 
-		new Setting(containerEl)
-			.setName(t('Show view header of the link'))
-			.setDesc(t('Show the Surfing plugin\'s navigation bar and bookmarks bar'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.showLinkViewHeader)
-				.onChange(async (value) => {
-					this.plugin.settings.showLinkViewHeader = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				}));
+		if (!Platform.isMobile) {
+			new Setting(containerEl)
+				.setName(t('Show view header of the link'))
+				.setDesc(t('Show the Surfing plugin\'s navigation bar and bookmarks bar'))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.showLinkViewHeader)
+					.onChange(async (value) => {
+						this.plugin.settings.showLinkViewHeader = value;
+						await this.plugin.saveSettings();
+						this.plugin.applyStyles();
+					}));
+		}
 		
 		new Setting(containerEl).setName(t('Menu item')).setHeading();
+		
+		new Setting(containerEl)
+			.setName(t('Modal window open delay'))
+			.setDesc(t('Set the delay (in milliseconds) before opening modal window after creating new file.'))
+			.addSlider(slider => slider
+				.setLimits(0, 5000, 50)
+				.setValue(this.plugin.settings.modalOpenDelay)
+				.setDynamicTooltip()
+				.onChange(async (value) => {
+					this.plugin.settings.modalOpenDelay = value;
+					await this.plugin.saveSettings();
+				}));
+
 		new Setting(containerEl)
 			.setDesc(t('Toggle menu items to show or hide in the right-click context menu'));
 		// 创建一个容器用于横向排列
@@ -604,9 +622,13 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						// (this.app as any).setting.openTabById('community-plugins');
 						// new Notice('Please search and install the plugin: ' + displayName);
 						// window.open(`https://obsidian.md/plugins?id=${pluginId}`, '_blank');
-						const repoUrl = pluginId === "obsidian-excalidraw-plugin-ymjr" 
-                        ? "https://github.com/Bowen-0x00/obsidian-excalidraw-plugin-ymjr"
-                        : `https://obsidian.md/plugins?id=${pluginId}`;
+
+						let repoUrl = `https://obsidian.md/plugins?id=${pluginId}`;
+						if(pluginId == "obsidian-excalidraw-plugin-ymjr") {
+							repoUrl = "https://github.com/Bowen-0x00/obsidian-excalidraw-plugin-ymjr";
+						} else if (pluginId == "obsidian-diagrams-net") {
+							repoUrl = "https://github.com/likemuuxi/obsidian-diagrams-net";
+						}
                     	window.open(repoUrl, '_blank');
 					}));
 		}

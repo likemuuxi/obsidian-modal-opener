@@ -80,6 +80,8 @@ export default {
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
 
     'Menu item':'菜单项',
+    'Modal window open delay':'模态窗口打开延迟',
+    'Set the delay (in milliseconds) before opening modal window after creating new file.':'在创建新文件后打开模态窗口的延迟（以毫秒为单位）。',
     'Toggle menu items to show or hide in the right-click context menu':'切换菜单项以在右键单击上下文菜单中显示或隐藏',
     'Plugin is not enabled or installed':'插件未启用或未安装',
     'Details':'详情',

@@ -80,6 +80,8 @@ export default {
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 
   'Menu item':'Menu item',
+  'Modal window open delay':'Modal window open delay',
+  'Set the delay (in milliseconds) before opening modal window after creating new file.':'Set the delay (in milliseconds) before opening modal window after creating new file.',
   'Toggle menu items to show or hide in the right-click context menu':'Toggle menu items to show or hide in the right-click context menu',
   'Plugin is not enabled or installed':'Plugin is not enabled or installed',
   'Details':'Details',

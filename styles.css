@@ -187,6 +187,11 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
+.modal-opener .floating-button svg {
+    min-width: 16px;
+    min-height: 16px;
+}
+
 .modal-opener .floating-button:hover {
     background-color: var(--interactive-accent-hover);
 }
@@ -205,7 +210,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 .modal-opener .menu-item {
     margin: 5px;
 }
-
 
 /* command-toggle */
 

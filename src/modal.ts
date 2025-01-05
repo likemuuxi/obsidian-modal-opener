@@ -44,12 +44,6 @@ export class ModalWindow extends Modal {
         }
     }
 
-    private handleBackgroundClick = (event: MouseEvent) => {
-        if (event.target === event.currentTarget) {
-            this.close();
-        }
-    }
-
     async onOpen() {
         if (!this.contentEl) {
             return;
@@ -63,7 +57,6 @@ export class ModalWindow extends Modal {
                 modalBgElement.classList.remove('closable');
             } else {
                 modalBgElement.classList.add('closable');
-                modalBgElement.addEventListener('click', this.handleBackgroundClick);
             }
         }
 
@@ -151,22 +144,24 @@ export class ModalWindow extends Modal {
                     
                     if (nextTab) {
                         // 保存当前活动的叶子
-                        const currentLeaf = this.app.workspace.activeLeaf;
-                        
-                        // 点击右侧标签页
-                        (nextTab as HTMLElement).click();
-                        
-                        // 延迟后再切回原来的标签页
                         setTimeout(() => {
-                            if (currentLeaf) {
-                                this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
-                            }
-                        }, 50);
+                            const currentLeaf = this.app.workspace.getLeaf(false);
+                        
+                            // 点击右侧标签页
+                            (nextTab as HTMLElement).click();
+                            
+                            // 延迟后再切回原来的标签页
+                            setTimeout(() => {
+                                if (currentLeaf) {
+                                    this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
+                                }
+                            }, 50);
+                        }, 200);
                     }
                 }
             }
         }
-        
+
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
         const modalOpener = this.containerEl.querySelector('.modal-opener');
         if (modalOpener && this.plugin.settings.enableRefreshOnClose) { // 添加条件检查
@@ -177,11 +172,6 @@ export class ModalWindow extends Modal {
                     this.refreshMarkdownViews();
                 }, this.plugin.settings.delayInMs);
             }
-        }
-
-        const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg");
-        if (modalBgElement) {
-            modalBgElement.removeEventListener('click', this.handleBackgroundClick);
         }
 
         if (this.observer) {
@@ -564,7 +554,12 @@ export class ModalWindow extends Modal {
     
         if (isLinkView) {
             if (!this.plugin.settings.showLinkViewHeader) {
-                heightAdjustment = this.containerEl.querySelector('.wb-bookmark-bar') ? -1 : 2;
+                heightAdjustment = 2;
+            } else {
+                heightAdjustment = 6;
+            }
+            if (Platform.isMobile) {
+                heightAdjustment = 3;
             }
         } else {
             if (!this.plugin.settings.showFileViewHeader) {
@@ -574,11 +569,14 @@ export class ModalWindow extends Modal {
                     const dataType = leafContent.getAttribute('data-type');
                     if (dataType == "canvas" || dataType == "excalidraw" || dataType == "tldraw-view") {
                         if(dataType === 'canvas'){
-                            heightAdjustment = 1;
+                            heightAdjustment = 2;
                         } else if(dataType === 'excalidraw') {
                             heightAdjustment = 2;
                         } else if(dataType === 'tldraw-view') {
                             heightAdjustment = -1;
+                            if (Platform.isMobile) {
+                                heightAdjustment = 2;
+                            }
                         }
                     } else {
                         const editingPlugin = this.getPlugin("editing-toolbar");
@@ -594,9 +592,18 @@ export class ModalWindow extends Modal {
                 // 针对特殊文件调整样式
                 const leafContent = this.containerEl.querySelector('.modal-opener-content .workspace-leaf-content');
                 if (leafContent) {
-                    const dataType = leafContent.getAttribute('data-type');
-                    if (dataType == "canvas" || dataType == "excalidraw") {
-                        heightAdjustment = dataType === 'canvas' ? 5 : dataType === 'excalidraw' ? 5 : 2;
+                    const dataType = leafContent.getAttribute('data-type');          
+                    if (dataType == "canvas" || dataType == "excalidraw" || dataType == "tldraw-view") {
+                        if(dataType === 'canvas'){
+                            heightAdjustment = 6;
+                        } else if(dataType === 'excalidraw') {
+                            heightAdjustment = 6;
+                        } else if(dataType === 'tldraw-view') {
+                            heightAdjustment = 3;
+                            if (Platform.isMobile) {
+                                heightAdjustment = 6;
+                            }
+                        }
                     } else {
                         const editingPlugin = this.getPlugin("editing-toolbar");
                         const toolbarPlugin = this.getPlugin("note-toolbar");
@@ -609,7 +616,7 @@ export class ModalWindow extends Modal {
                 }
             }
         }
-        
+
         const adjustedModalHeight = `${baseHeight - heightAdjustment}vh`;
         // console.log(`Adjusted Modal Height: ${adjustedModalHeight}`);
         container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
