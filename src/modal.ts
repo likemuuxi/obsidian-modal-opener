@@ -581,11 +581,17 @@ export class ModalWindow extends Modal {
                     } else {
                         const editingPlugin = this.getPlugin("editing-toolbar");
                         const toolbarPlugin = this.getPlugin("note-toolbar");
-                        if(editingPlugin || toolbarPlugin) {
-                            heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 2 : 1);
+                        const topToolbar = this.containerEl.querySelector('.cg-note-toolbar-callout');
+                        
+                        if (toolbarPlugin || editingPlugin) {
+                            if (toolbarPlugin) {
+                                heightAdjustment = topToolbar ? 5 : 1;
+                            } else {
+                                heightAdjustment = 2; // editingPlugin is true here
+                            }
                         } else {
                             heightAdjustment = 1; // markdown
-                        }
+                        }                                           
                     }
                 }
             } else {

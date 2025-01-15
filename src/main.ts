@@ -2,7 +2,7 @@ import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, Mark
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
-import ModalOpenerPluginSettings, { DEFAULT_SETTINGS } from "./settings";
+import { DEFAULT_SETTINGS, ModalOpenerPluginSettings,  } from "./settings";
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
