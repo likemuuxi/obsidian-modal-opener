@@ -1,8 +1,9 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf } from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform} from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
 import { DEFAULT_SETTINGS, ModalOpenerPluginSettings,  } from "./settings";
+import { connected } from "process";
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -175,6 +176,7 @@ export default class ModalOpenerPlugin extends Plugin {
         // }
         if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
             this.registerAltClickHandler();
+            this.registerTouchClickHandler();
         }
     }
 
@@ -251,7 +253,9 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private handleEditModeLink(editor: Editor) {
+    private handleEditModeLink(editor: Editor, evt: MouseEvent | TouchEvent) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
@@ -334,13 +338,23 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private registerAltClickHandler() {
         this.altClickHandler = (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+            // 如果是移动端，处理触摸事件的链接点击
+            if (
+                this.settings.clickWithoutAlt &&
+                activeView?.getMode() === 'source' &&
+                target.classList.contains('cm-link')
+            ) {
+                // new Notice("isMobile Click");
+                this.handleEditModeLink(activeView.editor, evt);
+            }
+
             // 检查是否应该触发处理
             const shouldTrigger = this.settings.clickWithoutAlt ? 
                 (evt.button === 0) : (evt.altKey && evt.button === 0);
             if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
-
-            const target = evt.target as HTMLElement;
-            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
             // 处理编辑器中的代码块
             if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
@@ -361,6 +375,28 @@ export default class ModalOpenerPlugin extends Plugin {
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
+    private registerTouchClickHandler() { 
+        // 移动端触摸事件监听
+        if (Platform.isMobile) {
+            document.addEventListener('touchstart', (touchEvt: TouchEvent) => {
+                const target = touchEvt.target as HTMLElement;
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+
+                // 如果是移动端，处理触摸事件的链接点击
+                if (
+                    this.settings.clickWithoutAlt &&
+                    activeView?.getMode() === 'source' &&
+                    target.classList.contains('cm-underline')
+                ) {
+                    touchEvt.preventDefault();
+                    touchEvt.stopImmediatePropagation();
+                    // new Notice("isMobile Touch");
+                    // this.handleEditModeLink(activeView.editor, touchEvt);
+                }
+            }, { capture: true });
+        }
+    }
+
     private isValidInternalLink(target: HTMLElement): boolean {
         const linkElement = target.tagName === 'A' ? target : target.closest('a');
     
@@ -377,9 +413,19 @@ export default class ModalOpenerPlugin extends Plugin {
             ) ||
             target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link') ||
             Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
-            target.closest('svg, img')
+            (
+                target.tagName === 'SVG' &&
+                target.classList.contains('canvas-minimap')
+            ) ||
+            (
+                ((target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) || target.closest('.ptl-tldraw-image')) 
+            ) ||
+            (
+                target.closest('svg') && (target.closest('.mm-mindmap-container') || target.closest('.cm-mindmap-container'))
+            )
         );
     }
+    
     
     private shouldSkipElement(target: HTMLElement): boolean {
         // 适配diagram.net svg 类型的文件 alt+点击  不做处理
@@ -396,7 +442,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (target.closest('svg, img, .rich-foot')) {
                     this.handlePreviewModeLink(evt);
                 } else {
-                    this.handleEditModeLink(activeView.editor);
+                    this.handleEditModeLink(activeView.editor, evt);
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
                 }
@@ -623,7 +669,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Markdown")
                         .setIcon("file")
                         .onClick(() => {
-                            this.createFileAndEditInModal(parentPath, "md");
+                            this.createFileAndEditInModal(parentPath, "md", true);
                         })
                 );
             }
@@ -636,7 +682,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Canvas")
                         .setIcon("layout-dashboard")
                         .onClick(() => {
-                            this.createFileAndEditInModal(parentPath, "canvas");
+                            this.createFileAndEditInModal(parentPath, "canvas", false);
                         })
                 );
             }
@@ -684,7 +730,7 @@ export default class ModalOpenerPlugin extends Plugin {
                             //     this.openCurrentContentInModal();
                             // }, this.settings.modalOpenDelay);
                             if (commandId) {
-                                await this.createFileAndInsertLink(commandId, true);
+                                await this.createFileAndInsertLink(commandId, true, false);
                             }
                         })
                 );
@@ -716,7 +762,7 @@ export default class ModalOpenerPlugin extends Plugin {
                             //     this.openCurrentContentInModal();
                             // },  this.settings.modalOpenDelay);
                             
-                            await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true);
+                            await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true, false);
                         })
                 );
             }
@@ -734,7 +780,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excel")
                         .setIcon("table")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("excel:excel-autocreate", true);
+                            await this.createFileAndInsertLink("excel:excel-autocreate", true, false);
                         })
                 );
             }
@@ -746,7 +792,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Sheet Plus")
                         .setIcon("grid")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", true);
+                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", true, false);
                         })
                 );
             }
@@ -770,7 +816,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("MarkMind")
                         .setIcon("brain-circuit")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap", true);
+                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap", true, false);
                         })
                 );
             }
@@ -783,7 +829,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("container")
                         .onClick(async () => {
                             // await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
-                            await this.createFileAndInsertLink("notion-like-tables:create", true);
+                            await this.createFileAndInsertLink("notion-like-tables:create", true, false);
                         })
                 );
             }
@@ -850,7 +896,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private async createFileAndInsertLink(commandId: string, isEmbed: boolean) {
+    private async createFileAndInsertLink(commandId: string, isEmbed: boolean, isAlias: boolean) {
         // 保存当前活动编辑器的信息
         const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
     
@@ -871,7 +917,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (activeFile && previousEditor && previousCursor) {
             const fileName = activeFile.name;
             const filePath = activeFile.path;
-            const linkText = isEmbed ? `![[${filePath}|${fileName}]]` : `[[${filePath}|${fileName}]]`;
+            const linkText = `${isEmbed ? '!' : ''}[[${filePath}${isAlias ? `|${fileName}` : ''}]]`;
             
             if (previousView) {
                 this.app.workspace.setActiveLeaf(previousView.leaf, { focus: true });
@@ -1025,12 +1071,12 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean) {
+    private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean, isAlias: boolean) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
             const editor = activeView.editor;
             const selection = editor.getSelection();
-            const linkText = isEmbed ? `![[${filePath}|${displayName}]]` : `[[${filePath}|${displayName}]]`;
+            const linkText = `${isEmbed ? '!' : ''}[[${filePath}${isAlias ? `|${displayName}` : ''}]]`;
             if (selection) {
                 const from = editor.getCursor("from");
                 const to = editor.getCursor("to");
@@ -1042,7 +1088,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
     
-    private async createFileAndEditInModal(parentPath: string, fileType: string) {
+    private async createFileAndEditInModal(parentPath: string, fileType: string, isAlias: boolean) {
         const result = await this.getNewFileName(fileType);
         if (!result) return;
     
@@ -1073,7 +1119,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
             const displayName = newFile.basename;
 
-            this.insertLinkToActiveFile(newFilePath, displayName, isEmbed);
+            isAlias ? this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, true) : this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, false);
         } catch (error) {
             new Notice(t("Failed to create file: ") + error.message);
         }

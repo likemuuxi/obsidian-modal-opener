@@ -418,13 +418,12 @@ export class ModalWindow extends Modal {
                     this.associatedLeaf = undefined;
                 }
                 this.associatedLeaf = currentLeaf;
-
-                this.setContainerHeight(linkContainer, true);
             }, 150);
         } else {
             const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
             frame.src = link;
         }
+        this.setContainerHeight(linkContainer, true);
         this.setupDoubleClickHandler();
     }
 
@@ -553,13 +552,15 @@ export class ModalWindow extends Modal {
         let heightAdjustment = 5; // 默认调整值
     
         if (isLinkView) {
-            if (!this.plugin.settings.showLinkViewHeader) {
-                heightAdjustment = -1;
+            const surfingPlugin = this.getPlugin("surfing");
+            if (surfingPlugin) {
+                if (!this.plugin.settings.showLinkViewHeader) {
+                    heightAdjustment = -1;
+                } else {
+                    heightAdjustment = 6;
+                }
             } else {
-                heightAdjustment = 6;
-            }
-            if (Platform.isMobile) {
-                heightAdjustment = 3;
+                heightAdjustment = 4;
             }
         } else {
             if (!this.plugin.settings.showFileViewHeader) {
