@@ -99,5 +99,5 @@ export default {
     'The command name already exists, please use a different name':'命令名称已存在，请使用不同的名称',
     'Command added successfully':'命令添加成功',
     'Please enter both command name and description':'请输入命令名称和描述',
-    'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'命令删除成功，请重新启动 Obsidian 以使更改生效。',
+    'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'命令删除成功。',
 }

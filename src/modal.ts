@@ -7,7 +7,7 @@ export class ModalWindow extends Modal {
     leaf?: WorkspaceLeaf;
     link: string;
     file?: TFile;
-    fragment: string
+    fragment: string;
     width: string;
     height: string;
     public scope: Scope;
@@ -164,7 +164,7 @@ export class ModalWindow extends Modal {
 
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
         const modalOpener = this.containerEl.querySelector('.modal-opener');
-        if (modalOpener && this.plugin.settings.enableRefreshOnClose) { // 添加条件检查
+        if (modalOpener && this.plugin.settings.enableRefreshOnClose) {
             const canvasView = this.app.workspace.getLeavesOfType("canvas").first()?.view;
             const mindmapView = this.app.workspace.getLeavesOfType("mindmapview").first()?.view;
             if (canvasView || mindmapView) {
@@ -173,7 +173,7 @@ export class ModalWindow extends Modal {
                 }, this.plugin.settings.delayInMs);
             }
         }
-
+        
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
@@ -560,7 +560,7 @@ export class ModalWindow extends Modal {
                     heightAdjustment = 6;
                 }
             } else {
-                heightAdjustment = 4;
+                heightAdjustment = 6;
             }
         } else {
             if (!this.plugin.settings.showFileViewHeader) {

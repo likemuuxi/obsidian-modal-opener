@@ -99,5 +99,5 @@ export default {
   'The command name already exists, please use a different name':'The command name already exists, please use a different name',
   'Command added successfully':'Command added successfully',
   'Please enter both command name and description':'Please enter both command name and description',
-  'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'Command deleted successfully. Please restart Obsidian for changes to take full effect.',
+  'Command deleted successfully. Please restart Obsidian for changes to take full effect.':'Command deleted successfully.',
 }

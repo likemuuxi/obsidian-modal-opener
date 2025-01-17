@@ -102,7 +102,7 @@ export default class ModalOpenerPlugin extends Plugin {
         const frameSelector = surfPlugin ? '.wb-frame' : 'iframe';
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
-
+        
         new ModalWindow(
             this,
             linkValue,
@@ -363,7 +363,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 检查特殊元素
-            if (this.shouldSkipElement(target)) return;
+            if (this.shouldSkipElement(target))  return;
 
             // 如果启用无Alt点击，检查是否为有效链接
             if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
@@ -633,7 +633,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     }
                 }
             }
-            
+
             // 处理网络链接
             new ModalWindow(
                 this,
@@ -1107,7 +1107,6 @@ export default class ModalOpenerPlugin extends Plugin {
     
         try {
             const newFile = await this.app.vault.create(newFilePath, '');
-    
             new ModalWindow(
                 this,
                 "",
