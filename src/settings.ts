@@ -181,7 +181,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.addOption('source', t('Editing'))
 				.setValue(this.plugin.settings.fileOpenMode)
 				.onChange(async (value) => {
-					this.plugin.settings.fileOpenMode = value as 'default' | 'preview' | 'source';
+					this.plugin.settings.fileOpenMode = value as 'current' | 'preview' | 'source';
 					await this.plugin.saveSettings();
 				}));
 
