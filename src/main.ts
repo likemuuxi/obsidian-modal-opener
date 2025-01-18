@@ -702,7 +702,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+                            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
                             // const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
                             let commandId;
                             if (excalidrawPlugin) {
@@ -970,11 +970,11 @@ export default class ModalOpenerPlugin extends Plugin {
                                     const fileExtension = selectElement.value;
                                     
                                     if (fileName) {
-                                        const fullFileName = `${fileName}.${fileExtension}|${fileName}`;
+                                        const fullFileName = `${fileName}.${fileExtension}`;
                                         this.insertCodeFileLink(fullFileName, "");
                                         setTimeout(() => {
                                             this.openCurrentContentInModal();
-                                        }, this.settings.modalOpenDelay);
+                                        }, 200);
                                     }
                                     
                                     obs.disconnect();
@@ -1064,12 +1064,18 @@ export default class ModalOpenerPlugin extends Plugin {
     private insertCodeFileLink(filePath: string, content: string) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
-            const editor = activeView.editor;
-            const cursor = editor.getCursor();
-            const linkText = `![[${filePath}]]`;
-            editor.replaceRange(linkText, cursor);
+            setTimeout(() => {
+                const file = this.app.metadataCache.getFirstLinkpathDest(`${filePath}`, "");
+                if (file && file instanceof TFile) {
+                    const editor = activeView.editor;
+                    const cursor = editor.getCursor();
+                    const linkText = `![[${file.path}]]`;
+                    editor.replaceRange(linkText, cursor);
+                }
+            }, 200);
         }
     }
+    
 
     private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean, isAlias: boolean) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
