@@ -495,8 +495,15 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (view.file && view.file.parent) {
                     parentPath = view.file.parent.path;
                 }
-                this.addCreateFileMenuItem(menu, parentPath);
-                this.addDeleteAttachmentMenuItem(menu, editor);
+
+                if(this.settings.showDeleteCommands) {
+                    this.addDeleteAttachmentMenuItem(menu, editor);
+                }
+                
+                if(this.settings.showCommandsContainer) {
+                    this.addCreateFileMenuItem(menu, parentPath);
+                    
+                }
             })
         );
     }

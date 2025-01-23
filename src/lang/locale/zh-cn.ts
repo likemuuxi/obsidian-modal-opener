@@ -79,6 +79,9 @@ export default {
     'Hide tab header':'隐藏标签页头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
 
+    'Enable the right-click menu':'启用右键菜单',
+    'Show or hide the menu and its menu options':'显示或隐藏菜单及其菜单选项',
+    'Enable the delete Linked attachment menu item':'启用删除链接附件菜单选项',
     'Menu item':'菜单项',
     'Modal window open delay':'模态窗口打开延迟',
     'Set the delay (in milliseconds) before opening modal window after creating new file.':'在创建新文件后打开模态窗口的延迟（以毫秒为单位）。',

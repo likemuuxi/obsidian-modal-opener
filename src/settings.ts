@@ -38,6 +38,8 @@ export interface ModalOpenerPluginSettings {
         markmind: boolean;
         dataloom: boolean;
     };
+	showCommandsContainer: boolean;
+	showDeleteCommands: boolean;
 }
 
 interface CustomCommand {
@@ -79,7 +81,9 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
         vscode: true,
         markmind: true,
         dataloom: true
-    }
+    },
+	showCommandsContainer: true,
+	showDeleteCommands: true,
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -117,6 +121,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
         markmind: boolean;
         dataloom: boolean;
     };
+	showCommandsContainer: boolean;
+	showDeleteCommands: boolean;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -370,120 +376,144 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		}
 		
 		new Setting(containerEl).setName(t('Menu item')).setHeading();
-		
+
 		new Setting(containerEl)
-			.setName(t('Modal window open delay'))
-			.setDesc(t('Set the delay (in milliseconds) before opening modal window after creating new file.'))
-			.addSlider(slider => slider
-				.setLimits(0, 500, 50)
-				.setValue(this.plugin.settings.modalOpenDelay)
-				.setDynamicTooltip()
+		.setName(t('Enable the delete Linked attachment menu item'))
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.showDeleteCommands)
+			.onChange(async (value) => {
+				this.plugin.settings.showDeleteCommands = value;
+				await this.plugin.saveSettings();
+
+			}));
+
+		new Setting(containerEl)
+			.setName(t('Enable the right-click menu'))
+			.setDesc(t('Show or hide the menu and its menu options'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showCommandsContainer)
 				.onChange(async (value) => {
-					this.plugin.settings.modalOpenDelay = value;
+					this.plugin.settings.showCommandsContainer = value;
 					await this.plugin.saveSettings();
+					// 重新显示设置页面以更新UI
+					this.display();
 				}));
 
-		new Setting(containerEl)
-			.setDesc(t('Toggle menu items to show or hide in the right-click context menu'));
-		// 创建一个容器用于横向排列
-		const commandsContainer = containerEl.createDiv('command-toggle-container');
-
-		// Markdown
-		new Setting(commandsContainer)
-			.setClass('command-toggle-item')
-			.setName('Markdown')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enabledCommands.markdown)
-				.onChange(async (value) => {
-					this.plugin.settings.enabledCommands.markdown = value;
-					await this.plugin.saveSettings();
-			}));
-			
-		// Canvas
-		const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
-		if (canvasPlugin) {
-			new Setting(commandsContainer)
-				.setClass('command-toggle-item')
-				.setName('Canvas')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enabledCommands.canvas)
+		// 只有在设置开启时才显示其他选项
+		if (this.plugin.settings.showCommandsContainer) {
+			new Setting(containerEl)
+				.setName(t('Modal window open delay'))
+				.setDesc(t('Set the delay (in milliseconds) before opening modal window after creating new file.'))
+				.addSlider(slider => slider
+					.setLimits(0, 500, 50)
+					.setValue(this.plugin.settings.modalOpenDelay)
+					.setDynamicTooltip()
 					.onChange(async (value) => {
-						this.plugin.settings.enabledCommands.canvas = value;
+						this.plugin.settings.modalOpenDelay = value;
 						await this.plugin.saveSettings();
 					}));
+
+			new Setting(containerEl)
+				.setDesc(t('Toggle menu items to show or hide in the right-click context menu'));
+			
+			const commandsContainer = containerEl.createDiv('command-toggle-container');
+			// Markdown
+			new Setting(commandsContainer)
+				.setClass('command-toggle-item')
+				.setName('Markdown')
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.enabledCommands.markdown)
+					.onChange(async (value) => {
+						this.plugin.settings.enabledCommands.markdown = value;
+						await this.plugin.saveSettings();
+				}));
+				
+			// Canvas
+			const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
+			if (canvasPlugin) {
+				new Setting(commandsContainer)
+					.setClass('command-toggle-item')
+					.setName('Canvas')
+					.addToggle(toggle => toggle
+						.setValue(this.plugin.settings.enabledCommands.canvas)
+						.onChange(async (value) => {
+							this.plugin.settings.enabledCommands.canvas = value;
+							await this.plugin.saveSettings();
+						}));
+			}
+			
+			// Excalidraw
+			this.createPluginSetting(
+				commandsContainer,
+				"obsidian-excalidraw-plugin",
+				"Excalidraw",
+				"excalidraw"
+			);
+
+			// Excalidraw
+			this.createPluginSetting(
+				commandsContainer,
+				"obsidian-excalidraw-plugin-ymjr",
+				"Excalidraw-ymjr",
+				"excalidraw"
+			);
+
+			// Diagrams
+			this.createPluginSetting(
+				commandsContainer,
+				"obsidian-diagrams-net",
+				"Diagrams",
+				"diagrams"
+			);
+
+			// Tldraw
+			this.createPluginSetting(
+				commandsContainer,
+				"tldraw",
+				"Tldraw",
+				"tldraw"
+			);
+
+			// Excel
+			this.createPluginSetting(
+				commandsContainer,
+				"excel",
+				"Excel",
+				"excel"
+			);
+
+			// Sheet Plus
+			this.createPluginSetting(
+				commandsContainer,
+				"sheet-plus",
+				"Sheet Plus",
+				"sheetPlus"
+			);
+
+			// VSCode
+			this.createPluginSetting(
+				commandsContainer,
+				"vscode-editor",
+				"Code File",
+				"vscode"
+			);
+
+			// Markmind
+			this.createPluginSetting(
+				commandsContainer,
+				"obsidian-markmind",
+				"MarkMind",
+				"markmind"
+			);
+
+			// Dataloom
+			this.createPluginSetting(
+				commandsContainer,
+				"notion-like-tables",
+				"Dataloom",
+				"dataloom"
+			);
 		}
-		
-		// Excalidraw
-		this.createPluginSetting(
-			commandsContainer,
-			"obsidian-excalidraw-plugin",
-			"Excalidraw",
-			"excalidraw"
-		);
-
-		// Excalidraw
-		this.createPluginSetting(
-			commandsContainer,
-			"obsidian-excalidraw-plugin-ymjr",
-			"Excalidraw-ymjr",
-			"excalidraw"
-		);
-
-		// Diagrams
-		this.createPluginSetting(
-			commandsContainer,
-			"obsidian-diagrams-net",
-			"Diagrams",
-			"diagrams"
-		);
-
-		// Tldraw
-		this.createPluginSetting(
-			commandsContainer,
-			"tldraw",
-			"Tldraw",
-			"tldraw"
-		);
-
-		// Excel
-		this.createPluginSetting(
-			commandsContainer,
-			"excel",
-			"Excel",
-			"excel"
-		);
-
-		// Sheet Plus
-		this.createPluginSetting(
-			commandsContainer,
-			"sheet-plus",
-			"Sheet Plus",
-			"sheetPlus"
-		);
-
-		// VSCode
-		this.createPluginSetting(
-			commandsContainer,
-			"vscode-editor",
-			"Code File",
-			"vscode"
-		);
-
-		// Markmind
-		this.createPluginSetting(
-			commandsContainer,
-			"obsidian-markmind",
-			"MarkMind",
-			"markmind"
-		);
-
-		// Dataloom
-		this.createPluginSetting(
-			commandsContainer,
-			"notion-like-tables",
-			"Dataloom",
-			"dataloom"
-		);
 
 		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 

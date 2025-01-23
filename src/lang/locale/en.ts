@@ -79,6 +79,9 @@ export default {
   'Hide tab header':'Hide tab header',
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 
+  'Enable the right-click menu':'Enable the right-click menu',
+  'Show or hide the menu and its menu options':'Show or hide the menu and select menu items',
+  'Enable the delete Linked attachment menu item':'Enable the delete Linked attachment menu item',
   'Menu item':'Menu item',
   'Modal window open delay':'Modal window open delay',
   'Set the delay (in milliseconds) before opening modal window after creating new file.':'Set the delay (in milliseconds) before opening modal window after creating new file.',
