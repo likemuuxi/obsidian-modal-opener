@@ -399,9 +399,58 @@ export class ModalWindow extends Modal {
                 this.addFloatingButton(wrapperContainer);
             }
         }
-        
+
         const surfPlugin = this.getPlugin("surfing");
-        if (surfPlugin) {
+        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        if (webviewPlugin) {
+            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+            (this.app as any).commands.executeCommandById("webviewer:open");
+            const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
+            const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
+            if (webview) {
+                // 更改 src 属性
+                webview.setAttribute('src', link);
+                // 使用 requestAnimationFrame 检查 suggestion-container
+                function checkForSuggestion() {
+                    const suggestionContainer = document.querySelector('.suggestion-container');
+                    if (suggestionContainer) {
+                        // 模拟回车点击
+                        const enterEvent = new KeyboardEvent('keydown', {
+                            key: 'Enter',
+                            code: 'Enter',
+                            keyCode: 13,
+                            which: 13,
+                            bubbles: true,
+                        });
+
+                        setTimeout(() => {
+                            suggestionContainer.dispatchEvent(enterEvent);
+                        }, 100);
+                    } else {
+                        // 如果没有找到，继续检查
+                        requestAnimationFrame(checkForSuggestion);
+                    }
+                }
+            
+                // 开始循环检查
+                requestAnimationFrame(checkForSuggestion);
+            
+                setTimeout(() => {
+                    const currentLeaf = this.app.workspace.getLeaf(false);
+                    this.handledLeaves.push(currentLeaf);
+            
+                    if (this.plugin.settings.hideTabHeader) {
+                        (currentLeaf as any).tabHeaderEl.style.display = 'none';
+                    }
+                    linkContainer.appendChild(currentLeaf.view.containerEl);
+                    if (this.associatedLeaf) {
+                        this.associatedLeaf.detach();
+                        this.associatedLeaf = undefined;
+                    }
+                    this.associatedLeaf = currentLeaf;
+                }, 150);
+            }
+        } else if (surfPlugin) {
             window.open(link);
             setTimeout(() => {
                 const currentLeaf = this.app.workspace.getLeaf(false);
@@ -535,7 +584,27 @@ export class ModalWindow extends Modal {
 
     private openExternalLink(link: string) {
         const surfPlugin = this.getPlugin("surfing");
-        if (surfPlugin) {
+        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        if (webviewPlugin) {
+            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+            (this.app as any).commands.executeCommandById("webviewer:open");  
+            const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
+            const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
+            if (webview) {
+                webview.setAttribute('src', link);
+                // 使用 requestAnimationFrame 检查 suggestion-container
+                setTimeout(() => {
+                    (this.app as any).commands.executeCommandById("workspace:undo-close-pane");
+                    const leaves = this.app.workspace.getLeavesOfType("webviewer");
+
+                    // 确保至少有两个标签页
+                    if (leaves.length > 1) {
+                        const previousLeaf = leaves[leaves.length - 2]; // 倒数第二个，即上一个打开的
+                        previousLeaf.detach(); // 关闭该标签页
+                    }
+                }, 100);
+            }
+        } else if (surfPlugin) {
             window.open(link);
         } else {
             const newLeaf = this.app.workspace.getLeaf(true);
@@ -661,6 +730,7 @@ export class ModalWindow extends Modal {
             return false;
         }
     }
+
     // 适配NoteToolBar
     private setupToolbarObserver() {
         // 首先移除任何现有的重复工具栏
@@ -785,7 +855,10 @@ export class ModalWindow extends Modal {
             const src = modalContainer.getAttribute('data-src') || '';
             if (this.isValidURL(src)) {
                 const surfPlugin = this.getPlugin("surfing");
-                if(surfPlugin) {
+                const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+                if (webviewPlugin) {
+                    (window as any).require("electron").shell.openExternal(this.link);
+                } else if(surfPlugin) {
                     (this.app as any).commands.executeCommandById("surfing:open-current-url-with-external-browser");
                 } else {
                     window.open(src);
