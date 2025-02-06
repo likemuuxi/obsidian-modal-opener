@@ -409,9 +409,13 @@ export class ModalWindow extends Modal {
             const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
             if (webview) {
                 // 更改 src 属性
-                webview.setAttribute('src', link);
+                // webview.setAttribute('src', link);
                 // 使用 requestAnimationFrame 检查 suggestion-container
                 function checkForSuggestion() {
+                    if (webview && webview.getAttribute('src') != link) {
+                        // console.log("Webview src is not link");
+                        webview.setAttribute('src', link);
+                    }
                     const suggestionContainer = document.querySelector('.suggestion-container');
                     if (suggestionContainer) {
                         // 模拟回车点击
@@ -428,7 +432,9 @@ export class ModalWindow extends Modal {
                         }, 100);
                     } else {
                         // 如果没有找到，继续检查
-                        requestAnimationFrame(checkForSuggestion);
+                        setTimeout(() => {
+                            requestAnimationFrame(checkForSuggestion);
+                        }, 1000);
                     }
                 }
             
