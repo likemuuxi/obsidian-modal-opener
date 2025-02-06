@@ -592,7 +592,7 @@ export class ModalWindow extends Modal {
         const surfPlugin = this.getPlugin("surfing");
         const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
         if (webviewPlugin) {
-            console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
             (this.app as any).commands.executeCommandById("webviewer:open");  
             const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
             const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
@@ -628,7 +628,10 @@ export class ModalWindow extends Modal {
     
         if (isLinkView) {
             const surfingPlugin = this.getPlugin("surfing");
-            if (surfingPlugin) {
+            const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+            if (webviewPlugin) {
+                heightAdjustment = 6;
+            } else if (surfingPlugin) {
                 if (!this.plugin.settings.showLinkViewHeader) {
                     heightAdjustment = -1;
                 } else {
