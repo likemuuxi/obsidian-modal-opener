@@ -3,7 +3,6 @@ import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
 import { DEFAULT_SETTINGS, ModalOpenerPluginSettings,  } from "./settings";
-import { connected } from "process";
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -26,6 +25,8 @@ export default class ModalOpenerPlugin extends Plugin {
 
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
+    private activeLeafChangeTimeout: NodeJS.Timeout | null = null; // 用 NodeJS.Timeout 类型
+    private isProcessing: boolean = false; // 用于状态锁定
 
 
     async onload() {
@@ -1139,33 +1140,52 @@ export default class ModalOpenerPlugin extends Plugin {
 
     // no dupe leaf
     private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
-        if (!this.settings.preventsDuplicateTabs || activeLeaf.view.containerEl.closest('.modal-opener')) {
-            return;
+        // 防抖处理：避免快速切换叶子时多次触发
+        if (this.activeLeafChangeTimeout) {
+            clearTimeout(this.activeLeafChangeTimeout);
         }
-
-        const { id } = activeLeaf;
-
-        if (this.processors.has(id)) {
-            // console.log(`已经在处理叶子 ${id}`);
-            return;
-        }
-
-        const processor = this.processActiveLeaf(activeLeaf);
-        this.processors.set(id, processor);
-
-        try {
-            await processor;
-        } finally {
-            this.processors.delete(id);
-            // console.log(`完成处理叶子 ${id}`);
-        }
+    
+        this.activeLeafChangeTimeout = setTimeout(async () => {
+            // 状态锁定：确保同一时间只有一个处理流程
+            if (this.isProcessing) {
+                // console.log("正在处理其他叶子，跳过本次调用");
+                return;
+            }
+    
+            this.isProcessing = true; // 锁定状态
+    
+            try {
+                if (!this.settings.preventsDuplicateTabs) {
+                    return;
+                }
+    
+                if (activeLeaf.view.containerEl.closest('.modal-opener')) {
+                    return;
+                }
+    
+                const { id } = activeLeaf;
+    
+                if (this.processors.has(id)) {
+                    // console.log(`已经在处理叶子 ${id}`);
+                    return;
+                }
+    
+                const processor = this.processActiveLeaf(activeLeaf);
+                this.processors.set(id, processor);
+    
+                try {
+                    await processor;
+                } finally {
+                    this.processors.delete(id);
+                    // console.log(`完成处理叶子 ${id}`);
+                }
+            } finally {
+                this.isProcessing = false; // 释放状态锁定
+            }
+        }, 100); // 防抖延迟时间：100ms
     }
 
     private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
-        if (!this.settings.preventsDuplicateTabs) {
-            return; // 如果功能未启用，直接返回
-        }
-    
         // 延迟处理，给予新页面加载的时间
         await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
     
