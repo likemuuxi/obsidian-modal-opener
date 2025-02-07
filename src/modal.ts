@@ -411,11 +411,14 @@ export class ModalWindow extends Modal {
                 // 更改 src 属性
                 // webview.setAttribute('src', link);
                 // 使用 requestAnimationFrame 检查 suggestion-container
+                let attemptCount = 0; // 计数器
+
                 function checkForSuggestion() {
                     if (webview && webview.getAttribute('src') != link) {
                         // console.log("Webview src is not link");
                         webview.setAttribute('src', link);
                     }
+                
                     const suggestionContainer = document.querySelector('.suggestion-container');
                     if (suggestionContainer) {
                         // 模拟回车点击
@@ -426,17 +429,20 @@ export class ModalWindow extends Modal {
                             which: 13,
                             bubbles: true,
                         });
-
+                
                         setTimeout(() => {
                             suggestionContainer.dispatchEvent(enterEvent);
                         }, 100);
                     } else {
-                        // 如果没有找到，继续检查
-                        setTimeout(() => {
-                            requestAnimationFrame(checkForSuggestion);
-                        }, 1000);
+                        // 如果没有找到，继续检查，最多尝试5次
+                        if (attemptCount < 5) {
+                            attemptCount++; // 增加尝试次数
+                            setTimeout(() => {
+                                requestAnimationFrame(checkForSuggestion);
+                            }, 1000);
+                        }
                     }
-                }
+                }                
             
                 // 开始循环检查
                 requestAnimationFrame(checkForSuggestion);
@@ -631,6 +637,10 @@ export class ModalWindow extends Modal {
             const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
             if (webviewPlugin) {
                 heightAdjustment = 6;
+                const adjustedModalHeight = `${baseHeight - heightAdjustment}vh`;
+                // console.log(`Adjusted Modal Height: ${adjustedModalHeight}`);
+                container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
+                return;
             } else if (surfingPlugin) {
                 if (!this.plugin.settings.showLinkViewHeader) {
                     heightAdjustment = -1;
@@ -792,8 +802,8 @@ export class ModalWindow extends Modal {
         
         const menuItems = buttonContainer.createEl('div', { cls: 'floating-menu-items' });
         const surfPlugin = this.getPlugin("surfing");
-        
-        if(surfPlugin) {
+        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        if(surfPlugin && !webviewPlugin) {
             this.createMenuItem(menuItems, 'lucide-sun-moon', t('Switch dark mode'), () => this.toggleDarkMode());
         }
         this.createMenuItem(menuItems, 'lucide-compass', t('Open in browser'), () => this.openInBrowser());
