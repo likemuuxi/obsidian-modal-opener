@@ -388,7 +388,7 @@ export default class ModalOpenerPlugin extends Plugin {
             // 处理链接点击
             this.handleLinkClick(evt, target, activeView);
         };
-
+        
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 

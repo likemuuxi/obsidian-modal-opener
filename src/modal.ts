@@ -282,6 +282,18 @@ export class ModalWindow extends Modal {
                 if (wbViewContent) {
                     const webviewElement = wbViewContent.querySelector('webview');
                     if (webviewElement) {
+                        const webviewerContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
+                        if (webviewerContent && this.plugin.settings.showFloatingButton) {
+                            // 移除现有的悬浮按钮
+                            const existingButton = document.querySelector('.floating-button-container');
+                            if (existingButton) {
+                                existingButton.remove();
+                            }
+                            
+                            if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link') {
+                                this.addFloatingButton(webviewerContent as HTMLElement);
+                            }
+                        }
                         webviewElement.addEventListener("dom-ready", async (event: any) => {
                             const srcValue = webviewElement.getAttribute('src');
                             if (srcValue && srcValue != "data:text/plain,") {
@@ -457,7 +469,14 @@ export class ModalWindow extends Modal {
 
     private handleInternalLinkClick = (event: MouseEvent) => {
         let target = event.target as HTMLElement;
-        let linkText = this.getLinkFromTarget(target)
+        let linkText = this.getLinkFromTarget(target);
+        if(this.isValidURL(linkText)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const leaf = this.app.workspace.getLeaf(true);
+            this.loadSiteByWebViewer(linkText, leaf);
+            return;
+        }
         if (linkText?.startsWith('#')) {
             const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
             linkText = currentFilePath + linkText;
