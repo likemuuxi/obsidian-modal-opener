@@ -457,7 +457,7 @@ export default class ModalOpenerPlugin extends Plugin {
             } else if (activeView.getMode() === 'source') {
                 // 适配在编辑模式下 richfoot tldraw markmind 的 alt 点击
                 // if (target.closest(this.settings.customElementSelectors)) {
-                if (target.closest('svg, img, .rich-foot')) {
+                if (target.closest('svg, img, .rich-foot, .annotated-link')) {
                     this.handlePreviewModeLink(evt);
                 } else {
                     this.handleEditModeLink(activeView.editor, evt);
