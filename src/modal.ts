@@ -263,7 +263,7 @@ export class ModalWindow extends Modal {
         if (ModalWindow.activeInstance !== this) {
             return;
         }
-
+        
         const activeLeaf = this.app.workspace.getLeaf(false);
         this.associatedLeaf = activeLeaf;
         if (activeLeaf) {
@@ -277,15 +277,17 @@ export class ModalWindow extends Modal {
 
                 this.handledLeaves.push(activeLeaf);
 
-                const wbViewContent = activeLeaf.view.containerEl.querySelector('.wb-view-content');
+                const wbViewContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
                 const activeFile = this.app.workspace.getActiveFile();
                 if (wbViewContent) {
                     const webviewElement = wbViewContent.querySelector('webview');
                     if (webviewElement) {
-                        const srcValue = webviewElement.getAttribute('src');
-                        if (srcValue) {
-                            modalContainer.setAttribute('data-src', srcValue);
-                        }
+                        webviewElement.addEventListener("dom-ready", async (event: any) => {
+                            const srcValue = webviewElement.getAttribute('src');
+                            if (srcValue && srcValue != "data:text/plain,") {
+                                modalContainer.setAttribute('data-src', srcValue);
+                            }
+                        });
                     }
                 } else if (activeFile && !this.updateFragmentLink) {
                     const filePath = activeFile.path;
@@ -382,7 +384,6 @@ export class ModalWindow extends Modal {
         }
 
         this.contentEl.empty();
-        const doc = this.contentEl.doc;
 
         const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
         linkContainer.setAttribute("data-src", this.link);
@@ -800,7 +801,7 @@ export class ModalWindow extends Modal {
             const src = modalContainer.getAttribute('data-src') || '';
             if (this.isValidURL(src)) {
                 if (this.webviewPlugin) {
-                    (window as any).require("electron").shell.openExternal(this.link);
+                    (window as any).require("electron").shell.openExternal(src);
                 } else {
                     window.open(src);
                 }

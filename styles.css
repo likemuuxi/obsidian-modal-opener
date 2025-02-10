@@ -77,8 +77,8 @@
     right: 5px;
 }
 
-body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="webviewer"] .view-header, 
-body:not(.show-link-view-header) .modal-opener-content .wb-bookmark-bar { 
+body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content:not([data-type="webviewer"]) .view-header,
+body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="webviewer"] .view-header {
     display: none !important;
 }
 
