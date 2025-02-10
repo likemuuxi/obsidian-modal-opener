@@ -77,15 +77,9 @@
     right: 5px;
 }
 
-
-body:not(.show-file-view-header) .modal-opener-content .workspace-leaf-content:not([data-type="surfing-view"]) .view-header {
-    display: none;
-}
-
-body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="surfing-view"] .view-header,
-/* body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="webviewer"] .view-header, */
+body:not(.show-link-view-header) .modal-opener-content .workspace-leaf-content[data-type="webviewer"] .view-header, 
 body:not(.show-link-view-header) .modal-opener-content .wb-bookmark-bar { 
-    display: none;
+    display: none !important;
 }
 
 body:not(.show-metadata) .modal-opener-content .metadata-container {

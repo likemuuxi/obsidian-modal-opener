@@ -1,6 +1,8 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, MarkdownEditView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, WorkspaceWindow, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
+
+const { remote } = (window as any).require('electron');
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -12,13 +14,13 @@ export class ModalWindow extends Modal {
     height: string;
     public scope: Scope;
     private associatedLeaf?: WorkspaceLeaf;
-    
     private handledLeaves: WorkspaceLeaf[] = [];
     private static instances: ModalWindow[] = [];
     private static activeInstance: ModalWindow | null = null;
     private boundHandleActiveLeafChange: () => void;
     private updateFragmentLink: boolean;
     private observer: MutationObserver | null = null;
+    private webviewPlugin: boolean;
 
     constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -30,6 +32,8 @@ export class ModalWindow extends Modal {
         this.height = height || `${this.plugin.settings.modalHeight}%`;
         this.scope = new Scope(this.app.scope); // Allow app commands to work inside modal
         this.boundHandleActiveLeafChange = this.handleActiveLeafChange.bind(this);
+        this.webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+
         ModalWindow.instances.push(this);
         ModalWindow.activeInstance = this;
         ModalOpenerPlugin.activeModalWindow = this;
@@ -60,13 +64,12 @@ export class ModalWindow extends Modal {
             }
         }
 
-        // Modal Size
         const modal = this.containerEl.lastChild as HTMLElement;
         if (modal) {
             modal.style.width = this.width;
             modal.style.height = this.height;
         }
-        
+
         if (this.file) {
             // console.log("file", this.file);
             this.displayFileContent(this.file, this.fragment);
@@ -82,7 +85,7 @@ export class ModalWindow extends Modal {
             // console.log("link", this.link);
             this.displayLinkContent(this.link);
         }
-        
+
         // 恢复 ESC 键的默认行为
         this.scope.register([], 'Escape', (evt: KeyboardEvent) => {
             // 检查当前内容是否为 Excalidraw
@@ -90,7 +93,7 @@ export class ModalWindow extends Modal {
             if (this.plugin.settings.disableExcalidrawEsc && excalidrawView) {
                 return; // 仅在设置开启时禁用 Excalidraw 的 ESC 关闭
             }
-            
+
             evt.preventDefault();
             this.close();
         });
@@ -115,53 +118,51 @@ export class ModalWindow extends Modal {
         }
     }
 
-	private isTabStacked = (element: HTMLElement) => {
-		const innerContainer = element.closest('.workspace-tab-header-container-inner');
-		const outerContainer = element.closest('.workspace-tab-container');
+    private isTabStacked = (element: HTMLElement) => {
+        const innerContainer = element.closest('.workspace-tab-header-container-inner');
+        const outerContainer = element.closest('.workspace-tab-container');
 
-		if (innerContainer) {
-			return false;
-		} else if (outerContainer) {
-			return true;
-		}
-		return false;
-	};
+        if (innerContainer) {
+            return false;
+        } else if (outerContainer) {
+            return true;
+        }
+        return false;
+    };
 
     onClose() {
         // 当是isTabStacked时，检查右侧有无标签页，如果有，聚焦右侧标签页再聚焦回来
         if (this.associatedLeaf) {
             const tabHeaderEl = (this.associatedLeaf as any).tabHeaderEl;
             if (tabHeaderEl && this.isTabStacked(tabHeaderEl)) {
-                // 获取当前标签页的父容器
-                const tabContainer = tabHeaderEl.closest('.workspace-tab-container');
-                if (tabContainer) {
-                    // 获取所有标签页
-                    const allTabs = Array.from(tabContainer.querySelectorAll('.workspace-tab-header'));
-                    // 找到当前标签页的索引
-                    const currentIndex = allTabs.findIndex(tab => tab === tabHeaderEl);
-                    // 获取右侧标签页
-                    const nextTab = allTabs[currentIndex + 1];
-                    
-                    if (nextTab) {
-                        // 保存当前活动的叶子
+                // 在外部声明 allLeafs 数组来存储所有根标签页
+                const allLeafs: WorkspaceLeaf[] = [];
+                this.app.workspace.iterateRootLeaves((leaf: WorkspaceLeaf) => {
+                    allLeafs.push(leaf);  // 将每个 root leaf 存入数组
+                });
+        
+                // 找到当前标签页的索引
+                const currentIndex = allLeafs.findIndex(leaf => leaf === this.associatedLeaf);
+                // 获取右侧标签页
+                const nextLeaf = allLeafs[currentIndex + 1];
+        
+                if (nextLeaf) {
+                    // 保存当前活动的叶子
+                    setTimeout(() => {
+                        const currentLeaf = this.app.workspace.getLeaf(false);
+                        // 点击右侧标签页
+                        this.app.workspace.setActiveLeaf(nextLeaf, { focus: true });
+                        // 延迟后再切回原来的标签页
                         setTimeout(() => {
-                            const currentLeaf = this.app.workspace.getLeaf(false);
-                        
-                            // 点击右侧标签页
-                            (nextTab as HTMLElement).click();
-                            
-                            // 延迟后再切回原来的标签页
-                            setTimeout(() => {
-                                if (currentLeaf) {
-                                    this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
-                                }
-                            }, 50);
-                        }, 200);
-                    }
+                            if (currentLeaf) {
+                                this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
+                            }
+                        }, 50);
+                    }, 200);
                 }
             }
         }
-
+        
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
         const modalOpener = this.containerEl.querySelector('.modal-opener');
         if (modalOpener && this.plugin.settings.enableRefreshOnClose) {
@@ -173,7 +174,7 @@ export class ModalWindow extends Modal {
                 }, this.plugin.settings.delayInMs);
             }
         }
-        
+
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
@@ -237,7 +238,7 @@ export class ModalWindow extends Modal {
             // 第一步：移除所有 ![[]] 中的感叹号
             const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
             editor.setValue(modifiedContent);
-            
+
             // 第二步：重新添加感叹号到原本是 ![[]] 的链接
             setTimeout(() => {
                 const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
@@ -301,12 +302,10 @@ export class ModalWindow extends Modal {
         if (!this.contentEl) {
             return;
         }
-        
-        this.contentEl.empty();
 
+        this.contentEl.empty();
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
         fileContainer.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
-
         const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
@@ -336,9 +335,6 @@ export class ModalWindow extends Modal {
             if (this.plugin.settings.hideTabHeader) {
                 (newLeaf as any).tabHeaderEl.style.display = 'none';
             }
-            // if (newLeaf.view && newLeaf.view.containerEl) {
-            //     document.body.addClass('modal-tab-header-hidden');
-            // }
             this.associatedLeaf = newLeaf;
 
             setTimeout(() => {
@@ -356,9 +352,6 @@ export class ModalWindow extends Modal {
             const leaf = this.app.workspace.getLeaf(true);
             await leaf.openFile(file, { state: { mode } });
             this.handledLeaves.push(leaf);
-            // if (leaf.view && leaf.view.containerEl) {
-            //     document.body.addClass('modal-tab-header-hidden');
-            // }
             if (this.plugin.settings.hideTabHeader) {
                 (leaf as any).tabHeaderEl.style.display = 'none';
             }
@@ -373,26 +366,27 @@ export class ModalWindow extends Modal {
         }, 100);
 
         const noteToolbarPlugin = this.getPlugin("note-toolbar");
-        if(noteToolbarPlugin) {
+        if (noteToolbarPlugin) {
             this.setupToolbarObserver();
         }
-        
+
         this.setupDoubleClickHandler();
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
     }
 
 
-    displayLinkContent(link:string) {
+    displayLinkContent(link: string) {
         if (!this.contentEl) {
             return;
         }
+
         this.contentEl.empty();
-        // 创建一个包装器来容纳文件内容和浮动按钮
-        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
+        const doc = this.contentEl.doc;
+
         const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
         linkContainer.setAttribute("data-src", this.link);
-    
+        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link') {
                 wrapperContainer.appendChild(linkContainer);
@@ -400,86 +394,20 @@ export class ModalWindow extends Modal {
             }
         }
 
-        const surfPlugin = this.getPlugin("surfing");
-        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-        if (webviewPlugin) {
-            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
-            (this.app as any).commands.executeCommandById("webviewer:open");
-            const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
-            const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
-            if (webview) {
-                // 更改 src 属性
-                // webview.setAttribute('src', link);
-                // 使用 requestAnimationFrame 检查 suggestion-container
-                let attemptCount = 0; // 计数器
+        if (this.webviewPlugin) {
+            const currentLeaf = this.app.workspace.getLeaf(true)
+            this.loadSiteByWebViewer(link, currentLeaf)
 
-                function checkForSuggestion() {
-                    if (webview && webview.getAttribute('src') != link) {
-                        // console.log("Webview src is not link");
-                        webview.setAttribute('src', link);
-                    }
-                
-                    const suggestionContainer = document.querySelector('.suggestion-container');
-                    if (suggestionContainer) {
-                        // 模拟回车点击
-                        const enterEvent = new KeyboardEvent('keydown', {
-                            key: 'Enter',
-                            code: 'Enter',
-                            keyCode: 13,
-                            which: 13,
-                            bubbles: true,
-                        });
-                
-                        setTimeout(() => {
-                            suggestionContainer.dispatchEvent(enterEvent);
-                        }, 100);
-                    } else {
-                        // 如果没有找到，继续检查，最多尝试5次
-                        if (attemptCount < 5) {
-                            attemptCount++; // 增加尝试次数
-                            setTimeout(() => {
-                                requestAnimationFrame(checkForSuggestion);
-                            }, 1000);
-                        }
-                    }
-                }                
-            
-                // 开始循环检查
-                requestAnimationFrame(checkForSuggestion);
-            
-                setTimeout(() => {
-                    const currentLeaf = this.app.workspace.getLeaf(false);
-                    this.handledLeaves.push(currentLeaf);
-            
-                    if (this.plugin.settings.hideTabHeader) {
-                        (currentLeaf as any).tabHeaderEl.style.display = 'none';
-                    }
-                    linkContainer.appendChild(currentLeaf.view.containerEl);
-                    if (this.associatedLeaf) {
-                        this.associatedLeaf.detach();
-                        this.associatedLeaf = undefined;
-                    }
-                    this.associatedLeaf = currentLeaf;
-                }, 150);
+            this.handledLeaves.push(currentLeaf);
+            if (this.plugin.settings.hideTabHeader) {
+                (currentLeaf as any).tabHeaderEl.style.display = 'none';
             }
-        } else if (surfPlugin) {
-            window.open(link);
-            setTimeout(() => {
-                const currentLeaf = this.app.workspace.getLeaf(false);
-                this.handledLeaves.push(currentLeaf);
-                // if (currentLeaf.view && currentLeaf.view.containerEl) {
-                //     document.body.addClass('modal-tab-header-hidden');
-                // }
-                if (this.plugin.settings.hideTabHeader) {
-                    (currentLeaf as any).tabHeaderEl.style.display = 'none';
-                }
-                linkContainer.appendChild(currentLeaf.view.containerEl);
-                if (this.associatedLeaf) {
-                    this.associatedLeaf.detach();
-                    this.associatedLeaf = undefined;
-                }
-                this.associatedLeaf = currentLeaf;
-            }, 150);
+            linkContainer.appendChild(currentLeaf.view.containerEl);
+            if (this.associatedLeaf) {
+                this.associatedLeaf.detach();
+                this.associatedLeaf = undefined;
+            }
+            this.associatedLeaf = currentLeaf;
         } else {
             const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
             frame.src = link;
@@ -488,9 +416,42 @@ export class ModalWindow extends Modal {
         this.setupDoubleClickHandler();
     }
 
+    private loadSiteByWebViewer(link: string, leaf: WorkspaceLeaf) {
+        leaf.setViewState({
+            type: "webviewer",
+            active: true,
+            state: {
+                url: link,
+                target: "_self",
+            }
+        });
 
-    private getLinkFromTarget(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+        const webviewEl = document.querySelector("webview");
+        if(webviewEl) {
+            webviewEl.addEventListener("dom-ready", async (event: any) => {
+                // @ts-ignore
+                const webContents = remote.webContents.fromId(
+                    (webviewEl as any).getWebContentsId()
+                );
+    
+                // Open new browser tab if the web view requests it.
+                webContents.setWindowOpenHandler((event: any) => {
+                    this.app.workspace.getLeaf(true).setViewState({
+                        type: "webviewer",
+                        active: true,
+                        state: {
+                            url: event.url,
+                            active: event.disposition !== "background-tab",
+                        }
+                    });
+                    return {
+                        action: "allow",
+                    };
+                });
+    
+                await this.registerJavascriptInWebcontents(webContents);
+            });
+        }
     }
 
     private handleInternalLinkClick = (event: MouseEvent) => {
@@ -509,12 +470,12 @@ export class ModalWindow extends Modal {
         } else {
             file = undefined;
         }
-        
+
         // 检测文件是否存在
         if (!file && !this.isValidURL(linkText)) {
             return;
         }
-        
+
         if (file) {
             const filePath = `${file.path}#${fragment}`;
             const modalContainer = this.containerEl.querySelector('.modal-opener-content');
@@ -524,7 +485,11 @@ export class ModalWindow extends Modal {
             }
         }
     }
-    
+
+    private getLinkFromTarget(target: HTMLElement): string {
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+    }
+
     private focusOnModalContent() {
         if (this.associatedLeaf?.view instanceof MarkdownView) {
             const editor = this.associatedLeaf.view.editor;
@@ -534,29 +499,6 @@ export class ModalWindow extends Modal {
             if (modalContainer instanceof HTMLElement) {
                 modalContainer.focus();
             }
-        }
-    }
-
-    public openInNewTab() {
-        const modalElement = this.containerEl.querySelector('.modal-opener');
-        if (!modalElement) return;
-        const modalContainer = modalElement.querySelector('.modal-opener-content');
-    
-        if (modalContainer) {
-            const src = modalContainer.getAttribute('data-src') || '';
-            if (this.isValidURL(src)) {
-                this.openExternalLink(src);
-            } else {
-                const [filePath, fragment] = src.split('#');
-                const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
-                if (file instanceof TFile) {
-                    this.plugin.app.workspace.openLinkText(src, filePath, 'tab');
-                }
-            }
-            // 关闭所有 modal 实例
-            ModalWindow.instances.forEach((instance) => {
-                instance.close();
-            });
         }
     }
 
@@ -595,29 +537,9 @@ export class ModalWindow extends Modal {
     }
 
     private openExternalLink(link: string) {
-        const surfPlugin = this.getPlugin("surfing");
-        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-        if (webviewPlugin) {
-            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
-            (this.app as any).commands.executeCommandById("webviewer:open");  
-            const activeLeaf = document.querySelector('.workspace-leaf.mod-active');
-            const webview = activeLeaf ? activeLeaf.querySelector('webview') as HTMLIFrameElement : null;
-            if (webview) {
-                webview.setAttribute('src', link);
-                // 使用 requestAnimationFrame 检查 suggestion-container
-                setTimeout(() => {
-                    (this.app as any).commands.executeCommandById("workspace:undo-close-pane");
-                    const leaves = this.app.workspace.getLeavesOfType("webviewer");
-
-                    // 确保至少有两个标签页
-                    if (leaves.length > 1) {
-                        const previousLeaf = leaves[leaves.length - 2]; // 倒数第二个，即上一个打开的
-                        previousLeaf.detach(); // 关闭该标签页
-                    }
-                }, 100);
-            }
-        } else if (surfPlugin) {
-            window.open(link);
+        if (this.webviewPlugin) {
+            const leaf = this.app.workspace.getLeaf(true);
+            this.loadSiteByWebViewer(link, leaf);
         } else {
             const newLeaf = this.app.workspace.getLeaf(true);
             const container = newLeaf.view.containerEl;
@@ -631,24 +553,16 @@ export class ModalWindow extends Modal {
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
         let heightAdjustment = 5; // 默认调整值
-    
+
         if (isLinkView) {
-            const surfingPlugin = this.getPlugin("surfing");
-            const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-            if (webviewPlugin) {
+            if (this.webviewPlugin) {
                 heightAdjustment = 6;
-                const adjustedModalHeight = `${baseHeight - heightAdjustment}vh`;
-                // console.log(`Adjusted Modal Height: ${adjustedModalHeight}`);
-                container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
-                return;
-            } else if (surfingPlugin) {
-                if (!this.plugin.settings.showLinkViewHeader) {
-                    heightAdjustment = -1;
-                } else {
-                    heightAdjustment = 6;
-                }
             } else {
-                heightAdjustment = 6;
+                if(Platform.isMobile) {
+                    heightAdjustment = 5.5;
+                } else{
+                    heightAdjustment = 4;
+                }
             }
         } else {
             if (!this.plugin.settings.showFileViewHeader) {
@@ -657,11 +571,11 @@ export class ModalWindow extends Modal {
                 if (leafContent) {
                     const dataType = leafContent.getAttribute('data-type');
                     if (dataType == "canvas" || dataType == "excalidraw" || dataType == "tldraw-view") {
-                        if(dataType === 'canvas'){
+                        if (dataType === 'canvas') {
                             heightAdjustment = 2;
-                        } else if(dataType === 'excalidraw') {
+                        } else if (dataType === 'excalidraw') {
                             heightAdjustment = 2;
-                        } else if(dataType === 'tldraw-view') {
+                        } else if (dataType === 'tldraw-view') {
                             heightAdjustment = -1;
                             if (Platform.isMobile) {
                                 heightAdjustment = 2;
@@ -671,7 +585,7 @@ export class ModalWindow extends Modal {
                         const editingPlugin = this.getPlugin("editing-toolbar");
                         const toolbarPlugin = this.getPlugin("note-toolbar");
                         const topToolbar = this.containerEl.querySelector('.cg-note-toolbar-callout');
-                        
+
                         if (toolbarPlugin || editingPlugin) {
                             if (toolbarPlugin) {
                                 heightAdjustment = topToolbar ? 5 : 1;
@@ -680,20 +594,20 @@ export class ModalWindow extends Modal {
                             }
                         } else {
                             heightAdjustment = 1; // markdown
-                        }                                           
+                        }
                     }
                 }
             } else {
                 // 针对特殊文件调整样式
                 const leafContent = this.containerEl.querySelector('.modal-opener-content .workspace-leaf-content');
                 if (leafContent) {
-                    const dataType = leafContent.getAttribute('data-type');          
+                    const dataType = leafContent.getAttribute('data-type');
                     if (dataType == "canvas" || dataType == "excalidraw" || dataType == "tldraw-view") {
-                        if(dataType === 'canvas'){
+                        if (dataType === 'canvas') {
                             heightAdjustment = 6;
-                        } else if(dataType === 'excalidraw') {
+                        } else if (dataType === 'excalidraw') {
                             heightAdjustment = 6;
-                        } else if(dataType === 'tldraw-view') {
+                        } else if (dataType === 'tldraw-view') {
                             heightAdjustment = 3;
                             if (Platform.isMobile) {
                                 heightAdjustment = 6;
@@ -702,7 +616,7 @@ export class ModalWindow extends Modal {
                     } else {
                         const editingPlugin = this.getPlugin("editing-toolbar");
                         const toolbarPlugin = this.getPlugin("note-toolbar");
-                        if(editingPlugin || toolbarPlugin) {
+                        if (editingPlugin || toolbarPlugin) {
                             heightAdjustment = toolbarPlugin ? 5 : (editingPlugin ? 5 : 4);
                         } else {
                             heightAdjustment = 1; // markdown
@@ -716,7 +630,7 @@ export class ModalWindow extends Modal {
         // console.log(`Adjusted Modal Height: ${adjustedModalHeight}`);
         container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
     }
-    
+
     private getPlugin(pluginId: string) {
         const app = this.plugin.app as any;
         return app.plugins.plugins[pluginId];
@@ -783,10 +697,10 @@ export class ModalWindow extends Modal {
     private addOpenInNewLeafButton(container: HTMLElement) {
         const buttonContainer = container.createEl('div', { cls: 'floating-button-container' });
         const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
-        
+
         setIcon(openButton, 'lucide-panel-top');
-        openButton.setAttribute('title',  t('Opens in new tab'));
-    
+        openButton.setAttribute('title', t('Opens in new tab'));
+
         openButton.addEventListener('click', (e) => {
             e.stopPropagation();
             this.openInNewTab();
@@ -799,42 +713,38 @@ export class ModalWindow extends Modal {
 
         setIcon(mainButton, 'lucide-more-vertical');
         mainButton.setAttribute('title', t("More options"));
-        
+
         const menuItems = buttonContainer.createEl('div', { cls: 'floating-menu-items' });
-        const surfPlugin = this.getPlugin("surfing");
-        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-        if(surfPlugin && !webviewPlugin) {
-            this.createMenuItem(menuItems, 'lucide-sun-moon', t('Switch dark mode'), () => this.toggleDarkMode());
-        }
+
         this.createMenuItem(menuItems, 'lucide-compass', t('Open in browser'), () => this.openInBrowser());
         this.createMenuItem(menuItems, 'lucide-panel-top', t('Opens in new tab'), () => this.openInNewTab());
         this.createMenuItem(menuItems, 'lucide-copy', t('Copy web link'), () => this.copyWebLink());
 
         // 显示/隐藏菜单
         let timeoutId: NodeJS.Timeout | null = null;
-    
+
         buttonContainer.addEventListener('mouseenter', () => {
             if (timeoutId) clearTimeout(timeoutId);
             menuItems.style.display = 'flex';
         });
-    
+
         buttonContainer.addEventListener('mouseleave', () => {
             timeoutId = setTimeout(() => {
                 menuItems.style.display = 'none';
             }, 300); // 300ms 延迟，给用户一些时间移动到菜单项上
         });
-    
+
         menuItems.addEventListener('mouseenter', () => {
             if (timeoutId) clearTimeout(timeoutId);
         });
-    
+
         menuItems.addEventListener('mouseleave', () => {
             timeoutId = setTimeout(() => {
                 menuItems.style.display = 'none';
             }, 300);
         });
     }
-    
+
     private createMenuItem(container: HTMLElement, icon: string, title: string, onClick: () => void): HTMLElement {
         const button = container.createEl('button', { cls: 'floating-button menu-item' });
         setIcon(button, icon);
@@ -846,39 +756,51 @@ export class ModalWindow extends Modal {
         });
         return button;
     }
-    
-    private toggleDarkMode() {
-        const surfPlugin = this.getPlugin("surfing");
-        if(surfPlugin) {
-            (this.app as any).commands.executeCommandById("surfing:toggle-dark-mode");
-        }
-    }
 
     private copyWebLink() {
         const modalElement = this.containerEl.querySelector('.modal-opener-content');
         if (!modalElement) return;
-    
+
         const dataSrc = modalElement.getAttribute('data-src');
         if (dataSrc) {
             navigator.clipboard.writeText(dataSrc)
                 .then(() => new Notice(t("Copied to clipboard")));
-        } 
+        }
     }
-    
+
+    public openInNewTab() {
+        const modalElement = this.containerEl.querySelector('.modal-opener');
+        if (!modalElement) return;
+        const modalContainer = modalElement.querySelector('.modal-opener-content');
+
+        if (modalContainer) {
+            const src = modalContainer.getAttribute('data-src') || '';
+            if (this.isValidURL(src)) {
+                this.openExternalLink(src);
+            } else {
+                const [filePath, fragment] = src.split('#');
+                const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+                if (file instanceof TFile) {
+                    this.plugin.app.workspace.openLinkText(src, filePath, 'tab');
+                }
+            }
+            // 关闭所有 modal 实例
+            ModalWindow.instances.forEach((instance) => {
+                instance.close();
+            });
+        }
+    }
+
     private openInBrowser() {
         const modalElement = this.containerEl.querySelector('.modal-opener');
         if (!modalElement) return;
         const modalContainer = modalElement.querySelector('.modal-opener-content');
-    
+
         if (modalContainer) {
             const src = modalContainer.getAttribute('data-src') || '';
             if (this.isValidURL(src)) {
-                const surfPlugin = this.getPlugin("surfing");
-                const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-                if (webviewPlugin) {
+                if (this.webviewPlugin) {
                     (window as any).require("electron").shell.openExternal(this.link);
-                } else if(surfPlugin) {
-                    (this.app as any).commands.executeCommandById("surfing:open-current-url-with-external-browser");
                 } else {
                     window.open(src);
                 }
@@ -886,4 +808,70 @@ export class ModalWindow extends Modal {
             }
         }
     }
+
+    async registerJavascriptInWebcontents(webContents: any) {
+		try {
+            const isDarkMode = document.body.classList.contains('theme-dark');
+			if (isDarkMode) {
+				try {
+					await webContents.executeJavaScript(`
+						const element = document.createElement('script');
+
+						fetch('https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js')
+							.then((response) => {
+								element.src = response.url;
+								document.body.appendChild(element);
+							})
+							.catch((error) => {
+								console.error('Error loading the script:', error);
+							});
+
+						element.onload = () => {
+							try {
+								DarkReader?.setFetchMethod(window.fetch);
+								DarkReader?.enable({
+									brightness: 100,
+									contrast: 90,
+									sepia: 10
+								});
+								console.log(DarkReader);
+							} catch (err) {
+
+								window.myPostPort?.postMessage('darkreader-failed');
+								console.error('Failed to load dark reader: ', err);
+
+							}
+						};0
+					`);
+				} catch (e) {
+					console.error(e);
+				}
+			} else {
+                try {
+                    await webContents.executeJavaScript(`
+                        if (DarkReader) {
+                            DarkReader.disable();
+                            console.log('Dark mode disabled');
+                        }
+                    `);
+                } catch (e) {
+                    console.error('Error disabling dark mode: ', e);
+                }
+            }
+		} catch (err) {
+			console.error("Failed to get background color: ", err);
+		}
+
+		// https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
+		webContents.executeJavaScript(`
+			window.addEventListener('mouseover', (e) => {
+				if(!e.target) return;
+				if(!e.ctrlKey && !e.metaKey) return;
+				// Tag name is a tag
+				if(e.target.tagName.toLowerCase() === 'a'){
+					window.myPostPort?.postMessage('link ' + e.clientX + ' ' + e.clientY + ' ' + e.target.href);
+				}
+			});
+		`);
+	}
 }

@@ -40,6 +40,7 @@ export interface ModalOpenerPluginSettings {
     };
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
+	customElementSelectors: string;
 }
 
 interface CustomCommand {
@@ -56,7 +57,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	dragThreshold: 200,
 	enableAnimation: true,
 	enableRounding: false,
-	clickWithoutAlt: false,
+	clickWithoutAlt: Platform.isMobile ? true : false,
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
 	customCommands: [],
@@ -84,6 +85,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
     },
 	showCommandsContainer: true,
 	showDeleteCommands: true,
+	customElementSelectors: 'svg, img, .rich-foot',
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -123,6 +125,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
     };
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
+	customElementSelectors: string;
 
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
@@ -177,6 +180,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						}
 					}));
 		}
+
+		// new Setting(containerEl)
+		// .setName(t('Custom element selectors'))
+		// .setDesc(t('Enter CSS selectors for elements that should trigger preview mode (comma-separated)'))
+		// .addText(text => text
+		// 	.setPlaceholder('svg, img, .rich-foot')
+		// 	.setValue(this.plugin.settings.customElementSelectors)
+		// 	.onChange(async (value) => {
+		// 		this.plugin.settings.customElementSelectors = value;
+		// 		await this.plugin.saveSettings();
+		// 	}));
 
 		new Setting(containerEl)
 			.setName(t('Default editing mode'))
@@ -365,7 +379,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		if (!Platform.isMobile) {
 			new Setting(containerEl)
 				.setName(t('Show view header of the link'))
-				.setDesc(t('Show the Surfing plugin\'s navigation bar and bookmarks bar'))
+				.setDesc(t('Show the web viewer\'s navigation bar'))
 				.addToggle(toggle => toggle
 					.setValue(this.plugin.settings.showLinkViewHeader)
 					.onChange(async (value) => {

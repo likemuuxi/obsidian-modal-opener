@@ -8,6 +8,9 @@ export default {
     "Wiki link": "Wiki链接",
     "Embed link": "嵌入链接",
     
+    'Custom element selectors':'自定义元素选择器',
+    'Enter CSS selectors for elements that should trigger preview mode (comma-separated)':'为应触发预览模式的元素输入CSS选择器（逗号分隔）',
+
     "Unsupported file or link format": "不支持的文件或链接格式",
     "Drag duration too short": "拖拽时间太短",
     "The file or link does not exist: ": "文件或链接不存在: ",
@@ -73,7 +76,7 @@ export default {
     'Show view header of the file':'显示文件的视图标题',
     'Show view header of the link':'显示链接的视图标题',
     'Show the view header of the file in the modal window':'在模态窗口中显示文件视图的头部标题',
-    'Show the Surfing plugin\'s navigation bar and bookmarks bar':'在模态窗口中显示Surfing插件的导航栏和书签栏',
+    'Show the web viewer\'s navigation bar':'在模态窗口中显示 Web viewer 的导航栏',
     'Show metadata':'显示元数据',
     'Show file metadata in the modal window':'在模态窗口中显示文件元数据',
     'Hide tab header':'隐藏标签页头部',

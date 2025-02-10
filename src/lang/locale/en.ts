@@ -7,7 +7,10 @@ export default {
   "Enter new file name": "Enter new file name: ",
   "Wiki link": "Wiki link",
   "Embed link": "Embed link",
-  
+
+  'Custom element selectors':'Custom element selectors',
+  'Enter CSS selectors for elements that should trigger preview mode (comma-separated)':'Enter CSS selectors for elements that should trigger preview mode (comma-separated)',
+
   "Unsupported file or link format": "Unsupported file or link format",
   "Drag duration too short": "Drag duration too short",
   "The file or link does not exist: ": "The file or link does not exist: ",
@@ -73,7 +76,7 @@ export default {
   'Show view header of the file':'Show view header of the file',
   'Show view header of the link':'Show view header of the link',
   'Show the view header of the file in the modal window':'Show the view header of the file in the modal window',
-  'Show the Surfing plugin\'s navigation bar and bookmarks bar':'Show the Surfing plugin\'s navigation bar and bookmarks bar in the modal window',
+  'Show the web viewer\'s navigation bar':'Show the web viewer\'s navigation bar',
   'Show metadata':'Display metadata',
   'Show file metadata in the modal window':'Show file metadata in the modal window',
   'Hide tab header':'Hide tab header',

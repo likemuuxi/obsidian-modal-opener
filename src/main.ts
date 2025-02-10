@@ -1,8 +1,9 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform} from "obsidian";
+import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { t } from "./lang/helpers"
-import { DEFAULT_SETTINGS, ModalOpenerPluginSettings,  } from "./settings";
+import { DEFAULT_SETTINGS, ModalOpenerPluginSettings, } from "./settings";
+import { platform } from "os";
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -20,31 +21,57 @@ export default class ModalOpenerPlugin extends Plugin {
     private draggedLink: string | null = null;
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
-    // private middleClickHandler: ((evt: MouseEvent) => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
 
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
-    private activeLeafChangeTimeout: NodeJS.Timeout | null = null; // 用 NodeJS.Timeout 类型
+    private activeLeafChangeTimeout: NodeJS.Timeout | null = null;
     private isProcessing: boolean = false; // 用于状态锁定
 
 
     async onload() {
         await this.loadSettings();
-
-        this.registerOpenHandler();
-        this.registerContextMenuHandler();
-        
-        this.applyStyles();
-        this.registerCustomCommands();
         this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
 
-        this.app.workspace.onLayoutReady(() => {
-            this.registerEvent(
-                this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this))
-            );
-        });
+        this.applyStyles();
+        this.registerOpenHandler();
+        this.registerContextMenuHandler();
+        this.registerCustomCommands();
+        this.registerEvent(this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this)));
+        this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChange.bind(this)));
 
+        this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            
+            // 检查是否点击了链接，并且没有 'external-link' 类
+            if ((target.tagName === "A" && !target.hasClass("external-link") && target instanceof HTMLAnchorElement) || target instanceof HTMLAnchorElement) {
+                if (evt.altKey || (this.settings.clickWithoutAlt && !evt.altKey)) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+
+                    if (this.isValidURL(target.href)) {
+                        this.openInFloatPreview(target.href);
+                    }
+                } else if (evt.ctrlKey) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    evt.stopImmediatePropagation();
+                    const settingTab = document.querySelector('.modal.mod-settings.mod-sidebar-layout');
+                    if (settingTab) {
+                        (window as any).require("electron").shell.openExternal(target.href);
+                    } else {
+                        setTimeout(() => {
+                            const currentLeaf = this.app.workspace.getLeaf(false);
+                            if (currentLeaf?.view?.getViewType() === "webviewer") {
+                                (window as any).require("electron").shell.openExternal(target.href);
+                                currentLeaf.detach();
+                            }
+                        }, 100);
+                    }
+                }
+            }
+        });
+        
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current tab content in modal',
@@ -77,6 +104,8 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     onunload() {
+        this.app.workspace.off("active-leaf-change", this.onActiveLeafChange.bind(this));
+        this.app.workspace.off("layout-change", this.onLayoutChange.bind(this));
         this.removeEventListeners();
     }
 
@@ -94,16 +123,16 @@ export default class ModalOpenerPlugin extends Plugin {
         const currentFile = this.app.workspace.getActiveFile()?.path || '';
         const file = this.app.vault.getAbstractFileByPath(currentFile);
         const activeLeaf = this.app.workspace.getLeaf(false);
-    
+
         if (!activeLeaf) {
             return;
         }
 
-        const surfPlugin = (this.app as any).plugins.plugins["surfing"];
-        const frameSelector = surfPlugin ? '.wb-frame' : 'iframe';
+        const webviewerPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        const frameSelector = webviewerPlugin ? 'webview' : 'iframe';
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
-        
+
         new ModalWindow(
             this,
             linkValue,
@@ -117,7 +146,7 @@ export default class ModalOpenerPlugin extends Plugin {
             activeLeaf.detach();
         }
     }
-    
+
     private openCurrentContentInModal() {
         this.openContentInModal(true);
     }
@@ -154,10 +183,6 @@ export default class ModalOpenerPlugin extends Plugin {
             document.removeEventListener('dragend', this.dragHandler);
             this.dragHandler = undefined; // Clear reference
         }
-        // if (this.middleClickHandler) {
-        //     document.removeEventListener('mousedown', this.middleClickHandler, { capture: true });
-        //     this.middleClickHandler = undefined;
-        // }
         if (this.altClickHandler) {
             document.removeEventListener('click', this.altClickHandler, { capture: true });
             this.altClickHandler = undefined;
@@ -165,16 +190,11 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private registerOpenHandler() {
-        // Remove previous event listeners
         this.removeEventListeners();
 
-        // Register new event handlers based on settings
         if (this.settings.openMethod === "drag" || this.settings.openMethod === "both") {
             this.registerDragHandler();
         }
-        // if (this.settings.openMethod === "middle" || this.settings.openMethod === "both") {
-        //     this.registerMouseMiddleClickHandler();
-        // }
         if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
             this.registerAltClickHandler();
             this.registerTouchClickHandler();
@@ -217,11 +237,11 @@ export default class ModalOpenerPlugin extends Plugin {
     private handlePreviewModeLink(evt: MouseEvent) {
         let target = evt.target as HTMLElement;
         // 向上查找包含 'internal-embed' 类的父元素
-        if (target.classList.contains('canvas-minimap') 
-            || target.classList.contains('file-embed-title') 
+        if (target.classList.contains('canvas-minimap')
+            || target.classList.contains('file-embed-title')
             || target.classList.contains('markdown-embed-link')
-            || target.closest('svg') 
-            || target.closest('.ptl-tldraw-image-container') 
+            || target.closest('svg')
+            || target.closest('.ptl-tldraw-image-container')
             || target.closest('.dataloom-padding')
             || target.closest('.dataloom-bottom-bar')
             || target.closest('[data-viewport-type="element"]')
@@ -229,13 +249,25 @@ export default class ModalOpenerPlugin extends Plugin {
         ) {
             target = target.closest('.internal-embed') as HTMLElement || target;
         }
-    
+
         // 检查是否是链接或链接内的元素
         const linkElement = target.tagName === 'A' ? target : target.closest('a');
         if (linkElement && linkElement.hasAttribute('data-tooltip-position')) {
             target = linkElement;
         }
         if (linkElement?.closest('.block-language-table-of-contents')) {
+            return;
+        }
+        
+        if (linkElement?.closest('.annotated-link')) {
+            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
+            let file: TFile | undefined;
+
+            if (abstractFile instanceof TFile) {
+                this.openInFloatPreview(abstractFile.path);
+            } else {
+                file = undefined;
+            }
             return;
         }
 
@@ -267,21 +299,6 @@ export default class ModalOpenerPlugin extends Plugin {
             new Notice(t("No link found at cursor position"));
         }
     }
-    
-    // private registerMouseMiddleClickHandler() {
-    //     this.middleClickHandler = (evt: MouseEvent) => {
-    //         if (evt.button === 1) {
-    //             const target = evt.target as HTMLElement;
-    //             // if (this.isPreviewModeLink(target) || this.isEditModeLink(target)) {
-    //             if (this.isPreviewModeLink(target)) {
-    //                 evt.preventDefault();
-    //                 evt.stopPropagation();
-    //                 this.handlePreviewModeLink(evt);
-    //             }
-    //         }
-    //     };
-    //     document.addEventListener('mousedown', this.middleClickHandler, { capture: true });
-    // }
 
     // 等canvas alt+click和其他类型一样表现为选取链接 可以改用此方法
     // private registerAltClickHandler() {
@@ -293,7 +310,7 @@ export default class ModalOpenerPlugin extends Plugin {
     //                 if (activeView) {
     //                     let targetElement = evt.target as HTMLElement;
     //                     let altText = targetElement.getAttribute("alt");
-    
+
     //                     if (this.isPreviewModeLink(targetElement)) {
     //                         this.handlePreviewModeLink(evt);
     //                     } else {
@@ -317,7 +334,7 @@ export default class ModalOpenerPlugin extends Plugin {
     //         }
     //     });
     // }
-    
+
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         if (document.querySelector('.monaco-editor')) {
             return false;
@@ -325,7 +342,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
         const currentLine = pos.line;
         let fenceCount = 0;
-    
+
         // 检查围栏标记
         for (let i = 0; i <= currentLine; i++) {
             const line = editor.getLine(i).trim();
@@ -333,7 +350,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 fenceCount++;
             }
         }
-    
+
         return fenceCount % 2 === 1;
     }
 
@@ -342,7 +359,6 @@ export default class ModalOpenerPlugin extends Plugin {
             const target = evt.target as HTMLElement;
             const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-            // 如果是移动端，处理触摸事件的链接点击
             if (
                 this.settings.clickWithoutAlt &&
                 activeView?.getMode() === 'source' &&
@@ -353,7 +369,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 检查是否应该触发处理
-            const shouldTrigger = this.settings.clickWithoutAlt ? 
+            const shouldTrigger = this.settings.clickWithoutAlt ?
                 (evt.button === 0) : (evt.altKey && evt.button === 0);
             if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
 
@@ -362,9 +378,9 @@ export default class ModalOpenerPlugin extends Plugin {
                 (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
                 return;
             }
-
+            
             // 检查特殊元素
-            if (this.shouldSkipElement(target))  return;
+            if (this.shouldSkipElement(target)) return;
 
             // 如果启用无Alt点击，检查是否为有效链接
             if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
@@ -376,7 +392,7 @@ export default class ModalOpenerPlugin extends Plugin {
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
-    private registerTouchClickHandler() { 
+    private registerTouchClickHandler() {
         // 移动端触摸事件监听
         if (Platform.isMobile) {
             document.addEventListener('touchstart', (touchEvt: TouchEvent) => {
@@ -400,12 +416,12 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private isValidInternalLink(target: HTMLElement): boolean {
         const linkElement = target.tagName === 'A' ? target : target.closest('a');
-    
+
         // 如果在 block-language-table-of-contents 中，直接返回 false
         if (linkElement?.closest('.block-language-table-of-contents')) {
             return false;
         }
-    
+
         return !!(
             linkElement && (
                 linkElement.classList.contains('internal-link') ||
@@ -419,15 +435,15 @@ export default class ModalOpenerPlugin extends Plugin {
                 target.classList.contains('canvas-minimap')
             ) ||
             (
-                ((target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) || target.closest('.ptl-tldraw-image')) 
+                ((target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) || target.closest('.ptl-tldraw-image'))
             ) ||
             (
                 target.closest('svg') && (target.closest('.mm-mindmap-container') || target.closest('.cm-mindmap-container'))
             )
         );
     }
-    
-    
+
+
     private shouldSkipElement(target: HTMLElement): boolean {
         // 适配diagram.net svg 类型的文件 alt+点击  不做处理
         const altText = target.getAttribute("alt");
@@ -440,6 +456,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.handlePreviewModeLink(evt);
             } else if (activeView.getMode() === 'source') {
                 // 适配在编辑模式下 richfoot tldraw markmind 的 alt 点击
+                // if (target.closest(this.settings.customElementSelectors)) {
                 if (target.closest('svg, img, .rich-foot')) {
                     this.handlePreviewModeLink(evt);
                 } else {
@@ -453,7 +470,7 @@ export default class ModalOpenerPlugin extends Plugin {
         } else {
             const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
             const link = target.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
-            
+
             if (excalidrawView && link) {
                 this.openInFloatPreview(link);
             } else if (this.isPreviewModeLink(target)) {
@@ -461,7 +478,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     }
-    
+
     private registerContextMenuHandler() {
         // Handle file menu
         this.registerEvent(
@@ -472,7 +489,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (folderPlugin) {
                     if (folderTarget && folderTarget.classList.contains("has-folder-note")) {
                         this.addFolderFloatMenuItem(menu, file.path);
-                    } else if (!folderTarget){
+                    } else if (!folderTarget) {
                         this.addFileFloatMenuItem(menu, file.path);
                     }
                 } else {
@@ -497,13 +514,12 @@ export default class ModalOpenerPlugin extends Plugin {
                     parentPath = view.file.parent.path;
                 }
 
-                if(this.settings.showDeleteCommands) {
+                if (this.settings.showDeleteCommands) {
                     this.addDeleteAttachmentMenuItem(menu, editor);
                 }
-                
-                if(this.settings.showCommandsContainer) {
+
+                if (this.settings.showCommandsContainer) {
                     this.addCreateFileMenuItem(menu, parentPath);
-                    
                 }
             })
         );
@@ -557,10 +573,10 @@ export default class ModalOpenerPlugin extends Plugin {
                     // 如果没有有效的视图，直接打开链接
                     this.openInFloatPreview(link);
                 }
-            }            
+            }
         });
     }
-    
+
     private addFolderFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
@@ -569,7 +585,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         });
     }
-    
+
     private addLinkFloatMenuItem(menu: Menu, link?: string) {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
@@ -599,7 +615,7 @@ export default class ModalOpenerPlugin extends Plugin {
             } else {
                 file = undefined;
             }
-            
+
             // 检测文件是否存在
             if (!file && !this.isValidURL(link)) {
                 new Notice(t("The file or link does not exist: ") + filePath);
@@ -625,7 +641,7 @@ export default class ModalOpenerPlugin extends Plugin {
             let file: TFile | undefined;
             const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
             let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
-            
+
             if (abstractFile instanceof TFile) {
                 file = abstractFile;
             } else {
@@ -662,13 +678,13 @@ export default class ModalOpenerPlugin extends Plugin {
             item
                 .setTitle(t('Create and edit in modal'))
                 .setIcon('file-plus')
-    
+
             const subMenu = (item as any).setSubmenu();
-    
+
             // 初始化计数器
             let group1Count = 0;
             let group2Count = 0;
-    
+
             // 第一组：Markdown 和 Canvas
             if (this.settings.enabledCommands.markdown) {
                 group1Count++;
@@ -681,7 +697,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
             if (canvasPlugin && this.settings.enabledCommands.canvas) {
                 group1Count++;
@@ -694,12 +710,12 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             // 如果第一组有项目，添加分隔线
             if (group1Count >= 1) {
                 subMenu.addSeparator();
             }
-    
+
             // 第二组：Excalidraw、Diagrams 和 Tldraw
             const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
             const excalidrawymjrPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
@@ -732,7 +748,7 @@ export default class ModalOpenerPlugin extends Plugin {
                             //         checkLeaf();
                             //     });
                             // };
-    
+
                             // await waitForNewLeaf();
                             // setTimeout(() => {
                             //     this.openCurrentContentInModal();
@@ -743,7 +759,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             const diagramsPlugin = this.getPlugin("obsidian-diagrams-net");
             if (diagramsPlugin && this.settings.enabledCommands.diagrams) {
                 group2Count++;
@@ -756,7 +772,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             const tldrawPlugin = this.getPlugin("tldraw");
             if (tldrawPlugin && this.settings.enabledCommands.tldraw) {
                 group2Count++;
@@ -769,17 +785,17 @@ export default class ModalOpenerPlugin extends Plugin {
                             // setTimeout(() => {
                             //     this.openCurrentContentInModal();
                             // },  this.settings.modalOpenDelay);
-                            
+
                             await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true, false);
                         })
                 );
             }
-    
+
             // 如果第二组有项目，添加分隔线
             if (group2Count >= 1) {
                 subMenu.addSeparator();
             }
-    
+
             // 第三组：其余插件
             const excelPlugin = this.getPlugin("excel");
             if (excelPlugin && this.settings.enabledCommands.excel) {
@@ -792,7 +808,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             const SheetPlugin = this.getPlugin("sheet-plus");
             if (SheetPlugin && this.settings.enabledCommands.sheetPlus) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -804,7 +820,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-            
+
             const vscodePlugin = this.getPlugin("vscode-editor");
             if (vscodePlugin && this.settings.enabledCommands.vscode) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -816,7 +832,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-            
+
             const markmindPlugin = this.getPlugin("obsidian-markmind");
             if (markmindPlugin && this.settings.enabledCommands.markmind) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -828,7 +844,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         })
                 );
             }
-    
+
             const dataloomPlugin = this.getPlugin("notion-like-tables");
             if (dataloomPlugin && this.settings.enabledCommands.dataloom) {
                 subMenu.addItem((subItem: MenuItem) =>
@@ -848,13 +864,13 @@ export default class ModalOpenerPlugin extends Plugin {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
-        
+
         if (linkMatch) {
             // 处理可能包含别名和锚点的链接文本
             const [filePath] = linkMatch.split('|');  // 先处理别名
             const [filePathWithoutAnchor] = filePath.split('#');  // 再处理锚点
             const file = this.app.metadataCache.getFirstLinkpathDest(filePathWithoutAnchor, "");
-            
+
             if (file && file instanceof TFile) {
                 menu.addItem((item) => {
                     item
@@ -863,16 +879,16 @@ export default class ModalOpenerPlugin extends Plugin {
                         .onClick(() => {
                             const modal = new Modal(this.app);
                             modal.titleEl.setText(t("Confirm deletion?"));
-                            
+
                             const content = modal.contentEl.createDiv();
                             content.setText(file.path);
-                            
+
                             const buttonContainer = content.createDiv({ cls: 'modal-button-container' });
-                            
+
                             buttonContainer.createEl('button', { text: t("Cancel") })
                                 .onclick = () => modal.close();
-                            
-                            buttonContainer.createEl('button', 
+
+                            buttonContainer.createEl('button',
                                 { text: t("Delete"), cls: 'mod-warning' })
                                 .onclick = async () => {
                                     try {
@@ -880,14 +896,14 @@ export default class ModalOpenerPlugin extends Plugin {
                                         // 检查是否包含感叹号
                                         const startIndex = line.indexOf("![[");
                                         const isEmbed = startIndex !== -1;
-                                        
-                                        const from = { 
-                                            line: cursor.line, 
-                                            ch: isEmbed ? startIndex : line.indexOf("[[") 
+
+                                        const from = {
+                                            line: cursor.line,
+                                            ch: isEmbed ? startIndex : line.indexOf("[[")
                                         };
-                                        const to = { 
-                                            line: cursor.line, 
-                                            ch: line.indexOf("]]") + 2 
+                                        const to = {
+                                            line: cursor.line,
+                                            ch: line.indexOf("]]") + 2
                                         };
                                         editor.replaceRange("", from, to);
                                         new Notice(t("File moved to trash"));
@@ -896,7 +912,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                         new Notice(t("Failed to delete file"));
                                     }
                                 };
-                            
+
                             modal.open();
                         });
                 });
@@ -907,10 +923,10 @@ export default class ModalOpenerPlugin extends Plugin {
     private async createFileAndInsertLink(commandId: string, isEmbed: boolean, isAlias: boolean) {
         // 保存当前活动编辑器的信息
         const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    
+
         let previousEditor: Editor | null = null;
         let previousCursor: EditorPosition | null = null;
-    
+
         if (previousView) {
             previousEditor = previousView.editor;
             previousCursor = previousEditor.getCursor();
@@ -919,19 +935,19 @@ export default class ModalOpenerPlugin extends Plugin {
 
         const newLeaf = this.app.workspace.getLeaf(true);
         this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
-    
+
         const activeFile = await this.waitForActiveFile();
-    
+
         if (activeFile && previousEditor && previousCursor) {
             const fileName = activeFile.name;
             const filePath = activeFile.path;
             const linkText = `${isEmbed ? '!' : ''}[[${filePath}${isAlias ? `|${fileName}` : ''}]]`;
-            
+
             if (previousView) {
                 this.app.workspace.setActiveLeaf(previousView.leaf, { focus: true });
                 previousEditor?.replaceRange(linkText, previousCursor);
             }
-    
+
             // 移动光标到插入的链接之后
             const newCursor = {
                 line: previousCursor.line,
@@ -971,12 +987,12 @@ export default class ModalOpenerPlugin extends Plugin {
                             if (codePlugin) {
                                 selectElement = node.querySelector('.dropdown') as HTMLSelectElement;
                             }
-                            
+
                             if (confirmButton && inputElement && selectElement) {
                                 confirmButton.addEventListener('click', () => {
                                     const fileName = inputElement.value;
                                     const fileExtension = selectElement.value;
-                                    
+
                                     if (fileName) {
                                         const fullFileName = `${fileName}.${fileExtension}`;
                                         this.insertCodeFileLink(fullFileName, "");
@@ -984,7 +1000,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                             this.openCurrentContentInModal();
                                         }, 200);
                                     }
-                                    
+
                                     obs.disconnect();
                                     resolve();
                                 });
@@ -994,33 +1010,33 @@ export default class ModalOpenerPlugin extends Plugin {
                     }
                 }
             });
-    
+
             observer.observe(document.body, { childList: true, subtree: true });
             (this.app as any).commands.executeCommandById("vscode-editor:create");
         });
     }
-    
+
     private async getNewFileName(fileType: string): Promise<{ fileName: string, isEmbed: boolean } | null> {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         const selectedText = activeView?.editor?.getSelection() || '';
-    
+
         return new Promise((resolve) => {
             const modal = new Modal(this.app);
             modal.titleEl.setText(t("Enter new file name"));
-            
+
             const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
-    
+
             const inputContainer = container.createDiv({ cls: 'new-file-input-container' });
-    
-            const input = inputContainer.createEl("input", { 
-                type: "text", 
+
+            const input = inputContainer.createEl("input", {
+                type: "text",
                 value: selectedText,
                 placeholder: "File name",
                 cls: 'new-file-input'
             });
             input.focus();
             input.select();
-    
+
             const select = inputContainer.createEl("select", { cls: 'new-file-select' });
             if (fileType == "canvas") {
                 select.createEl("option", { text: t("Embed link"), value: "embed" });
@@ -1029,18 +1045,18 @@ export default class ModalOpenerPlugin extends Plugin {
                 select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
                 select.createEl("option", { text: t("Embed link"), value: "embed" });
             }
-    
+
             const buttonContainer = container.createDiv({ cls: 'new-file-button-container' });
-    
-            const confirmButton = buttonContainer.createEl("button", { 
-                text: t("Confirm"), 
+
+            const confirmButton = buttonContainer.createEl("button", {
+                text: t("Confirm"),
                 cls: 'new-file-button confirm'
             });
-            const cancelButton = buttonContainer.createEl("button", { 
-                text: t("Cancel"), 
+            const cancelButton = buttonContainer.createEl("button", {
+                text: t("Cancel"),
                 cls: 'new-file-button cancel'
             });
-    
+
             const confirmAction = () => {
                 const fileName = input.value.trim();
                 if (fileName) {
@@ -1051,7 +1067,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     modal.close();
                 }
             };
-    
+
             confirmButton.onclick = confirmAction;
 
             input.addEventListener('keydown', (event: KeyboardEvent) => {
@@ -1068,7 +1084,7 @@ export default class ModalOpenerPlugin extends Plugin {
             modal.open();
         });
     }
-    
+
     private insertCodeFileLink(filePath: string, content: string) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -1083,7 +1099,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }, 200);
         }
     }
-    
+
 
     private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean, isAlias: boolean) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -1101,14 +1117,14 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     }
-    
+
     private async createFileAndEditInModal(parentPath: string, fileType: string, isAlias: boolean) {
         const result = await this.getNewFileName(fileType);
         if (!result) return;
-    
+
         const { fileName, isEmbed } = result;
         let newFilePath = '';
-    
+
         if (fileName.includes('/') || parentPath === '/') {
             newFilePath = fileName;
         } else {
@@ -1118,7 +1134,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (!newFilePath.endsWith(`.${fileType}`)) {
             newFilePath += `.${fileType}`;
         }
-    
+
         try {
             const newFile = await this.app.vault.create(newFilePath, '');
             new ModalWindow(
@@ -1138,41 +1154,55 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
+    private async onLayoutChange() {
+        const leaf = this.app.workspace.getLeaf(false);
+        if (leaf?.view?.getViewType() === "webviewer") {
+            // 限定在当前leaf的容器内查找
+            const webviewEl = document.querySelector("webview");
+            
+            if (webviewEl) {
+                webviewEl.addEventListener("dom-ready", async (event: any) => {
+                    this.registerJavascriptInWebcontents(webviewEl);
+                });
+            }
+        }
+    }
+
     // no dupe leaf
     private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
         // 防抖处理：避免快速切换叶子时多次触发
         if (this.activeLeafChangeTimeout) {
             clearTimeout(this.activeLeafChangeTimeout);
         }
-    
+
         this.activeLeafChangeTimeout = setTimeout(async () => {
             // 状态锁定：确保同一时间只有一个处理流程
             if (this.isProcessing) {
                 // console.log("正在处理其他叶子，跳过本次调用");
                 return;
             }
-    
+
             this.isProcessing = true; // 锁定状态
-    
+
             try {
                 if (!this.settings.preventsDuplicateTabs) {
                     return;
                 }
-    
+
                 if (activeLeaf.view.containerEl.closest('.modal-opener')) {
                     return;
                 }
-    
+
                 const { id } = activeLeaf;
-    
+
                 if (this.processors.has(id)) {
                     // console.log(`已经在处理叶子 ${id}`);
                     return;
                 }
-    
+
                 const processor = this.processActiveLeaf(activeLeaf);
                 this.processors.set(id, processor);
-    
+
                 try {
                     await processor;
                 } finally {
@@ -1188,28 +1218,28 @@ export default class ModalOpenerPlugin extends Plugin {
     private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
         // 延迟处理，给予新页面加载的时间
         await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
-    
+
         const filePath = activeLeaf.view.getState().file;
         if (!filePath) return;
-    
+
         const viewType = activeLeaf.view.getViewType();
         const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
-            .filter(l => 
-                l !== activeLeaf && 
+            .filter(l =>
+                l !== activeLeaf &&
                 l.view.getState().file === filePath &&
                 (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
             );
-    
+
         if (duplicateLeaves.length === 0) return;
-    
+
         // 根据活跃时间排序，最近活跃的在前
-        const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) => 
+        const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) =>
             (b as any).activeTime - (a as any).activeTime
         );
-    
+
         const mostRecentLeaf = sortedLeaves[0];
         const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
-    
+
         // 如果当前叶子不是最近活跃的，我们需要进一步处理
         if (activeLeaf !== mostRecentLeaf) {
             // 如果当前叶子是最老的，我们应该保留它并关闭其他的
@@ -1240,7 +1270,7 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private isPreviewModeLink(target: HTMLElement): boolean {
-        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link')) 
+        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
             || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
             || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb')
             || target.classList.contains('cm-hmd-internal-link')
@@ -1253,32 +1283,98 @@ export default class ModalOpenerPlugin extends Plugin {
             || Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))
             || target.classList.contains('svg')
     }
-    
+
     private getPreviewModeLinkText(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') 
-        || target.getAttribute('filesource') || target.getAttribute('src') || target.textContent?.trim() || '';
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path')
+            || target.getAttribute('filesource') || target.getAttribute('src') || target.textContent?.trim() || '';
     }
 
     private findLinkAtPosition(line: string, position: number): string | null {
         // 匹配![[]]和[[]]格式的内部链接、Markdown链接和URL
         const linkRegex = /!?\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)/g;
         let match;
-        
+
         while ((match = linkRegex.exec(line)) !== null) {
             if (match.index <= position && position <= match.index + match[0].length) {
                 // 返回内部链接、Markdown链接的URL，或直接的URL
                 return match[1] || match[3] || match[4] || null;
             }
         }
-        
+
         return null;
     }
 
-    private isValidURL = (url: string) => 
+    private isValidURL = (url: string) =>
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
 
     public getPlugin(pluginId: string) {
         const app = this.app as any;
         return app.plugins.plugins[pluginId];
     }
+
+    async registerJavascriptInWebcontents(webContents: any) {
+		try {
+            const isDarkMode = document.body.classList.contains('theme-dark');
+			if (isDarkMode) {
+				try {
+					await webContents.executeJavaScript(`
+						const element = document.createElement('script');
+
+						fetch('https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js')
+							.then((response) => {
+								element.src = response.url;
+								document.body.appendChild(element);
+							})
+							.catch((error) => {
+								console.error('Error loading the script:', error);
+							});
+
+						element.onload = () => {
+							try {
+								DarkReader?.setFetchMethod(window.fetch);
+								DarkReader?.enable({
+									brightness: 100,
+									contrast: 90,
+									sepia: 10
+								});
+								console.log(DarkReader);
+							} catch (err) {
+
+								window.myPostPort?.postMessage('darkreader-failed');
+								console.error('Failed to load dark reader: ', err);
+
+							}
+						};0
+					`);
+				} catch (e) {
+					console.error(e);
+				}
+			} else {
+                try {
+                    await webContents.executeJavaScript(`
+                        if (DarkReader) {
+                            DarkReader.disable();
+                            console.log('Dark mode disabled');
+                        }
+                    `);
+                } catch (e) {
+                    console.error('Error disabling dark mode: ', e);
+                }
+            }
+		} catch (err) {
+			console.error("Failed to get background color: ", err);
+		}
+
+		// https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
+		webContents.executeJavaScript(`
+			window.addEventListener('mouseover', (e) => {
+				if(!e.target) return;
+				if(!e.ctrlKey && !e.metaKey) return;
+				// Tag name is a tag
+				if(e.target.tagName.toLowerCase() === 'a'){
+					window.myPostPort?.postMessage('link ' + e.clientX + ' ' + e.clientY + ' ' + e.target.href);
+				}
+			});
+		`);
+	}
 }
