@@ -27,17 +27,17 @@ export interface ModalOpenerPluginSettings {
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
 	enabledCommands: {
-        markdown: boolean;
-        canvas: boolean;
-        excalidraw: boolean;
-        diagrams: boolean;
-        tldraw: boolean;
-        excel: boolean;
-        sheetPlus: boolean;
-        vscode: boolean;
-        markmind: boolean;
-        dataloom: boolean;
-    };
+		markdown: boolean;
+		canvas: boolean;
+		excalidraw: boolean;
+		diagrams: boolean;
+		tldraw: boolean;
+		excel: boolean;
+		sheetPlus: boolean;
+		vscode: boolean;
+		markmind: boolean;
+		dataloom: boolean;
+	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
 	customElementSelectors: string;
@@ -72,17 +72,17 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
 	enabledCommands: {
-        markdown: true,
-        canvas: true,
-        excalidraw: true,
-        diagrams: true,
-        tldraw: true,
-        excel: true,
-        sheetPlus: true,
-        vscode: true,
-        markmind: true,
-        dataloom: true
-    },
+		markdown: true,
+		canvas: true,
+		excalidraw: true,
+		diagrams: true,
+		tldraw: true,
+		excel: true,
+		sheetPlus: true,
+		vscode: true,
+		markmind: true,
+		dataloom: true
+	},
 	showCommandsContainer: true,
 	showDeleteCommands: true,
 	customElementSelectors: 'svg, img, .rich-foot',
@@ -112,17 +112,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
 	enabledCommands: {
-        markdown: boolean;
-        canvas: boolean;
-        excalidraw: boolean;
-        diagrams: boolean;
-        tldraw: boolean;
-        excel: boolean;
-        sheetPlus: boolean;
-        vscode: boolean;
-        markmind: boolean;
-        dataloom: boolean;
-    };
+		markdown: boolean;
+		canvas: boolean;
+		excalidraw: boolean;
+		diagrams: boolean;
+		tldraw: boolean;
+		excel: boolean;
+		sheetPlus: boolean;
+		vscode: boolean;
+		markmind: boolean;
+		dataloom: boolean;
+	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
 	customElementSelectors: string;
@@ -215,7 +215,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 					await this.reloadPlugin();
 				}));
-	
+
 		if (this.plugin.settings.showFloatingButton) {
 			new Setting(containerEl)
 				.setName(t("Add hover button to"))
@@ -229,7 +229,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}));
 		}
-		
+
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
 		if (this.plugin.settings.openMethod === "altclick" || this.plugin.settings.openMethod === "both") {
@@ -244,7 +244,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						await this.reloadPlugin();
 					}));
 		}
-		
+
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
 			.setDesc(t('Use only the Close button and Esc to close.'))
@@ -266,14 +266,14 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-            .setName(t('Refresh view on close'))
-            .setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
-            .addToggle(toggle => toggle
-                .setValue(this.plugin.settings.enableRefreshOnClose)
-                .onChange(async (value) => {
-                    this.plugin.settings.enableRefreshOnClose = value;
-                    await this.plugin.saveSettings();
-                }));
+			.setName(t('Refresh view on close'))
+			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableRefreshOnClose)
+				.onChange(async (value) => {
+					this.plugin.settings.enableRefreshOnClose = value;
+					await this.plugin.saveSettings();
+				}));
 
 		new Setting(containerEl)
 			.setName(t('Prevents duplicate tabs'))
@@ -352,7 +352,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.hideTabHeader = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
-			}));
+				}));
 
 		new Setting(containerEl)
 			.setName(t('Show metadata'))
@@ -363,11 +363,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.showMetadata = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
-			}));
+				}));
 
 		new Setting(containerEl)
 			.setName(t('Show view header of the file'))
-			.setDesc(t('Show the view header of the file in the modal window'))
+			.setDesc(t('Show the file\'s navigation bar in the modal window'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.showFileViewHeader)
 				.onChange(async (value) => {
@@ -379,7 +379,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		if (!Platform.isMobile) {
 			new Setting(containerEl)
 				.setName(t('Show view header of the link'))
-				.setDesc(t('Show the web viewer\'s navigation bar'))
+				.setDesc(t('Show the web viewer\'s navigation bar in the modal window'))
 				.addToggle(toggle => toggle
 					.setValue(this.plugin.settings.showLinkViewHeader)
 					.onChange(async (value) => {
@@ -388,18 +388,18 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.plugin.applyStyles();
 					}));
 		}
-		
+
 		new Setting(containerEl).setName(t('Menu item')).setHeading();
 
 		new Setting(containerEl)
-		.setName(t('Enable the delete Linked attachment menu item'))
-		.addToggle(toggle => toggle
-			.setValue(this.plugin.settings.showDeleteCommands)
-			.onChange(async (value) => {
-				this.plugin.settings.showDeleteCommands = value;
-				await this.plugin.saveSettings();
+			.setName(t('Enable the delete Linked attachment menu item'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showDeleteCommands)
+				.onChange(async (value) => {
+					this.plugin.settings.showDeleteCommands = value;
+					await this.plugin.saveSettings();
 
-			}));
+				}));
 
 		new Setting(containerEl)
 			.setName(t('Enable the right-click menu'))
@@ -429,7 +429,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 			new Setting(containerEl)
 				.setDesc(t('Toggle menu items to show or hide in the right-click context menu'));
-			
+
 			const commandsContainer = containerEl.createDiv('command-toggle-container');
 			// Markdown
 			new Setting(commandsContainer)
@@ -440,8 +440,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.enabledCommands.markdown = value;
 						await this.plugin.saveSettings();
-				}));
-				
+					}));
+
 			// Canvas
 			const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
 			if (canvasPlugin) {
@@ -455,7 +455,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 							await this.plugin.saveSettings();
 						}));
 			}
-			
+
 			// Excalidraw
 			this.createPluginSetting(
 				commandsContainer,
@@ -639,14 +639,14 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	) {
 		const plugin = this.plugin.getPlugin(pluginId);
 		const setting = new Setting(container).setClass('command-toggle-item');
-		
+
 		if (plugin) {
 			// 如果插件存在且选项未设置过,则默认启用
 			if (this.plugin.settings.enabledCommands[settingKey] === undefined) {
 				this.plugin.settings.enabledCommands[settingKey] = true;
 				this.plugin.saveSettings();
 			}
-	
+
 			setting
 				.setName(displayName)
 				.addToggle(toggle => toggle
@@ -662,18 +662,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.addButton(button => button
 					.setButtonText(t('Details'))
 					.onClick(async () => {
-						// (this.app as any).setting.open();
-						// (this.app as any).setting.openTabById('community-plugins');
-						// new Notice('Please search and install the plugin: ' + displayName);
-						// window.open(`https://obsidian.md/plugins?id=${pluginId}`, '_blank');
+						let obsidianUrl = `obsidian://show-plugin?id=${encodeURIComponent(pluginId)}`;
 
-						let repoUrl = `https://obsidian.md/plugins?id=${pluginId}`;
-						if(pluginId == "obsidian-excalidraw-plugin-ymjr") {
-							repoUrl = "https://github.com/Bowen-0x00/obsidian-excalidraw-plugin-ymjr";
-						} else if (pluginId == "obsidian-diagrams-net") {
-							repoUrl = "https://github.com/likemuuxi/obsidian-diagrams-net";
+						// 特殊插件的处理
+						if (pluginId === "obsidian-excalidraw-plugin-ymjr") {
+							obsidianUrl = "https://github.com/Bowen-0x00/obsidian-excalidraw-plugin-ymjr";
+						} else if (pluginId === "obsidian-diagrams-net") {
+							obsidianUrl = "https://github.com/likemuuxi/obsidian-diagrams-net";
 						}
-                    	window.open(repoUrl, '_blank');
+
+						// 打开链接
+						window.open(obsidianUrl, '_blank');
 					}));
 		}
 		return setting;

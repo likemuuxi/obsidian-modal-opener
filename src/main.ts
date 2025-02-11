@@ -38,7 +38,6 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerContextMenuHandler();
         this.registerCustomCommands();
         this.registerEvent(this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this)));
-        this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChange.bind(this)));
 
         this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
@@ -105,7 +104,6 @@ export default class ModalOpenerPlugin extends Plugin {
 
     onunload() {
         this.app.workspace.off("active-leaf-change", this.onActiveLeafChange.bind(this));
-        this.app.workspace.off("layout-change", this.onLayoutChange.bind(this));
         this.removeEventListeners();
     }
 
@@ -133,7 +131,7 @@ export default class ModalOpenerPlugin extends Plugin {
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
 
-        new ModalWindow(
+        new ModalWindow (
             this,
             linkValue,
             file instanceof TFile ? file : undefined,
@@ -623,7 +621,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 处理网络链接
-            new ModalWindow(
+            new ModalWindow (
                 this,
                 this.isValidURL(link) ? link : "",
                 file,
@@ -659,7 +657,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 处理网络链接
-            new ModalWindow(
+            new ModalWindow (
                 this,
                 "",
                 file,
@@ -1100,7 +1098,6 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-
     private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean, isAlias: boolean) {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         if (activeView) {
@@ -1137,7 +1134,9 @@ export default class ModalOpenerPlugin extends Plugin {
 
         try {
             const newFile = await this.app.vault.create(newFilePath, '');
-            new ModalWindow(
+            const displayName = newFile.basename;
+            isAlias ? this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, true) : this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, false);
+            new ModalWindow (
                 this,
                 "",
                 newFile,
@@ -1145,26 +1144,8 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.settings.modalWidth,
                 this.settings.modalHeight
             ).open();
-
-            const displayName = newFile.basename;
-
-            isAlias ? this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, true) : this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, false);
         } catch (error) {
             new Notice(t("Failed to create file: ") + error.message);
-        }
-    }
-
-    private async onLayoutChange() {
-        const leaf = this.app.workspace.getLeaf(false);
-        if (leaf?.view?.getViewType() === "webviewer") {
-            // 限定在当前leaf的容器内查找
-            const webviewEl = document.querySelector("webview");
-            
-            if (webviewEl) {
-                webviewEl.addEventListener("dom-ready", async (event: any) => {
-                    this.registerJavascriptInWebcontents(webviewEl);
-                });
-            }
         }
     }
 
@@ -1173,6 +1154,19 @@ export default class ModalOpenerPlugin extends Plugin {
         // 防抖处理：避免快速切换叶子时多次触发
         if (this.activeLeafChangeTimeout) {
             clearTimeout(this.activeLeafChangeTimeout);
+        }
+
+        if (activeLeaf?.view?.getViewType() === "webviewer") {
+            const activeLeafEl = document.querySelector(".workspace-leaf.mod-active");
+            if (activeLeafEl) {
+                const webviewEl = activeLeafEl.querySelector("webview");
+        
+                if (webviewEl) {
+                    webviewEl.addEventListener("dom-ready", () => {
+                        this.registerJavascriptInWebcontents(webviewEl);
+                    });
+                }
+            }
         }
 
         this.activeLeafChangeTimeout = setTimeout(async () => {
@@ -1194,12 +1188,10 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
 
                 const { id } = activeLeaf;
-
                 if (this.processors.has(id)) {
                     // console.log(`已经在处理叶子 ${id}`);
                     return;
                 }
-
                 const processor = this.processActiveLeaf(activeLeaf);
                 this.processors.set(id, processor);
 

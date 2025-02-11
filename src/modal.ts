@@ -2,8 +2,6 @@ import { Modal, TFile, WorkspaceLeaf, MarkdownView, WorkspaceWindow, Scope, requ
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
-const { remote } = (window as any).require('electron');
-
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
     leaf?: WorkspaceLeaf;
@@ -277,20 +275,22 @@ export class ModalWindow extends Modal {
 
                 this.handledLeaves.push(activeLeaf);
 
-                const wbViewContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
                 const activeFile = this.app.workspace.getActiveFile();
-                if (wbViewContent) {
-                    const webviewElement = wbViewContent.querySelector('webview');
+                const webViewContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
+                if (webViewContent) {
+                    const webviewElement = webViewContent.querySelector('webview');
                     if (webviewElement) {
                         const webviewerContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
                         if (webviewerContent && this.plugin.settings.showFloatingButton) {
                             // 移除现有的悬浮按钮
                             const existingButton = document.querySelector('.floating-button-container');
+                            const existingMenuButton = document.querySelector('.floating-menu-container');
                             if (existingButton) {
                                 existingButton.remove();
                             }
                             
-                            if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link') {
+                            if ((this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link')
+                                && !existingMenuButton) {
                                 this.addFloatingButton(webviewerContent as HTMLElement);
                             }
                         }
@@ -312,7 +312,7 @@ export class ModalWindow extends Modal {
         }
     }
 
-    async displayFileContent(file: TFile, fragment: string) {
+    private async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
             return;
         }
@@ -390,7 +390,7 @@ export class ModalWindow extends Modal {
     }
 
 
-    displayLinkContent(link: string) {
+    private async displayLinkContent(link: string) {
         if (!this.contentEl) {
             return;
         }
@@ -442,6 +442,7 @@ export class ModalWindow extends Modal {
         const webviewEl = document.querySelector("webview");
         if(webviewEl) {
             webviewEl.addEventListener("dom-ready", async (event: any) => {
+                const { remote } = (window as any).require('electron');
                 // @ts-ignore
                 const webContents = remote.webContents.fromId(
                     (webviewEl as any).getWebContentsId()
@@ -477,6 +478,7 @@ export class ModalWindow extends Modal {
             this.loadSiteByWebViewer(linkText, leaf);
             return;
         }
+        // 更新带锚点的链接
         if (linkText?.startsWith('#')) {
             const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
             linkText = currentFilePath + linkText;
@@ -571,6 +573,9 @@ export class ModalWindow extends Modal {
     }
 
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
+        console.log("Screen Width: " + window.innerWidth);
+        console.log("Screen Height: " + window.innerHeight);
+
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
         let heightAdjustment = 5; // 默认调整值
 
