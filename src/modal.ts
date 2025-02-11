@@ -573,9 +573,6 @@ export class ModalWindow extends Modal {
     }
 
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
-        console.log("Screen Width: " + window.innerWidth);
-        console.log("Screen Height: " + window.innerHeight);
-
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
         let heightAdjustment = 5; // 默认调整值
 
