@@ -19,6 +19,7 @@ export class ModalWindow extends Modal {
     private updateFragmentLink: boolean;
     private observer: MutationObserver | null = null;
     private webviewPlugin: boolean;
+    private loaded = false;
 
     constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
         super(plugin.app);
@@ -193,7 +194,6 @@ export class ModalWindow extends Modal {
 
         const { contentEl } = this;
         contentEl.empty();
-        // document.body.removeClass('modal-tab-header-hidden');
 
         // 检查是否所有模态窗口都已关闭，退出多光标模式
         if (document.querySelectorAll('.modal-opener').length === 0) {
@@ -396,7 +396,6 @@ export class ModalWindow extends Modal {
         }
 
         this.contentEl.empty();
-
         const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
         linkContainer.setAttribute("data-src", this.link);
         const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
@@ -422,12 +421,62 @@ export class ModalWindow extends Modal {
             }
             this.associatedLeaf = currentLeaf;
         } else {
-            const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
-            frame.src = link;
+            // const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
+            // frame.src = link;
+            this.createWebview(this.contentEl, linkContainer);
         }
         this.setContainerHeight(linkContainer, true);
         this.setupDoubleClickHandler();
     }
+
+
+    createWebview = (contentEl: HTMLElement, containerEl: HTMLElement) => {
+        const doc = contentEl.doc;
+        const webviewEl = doc.createElement('webview');
+        webviewEl.setAttribute("allowpopups", "");
+        // @ts-ignore
+        webviewEl.partition = "persist:webview-vault-" + this.app.appId;
+        webviewEl.addClass("modal-opener-webview");
+        containerEl.appendChild(webviewEl);
+
+        if (this.link) webviewEl.setAttribute("src", this.link);;
+
+        webviewEl.addEventListener("dom-ready", async (event: any) => {
+            const { remote } = (window as any).require('electron');
+            // @ts-ignore
+            const webContents = remote.webContents.fromId(
+                (webviewEl as any).getWebContentsId()
+            );
+
+            // Open new browser tab if the web view requests it.
+            webContents.setWindowOpenHandler((event: any) => {
+                this.link = event.url;
+                this.createWebview(contentEl, containerEl);
+            });
+
+            if(this.plugin.settings.enableWebAutoDarkMode) {
+                await this.registerWebAutoDarkMode(webContents);
+            }
+            if(this.plugin.settings.enableImmersiveTranslation) {
+                await this.registerImmersiveTranslation(webContents);
+            }
+        });
+
+
+        webviewEl.addEventListener('destroyed', () => {
+            if (doc !== this.contentEl.doc) {
+                // console.log("Webview destroyed");
+                webviewEl.detach();
+                // this.createWebview(contentEl, containerEl);
+            }
+        });
+
+        // doc.contains(this.contentEl) ? this.contentEl.appendChild(webviewEl) : this.contentEl.onNodeInserted(() => {
+        //     if (this.loaded) return;
+        //     else this.loaded = true;
+        //     this.contentEl.doc === doc ? this.contentEl.appendChild(webviewEl) : this.createWebview(contentEl, containerEl);
+        // });
+    };
 
     private loadSiteByWebViewer(link: string, leaf: WorkspaceLeaf) {
         leaf.setViewState({
@@ -463,7 +512,12 @@ export class ModalWindow extends Modal {
                     };
                 });
     
-                await this.registerJavascriptInWebcontents(webContents);
+                if(this.plugin.settings.enableWebAutoDarkMode) {
+                    await this.registerWebAutoDarkMode(webContents);
+                }
+                if(this.plugin.settings.enableImmersiveTranslation) {
+                    await this.registerImmersiveTranslation(webContents);
+                }
             });
         }
     }
@@ -564,11 +618,16 @@ export class ModalWindow extends Modal {
             this.loadSiteByWebViewer(link, leaf);
         } else {
             const newLeaf = this.app.workspace.getLeaf(true);
-            const container = newLeaf.view.containerEl;
-            container.empty();
-            const frame = container.createEl("iframe", { cls: "modal-iframe" });
-            frame.src = link;
-            this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
+            const contentEl = newLeaf.view.containerEl;
+            contentEl.empty();
+            const activeLeaf = document.querySelector(".workspace-leaf.mod-active")
+            
+            if (activeLeaf) {
+                const linkContainer = activeLeaf.querySelector(".workspace-leaf-content") as HTMLElement;
+                this.createWebview(contentEl, linkContainer);
+            }
+            // const frame = container.createEl("iframe", { cls: "modal-webview" });
+            // frame.src = link;
         }
     }
 
@@ -830,8 +889,7 @@ export class ModalWindow extends Modal {
             }
         }
     }
-
-    async registerJavascriptInWebcontents(webContents: any) {
+    async registerWebAutoDarkMode(webContents: any) {
 		try {
             const isDarkMode = document.body.classList.contains('theme-dark');
 			if (isDarkMode) {
@@ -895,5 +953,31 @@ export class ModalWindow extends Modal {
 				}
 			});
 		`);
+    }
+
+    async registerImmersiveTranslation(webContents: any) {
+        // 注入沉浸式翻译 SDK
+        await webContents.executeJavaScript(`
+            // 1. 设置初始化参数
+            window.immersiveTranslateConfig = {
+                isAutoTranslate: false,
+                pageRule: {
+                    // 智能选择需要翻译的内容
+                    selectors: ["body"],
+                    // 排除不需要翻译的元素
+                    excludeSelectors: ["pre", "code", ".code", "script", "style"],
+                    // 将译文作为 block 的最小字符数
+                    blockMinTextCount: 0,
+                    // 原文段落的最小字符数
+                    paragraphMinTextCount: 1
+                }
+            };
+
+            // 2. 加载沉浸式翻译 SDK
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-latest.js';
+            document.head.appendChild(script);
+        `);
 	}
 }

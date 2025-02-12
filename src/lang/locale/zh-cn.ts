@@ -58,6 +58,7 @@ export default {
     'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',
     'Excalidraw Disables the Esc key': 'Excalidraw 禁用 Esc 键',
     'Disable Esc key to close modal when editing Excalidraw': '在编辑 Excalidraw 时禁用 Esc 键关闭模态窗口',
+
     'Refresh view on close': '关闭后刷新视图',
     'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': '关闭模态窗口时刷新视图，目前仅在编辑Canvas和Markmind文件后刷新',
     'Prevents duplicate tabs':'防止重复标签页',
@@ -65,6 +66,12 @@ export default {
     'Delay time':'延迟时间',
     'Delay in milliseconds before performing operations':'执行操作之前的延迟(以毫秒为单位)',
 
+    'Extend':'扩展',
+    'Automatically switch to dark mode': '自动切换黑暗模式',
+    'Automatically switch to dark mode in web view': '在网页视图中自动切换黑暗模式',
+    'Enable immersive translation': '启用沉浸式翻译',
+    'Load immersive translation plugin in web view': '在网页视图中加载沉浸式翻译插件',
+    
     "Styles":'样式',
     "Modal width":'窗口宽度',
     "Modal height":'窗口高度',

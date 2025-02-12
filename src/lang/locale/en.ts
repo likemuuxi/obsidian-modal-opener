@@ -1,5 +1,12 @@
 // English
 export default {
+
+  'General': 'General',
+  'Behavior': 'Behavior',
+  'Style': 'Style',
+  'Commands': 'Commands',
+  'Advanced': 'Advanced',
+
   "No active modal window":"No active modal window",
   "No link found at cursor position":"No link found at cursor position",
 
@@ -26,7 +33,6 @@ export default {
   // General settings
   'Open with':'Open with',
   'Drag & Drop':'Drag & Drop',
-  // 'Middle mouse button':'Middle mouse button(Only reading view)',
   'Alt & Left click':'Alt & Left click',
   'Both':'Both',
 
@@ -51,13 +57,13 @@ export default {
   'More options': 'More options',
   'Copied to clipboard': 'Link copied to clipboard',
 
-  'Behavior':'Behavior',
   'Single-click trigger':'Single-click trigger',
   'If enabled, clicking links will open them in modal window without holding Alt.':'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close':'Disable external click close',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
   'Excalidraw Disables the Esc key': 'Excalidraw Disables the Esc key',
   'Disable Esc key to close modal when editing Excalidraw': 'Disable Esc key to close modal when editing Excalidraw',
+
   'Refresh view on close': 'Refresh view on close',
   'Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file': 'Refresh views when closing modal, currently only refreshing after editing Canvas and Markmind file',
   'Prevents duplicate tabs':'Prevents duplicate tabs',
@@ -65,6 +71,12 @@ export default {
   'Delay time':'Delay time',
   'Delay in milliseconds before performing operations':'Delay in milliseconds before performing operations',
 
+  'Extend':'Extend',
+  'Automatically switch to dark mode': 'Automatically switch to dark mode',
+  'Automatically switch to dark mode in web view': 'Automatically switch to dark mode in web view',
+  'Enable immersive translation': 'Enable immersive translation',
+  'Load immersive translation plugin in web view': 'Load immersive translation plugin in web view',
+  
   "Styles":'Styles',
   "Modal width":'Modal width',
   "Modal height":'Modal height',

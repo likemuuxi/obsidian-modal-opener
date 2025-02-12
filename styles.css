@@ -1,4 +1,3 @@
-
 /* .modal-tab-header-hidden .workspace-tab-header.is-active {
     display: none !important;
 } */
@@ -21,7 +20,7 @@
     pointer-events: auto;
 }
 
-.modal-iframe {
+.modal-opener-webview {
     width: 100%;
     height: 98%;
     border: 0;
@@ -212,13 +211,196 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 .command-toggle-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    margin-top: 12px;
+    gap: 12px;
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    margin: 12px 0;
 }
 
 .command-toggle-item {
+    background: var(--background-primary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
     display: flex;
     align-items: center;
-    padding: 8px;
-    border-top: 0px solid var(--background-modifier-border);  /* 添加边框 */
-    border-right: 1px solid var(--background-modifier-border);
+    justify-content: space-between;
+}
+
+.command-toggle-item .setting-item-name {
+    font-size: 0.95em;
+    margin: 0;
+}
+
+/* 自定义命令区域样式 */
+.custom-commands-container {
+    background: var(--background-secondary);
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+.custom-commands-container .setting-item {
+    background: var(--background-primary);
+    margin-bottom: 8px;
+    padding: 12px;
+}
+
+.custom-command-input {
+    width: 180px !important;
+}
+
+/* 按钮样式优化 */
+.modal-opener-settings button:not(.dropdown) {
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 0.9em;
+    transition: background-color 0.2s ease;
+}
+
+/* 设置页面整体布局优化 */
+.modal-opener-settings {
+    padding: 0 10px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* 设置项布局优化 */
+.modal-opener-settings .setting-item {
+    padding: 0.75em 1em;
+    border: none;
+    background: var(--background-primary);
+    margin-bottom: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.modal-opener-settings .setting-item:hover {
+    background: var(--background-secondary);
+}
+
+/* 设置项内部布局 */
+.modal-opener-settings .setting-item-info {
+    flex: 1 1 auto;
+    padding-right: 20px;
+}
+
+.modal-opener-settings .setting-item-name {
+    font-size: 1em;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.modal-opener-settings .setting-item-description {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* 设置项控件布局 */
+.modal-opener-settings .setting-item-control {
+    flex: 0 0 auto;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 分组标题样式 */
+.modal-opener-settings .setting-item-heading {
+    font-size: 1.2em;
+    font-weight: 600;
+    color: var(--text-accent);
+    padding: 1.5em 0 0.5em;
+    margin: 1em 0 0.8em;
+    border-bottom: 2px solid var(--background-modifier-border);
+}
+
+/* 下拉菜单样式优化 */
+.modal-opener-settings .dropdown {
+    min-width: 160px;
+    border-radius: 4px;
+}
+
+/* 滑块样式优化 */
+.modal-opener-settings .slider {
+    min-width: 200px;
+}
+
+/* 文本输入框样式 */
+.modal-opener-settings input[type="text"] {
+    min-width: 160px;
+    border-radius: 4px;
+    padding: 4px 8px;
+}
+
+/* Tab 容器样式 */
+.settings-tab-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Tab 按钮容器 */
+.settings-tab-buttons {
+    display: flex;
+    gap: 4px;
+    padding: 0 0 16px;
+    border-bottom: 2px solid var(--background-modifier-border);
+    margin-bottom: 16px;
+}
+
+/* Tab 按钮样式 */
+.settings-tab-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-tab-button:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.settings-tab-button.is-active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.settings-tab-button svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* Tab 内容面板 */
+.settings-tab-panel {
+    display: none;
+    padding: 0 8px;
+}
+
+.settings-tab-panel.is-active {
+    display: block;
+}
+
+/* 设置项样式优化 */
+.settings-tab-panel .setting-item {
+    border: none;
+    padding: 16px;
+    margin-bottom: 8px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+}
+
+.settings-tab-panel .setting-item:hover {
+    background: var(--background-secondary-alt);
 }

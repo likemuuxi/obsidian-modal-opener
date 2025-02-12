@@ -4,7 +4,6 @@ import { t } from "./lang/helpers"
 
 
 export interface ModalOpenerPluginSettings {
-	// openMethod: "drag" | "middle" | "altclick" | "both";
 	openMethod: "drag" | "altclick" | "both";
 	fileOpenMode: 'current' | 'source' | 'preview';
 	modalWidth: string;
@@ -15,6 +14,8 @@ export interface ModalOpenerPluginSettings {
 	clickWithoutAlt: boolean;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
+	enableWebAutoDarkMode: boolean;
+	enableImmersiveTranslation: boolean;
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
@@ -60,6 +61,8 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	clickWithoutAlt: Platform.isMobile ? true : false,
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
+	enableWebAutoDarkMode: true,
+	enableImmersiveTranslation: true,
 	customCommands: [],
 	showFileViewHeader: false,
 	showLinkViewHeader: false,
@@ -130,35 +133,21 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
-		// Initialize settings with default values or plugin settings
-		this.openMethod = this.plugin.settings.openMethod;
-		this.fileOpenMode = this.plugin.settings.fileOpenMode
-		this.modalWidth = this.plugin.settings.modalWidth;
-		this.modalHeight = this.plugin.settings.modalHeight;
-		this.dragThreshold = this.plugin.settings.dragThreshold;
-		this.enableAnimation = this.plugin.settings.enableAnimation;
-		this.onlyCloseButton = this.plugin.settings.onlyCloseButton;
-		this.customCommands = this.plugin.settings.customCommands;
-		this.showFileViewHeader = this.plugin.settings.showFileViewHeader;
-		this.showLinkViewHeader = this.plugin.settings.showLinkViewHeader;
-		this.showFloatingButton = this.plugin.settings.showFloatingButton;
-		this.viewOfDisplayButton = this.plugin.settings.viewOfDisplayButton;
 	}
 
 	display(): void {
 		const { containerEl } = this;
-
 		containerEl.empty();
+		// 添加全局样式
+		containerEl.addClass("modal-opener-settings");
 
 		new Setting(containerEl)
 			.setName(t("Open with"))
 			.addDropdown((dd) => dd
 				.addOption("both", t("Both"))
-				// .addOption("middle", t("Middle mouse button"))
 				.addOption("drag", t("Drag & Drop"))
 				.addOption("altclick", t("Alt & Left click"))
 				.setValue(this.plugin.settings.openMethod)
-				// .onChange(async (value: "drag" | "middle" | "altclick" | "both") => {
 				.onChange(async (value: "drag" | "altclick" | "both") => {
 					this.plugin.settings.openMethod = value;
 					await this.plugin.saveSettings();
@@ -297,16 +286,39 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl).setName(t('Extend')).setHeading();
+
+		new Setting(containerEl)
+			.setName(t('Automatically switch to dark mode'))
+			.setDesc(t('Automatically switch to dark mode in web view'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableWebAutoDarkMode)
+				.onChange(async (value) => {
+					this.plugin.settings.enableWebAutoDarkMode = value;
+					await this.plugin.saveSettings();
+				}));
+		
+		new Setting(containerEl)
+		.setName(t('Enable immersive translation'))
+		.setDesc(t('Load immersive translation plugin in web view'))
+		.addToggle(toggle => toggle
+			.setValue(this.plugin.settings.enableImmersiveTranslation)
+			.onChange(async (value) => {
+				this.plugin.settings.enableImmersiveTranslation = value;
+				await this.plugin.saveSettings();
+			}));
+
+
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
 		new Setting(containerEl)
 			.setName(t("Modal width"))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.modalWidth)
+				.setValue(this.plugin.settings.modalWidth)
 				.onChange(async (value) => {
 					this.plugin.settings.modalWidth = value;
-					this.modalWidth = value;
+					this.plugin.settings.modalWidth = value;
 					await this.plugin.saveSettings();
 				}));
 
@@ -314,10 +326,10 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.setName(t("Modal height"))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.modalHeight)
+				.setValue(this.plugin.settings.modalHeight)
 				.onChange(async (value) => {
 					this.plugin.settings.modalHeight = value;
-					this.modalHeight = value;
+					this.plugin.settings.modalHeight = value;
 					await this.plugin.saveSettings();
 				}));
 

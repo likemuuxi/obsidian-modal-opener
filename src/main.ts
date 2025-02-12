@@ -1163,7 +1163,12 @@ export default class ModalOpenerPlugin extends Plugin {
         
                 if (webviewEl) {
                     webviewEl.addEventListener("dom-ready", () => {
-                        this.registerJavascriptInWebcontents(webviewEl);
+                        if(this.settings.enableWebAutoDarkMode) {
+                            this.registerWebAutoDarkMode(webviewEl);
+                        }
+                        if(this.settings.enableImmersiveTranslation) {
+                            this.registerImmersiveTranslation(webviewEl);
+                        }
                     });
                 }
             }
@@ -1304,7 +1309,7 @@ export default class ModalOpenerPlugin extends Plugin {
         return app.plugins.plugins[pluginId];
     }
 
-    async registerJavascriptInWebcontents(webContents: any) {
+    async registerWebAutoDarkMode(webContents: any) {
 		try {
             const isDarkMode = document.body.classList.contains('theme-dark');
 			if (isDarkMode) {
@@ -1368,5 +1373,31 @@ export default class ModalOpenerPlugin extends Plugin {
 				}
 			});
 		`);
+    }
+
+    async registerImmersiveTranslation(webContents: any) {
+        // 注入沉浸式翻译 SDK
+        await webContents.executeJavaScript(`
+            // 1. 设置初始化参数
+            window.immersiveTranslateConfig = {
+                isAutoTranslate: false,
+                pageRule: {
+                    // 智能选择需要翻译的内容
+                    selectors: ["body"],
+                    // 排除不需要翻译的元素
+                    excludeSelectors: ["pre", "code", ".code", "script", "style"],
+                    // 将译文作为 block 的最小字符数
+                    blockMinTextCount: 0,
+                    // 原文段落的最小字符数
+                    paragraphMinTextCount: 1
+                }
+            };
+
+            // 2. 加载沉浸式翻译 SDK
+            const script = document.createElement('script');
+            script.async = true;
+            script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-latest.js';
+            document.head.appendChild(script);
+        `);
 	}
 }
