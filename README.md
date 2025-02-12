@@ -65,14 +65,13 @@ Currently known plugins with conflicts.
 
 The above plugins are all for handling duplicate tabs, now the plugin has a built-in duplicate tab detection function, which comes from the `mononote` plugin and has been modified on the basis of the original one.
 
-> Notice: When loading a Web page using the `surfing` plugin, do not turn on the **option to open a web page in a fixed and unique tab**. This affects the plugin's functionality.
-
 # 🥰Special thanks
 
 Special thanks to these amazing plugins! I use these plugins as a reference for developing my first public plugin. The basic structure of this plugin is mainly based on [obidian link opener](https://github.com/zorazrr/obsidian-link-opener). I referred to other plugins and completed the modal window file display and prevent duplicate tabs functions, The list of plug-ins is as follows.
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Float-Search](https://github.com/Quorafind/Obsidian-Float-Search) by Quorafind
+- [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-copilot](https://github.com/logancyang/obsidian-copilot) by logancyang
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 - [Cursor](https://www.cursor.com/) 、[ChatGPT](https://chatgpt.com/)
