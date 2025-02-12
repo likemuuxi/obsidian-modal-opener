@@ -63,14 +63,13 @@
 
 以上插件都是对重复标签页的处理，现在插件内置重复标签页检测功能，功能来自 `mononote` 插件，在原有基础上有所修改。
 
-> 注意：当使用 `surfing`插件加载网页时，不要开启**在固定且唯一标签页中打开网页**选项，会影响插件功能。
-
 # 🥰特别感谢
 
 特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和阻止重复标签页功能，插件列表如下。
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Float-Search](https://github.com/Quorafind/Obsidian-Float-Search) by Quorafind
+- [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-copilot](https://github.com/logancyang/obsidian-copilot) by logancyang
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 - [Cursor](https://www.cursor.com/) 、[ChatGPT](https://chatgpt.com/)
