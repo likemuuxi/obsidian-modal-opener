@@ -20,7 +20,7 @@
     pointer-events: auto;
 }
 
-.modal-opener-webview {
+.modal-webview, .modal-iframe {
     width: 100%;
     height: 98%;
     border: 0;
@@ -264,10 +264,8 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 .modal-opener-settings .setting-item {
     padding: 0.75em 1em;
     border: none;
-    background: var(--background-primary);
     margin-bottom: 8px;
     border-radius: 8px;
-    transition: background-color 0.2s ease;
 }
 
 /* 设置项内部布局 */
@@ -300,8 +298,5 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 /* 分组标题样式 */
 .modal-opener-settings .setting-item-heading {
     font-size: 1.2em;
-    font-weight: bold;
-    padding: 1.5em 0 0.5em;
-    margin: 1em 0 0.8em;
-    border-bottom: 2px solid var(--background-modifier-border);
+    font-weight: 500;
 }

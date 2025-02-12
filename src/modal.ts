@@ -439,7 +439,7 @@ export class ModalWindow extends Modal {
         webviewEl.setAttribute("allowpopups", "");
         // @ts-ignore
         webviewEl.partition = "persist:webview-vault-" + this.app.appId;
-        webviewEl.addClass("modal-opener-webview");
+        webviewEl.addClass("modal-webview");
         containerEl.appendChild(webviewEl);
 
         if (this.link) webviewEl.setAttribute("src", this.link);;
@@ -624,7 +624,7 @@ export class ModalWindow extends Modal {
             const contentEl = newLeaf.view.containerEl;
             contentEl.empty();
             if(Platform.isMobile) {
-                const frame = contentEl.createEl("iframe", { cls: "modal-webview" });
+                const frame = contentEl.createEl("iframe", { cls: "modal-iframe" });
                 frame.src = link;
             } else {
                 const activeLeaf = document.querySelector(".workspace-leaf.mod-active")
