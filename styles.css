@@ -259,12 +259,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     transition: background-color 0.2s ease;
 }
 
-/* 设置页面整体布局优化 */
-.modal-opener-settings {
-    padding: 0 10px;
-    max-width: 800px;
-    margin: 0 auto;
-}
 
 /* 设置项布局优化 */
 .modal-opener-settings .setting-item {
@@ -323,84 +317,10 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     border-radius: 4px;
 }
 
-/* 滑块样式优化 */
-.modal-opener-settings .slider {
-    min-width: 200px;
-}
 
 /* 文本输入框样式 */
 .modal-opener-settings input[type="text"] {
     min-width: 160px;
     border-radius: 4px;
     padding: 4px 8px;
-}
-
-/* Tab 容器样式 */
-.settings-tab-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
-/* Tab 按钮容器 */
-.settings-tab-buttons {
-    display: flex;
-    gap: 4px;
-    padding: 0 0 16px;
-    border-bottom: 2px solid var(--background-modifier-border);
-    margin-bottom: 16px;
-}
-
-/* Tab 按钮样式 */
-.settings-tab-button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.settings-tab-button:hover {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
-}
-
-.settings-tab-button.is-active {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-}
-
-.settings-tab-button svg {
-    width: 16px;
-    height: 16px;
-}
-
-/* Tab 内容面板 */
-.settings-tab-panel {
-    display: none;
-    padding: 0 8px;
-}
-
-.settings-tab-panel.is-active {
-    display: block;
-}
-
-/* 设置项样式优化 */
-.settings-tab-panel .setting-item {
-    border: none;
-    padding: 16px;
-    margin-bottom: 8px;
-    background: var(--background-secondary);
-    border-radius: 8px;
-}
-
-.settings-tab-panel .setting-item:hover {
-    background: var(--background-secondary-alt);
 }
