@@ -421,9 +421,12 @@ export class ModalWindow extends Modal {
             }
             this.associatedLeaf = currentLeaf;
         } else {
-            // const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
-            // frame.src = link;
-            this.createWebview(this.contentEl, linkContainer);
+            if(Platform.isMobile) {
+                const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
+                frame.src = link;
+            } else {
+                this.createWebview(this.contentEl, linkContainer);
+            }
         }
         this.setContainerHeight(linkContainer, true);
         this.setupDoubleClickHandler();
@@ -620,14 +623,16 @@ export class ModalWindow extends Modal {
             const newLeaf = this.app.workspace.getLeaf(true);
             const contentEl = newLeaf.view.containerEl;
             contentEl.empty();
-            const activeLeaf = document.querySelector(".workspace-leaf.mod-active")
-            
-            if (activeLeaf) {
-                const linkContainer = activeLeaf.querySelector(".workspace-leaf-content") as HTMLElement;
-                this.createWebview(contentEl, linkContainer);
+            if(Platform.isMobile) {
+                const frame = contentEl.createEl("iframe", { cls: "modal-webview" });
+                frame.src = link;
+            } else {
+                const activeLeaf = document.querySelector(".workspace-leaf.mod-active")
+                if (activeLeaf) {
+                    const linkContainer = activeLeaf.querySelector(".workspace-leaf-content") as HTMLElement;
+                    this.createWebview(contentEl, linkContainer);
+                }
             }
-            // const frame = container.createEl("iframe", { cls: "modal-webview" });
-            // frame.src = link;
         }
     }
 

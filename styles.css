@@ -270,10 +270,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     transition: background-color 0.2s ease;
 }
 
-.modal-opener-settings .setting-item:hover {
-    background: var(--background-secondary);
-}
-
 /* 设置项内部布局 */
 .modal-opener-settings .setting-item-info {
     flex: 1 1 auto;
@@ -304,23 +300,8 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 /* 分组标题样式 */
 .modal-opener-settings .setting-item-heading {
     font-size: 1.2em;
-    font-weight: 600;
-    color: var(--text-accent);
+    font-weight: bold;
     padding: 1.5em 0 0.5em;
     margin: 1em 0 0.8em;
     border-bottom: 2px solid var(--background-modifier-border);
-}
-
-/* 下拉菜单样式优化 */
-.modal-opener-settings .dropdown {
-    min-width: 160px;
-    border-radius: 4px;
-}
-
-
-/* 文本输入框样式 */
-.modal-opener-settings input[type="text"] {
-    min-width: 160px;
-    border-radius: 4px;
-    padding: 4px 8px;
 }
