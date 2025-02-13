@@ -205,12 +205,12 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.showFloatingButton = value;
 					await this.plugin.saveSettings();
 					await this.reloadPlugin();
-				}));
-
-		if (this.plugin.settings.showFloatingButton) {
-			new Setting(containerEl)
-				.setName(t("Add hover button to"))
-				.addDropdown(dropdown => dropdown
+					this.display();
+				}))
+			.addDropdown(dropdown => {
+				dropdown.selectEl.style.display = this.plugin.settings.showFloatingButton ? 'block' : 'none';
+				
+				dropdown
 					.addOption('both', t('Both'))
 					.addOption('file', t('File view'))
 					.addOption('link', t('Link view'))
@@ -218,28 +218,26 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.viewOfDisplayButton = value as 'both' | 'file' | 'link';
 						await this.plugin.saveSettings();
-					}));
-		}
+					});
+				return dropdown;
+		});
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
-		if (this.plugin.settings.openMethod === "altclick" || this.plugin.settings.openMethod === "both") {
-			new Setting(containerEl)
-				.setName(t("Single-click trigger"))
-				.setDesc(t("If enabled, clicking links will open them in modal window without holding Alt."))
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.clickWithoutAlt)
-					.onChange(async (value) => {
-						this.plugin.settings.clickWithoutAlt = value;
-						await this.plugin.saveSettings();
-						await this.reloadPlugin();
-					}));
-		}
-
-		if (this.plugin.settings.clickWithoutAlt) {
-			new Setting(containerEl)
-				.setName(t("Select trigger type"))
-				.addDropdown(dropdown => dropdown
+		new Setting(containerEl)
+			.setName(t("Single-click trigger"))
+			.setDesc(t("If enabled, clicking links will open them in modal window without holding Alt."))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.clickWithoutAlt)
+				.onChange(async (value) => {
+					this.plugin.settings.clickWithoutAlt = value;
+					await this.plugin.saveSettings();
+					await this.reloadPlugin();
+					this.display(); // 重新渲染设置界面
+				}))
+			.addDropdown(dropdown => {
+				dropdown.selectEl.style.display = this.plugin.settings.clickWithoutAlt ? 'block' : 'none'; // 根据按钮显示设置显示/隐藏下拉框
+				dropdown
 					.addOption('both', t('Both'))
 					.addOption('internal', t('Internal link'))
 					.addOption('external', t('External link'))
@@ -247,8 +245,9 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.typeOfClickTrigger = value as 'both' | 'internal' | 'external';
 						await this.plugin.saveSettings();
-					}));
-		}
+					});
+				return dropdown;
+		});
 
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
