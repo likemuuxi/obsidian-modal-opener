@@ -44,14 +44,14 @@ export default class ModalOpenerPlugin extends Plugin {
             
             // 检查是否点击了链接，并且没有 'external-link' 类
             if ((target.tagName === "A" && !target.hasClass("external-link") && target instanceof HTMLAnchorElement) || target instanceof HTMLAnchorElement) {
-                if (evt.altKey || (this.settings.clickWithoutAlt && !evt.altKey)) {
+                if (evt.altKey && !evt.ctrlKey) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
 
                     if (this.isValidURL(target.href)) {
                         this.openInFloatPreview(target.href);
                     }
-                } else if (evt.ctrlKey) {
+                } else if (evt.ctrlKey && !evt.altKey) {
                     evt.preventDefault();
                     evt.stopPropagation();
                     evt.stopImmediatePropagation();
@@ -408,6 +408,11 @@ export default class ModalOpenerPlugin extends Plugin {
             const target = evt.target as HTMLElement;
             const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
+            // 检查是否应该触发处理
+            const shouldTrigger = this.settings.clickWithoutAlt ?
+                (evt.button === 0) : (evt.altKey && evt.button === 0);
+            if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
+
             if (
                 this.settings.clickWithoutAlt &&
                 activeView?.getMode() === 'source' &&
@@ -416,11 +421,6 @@ export default class ModalOpenerPlugin extends Plugin {
                 // new Notice("isMobile Click");
                 this.handleEditModeLink(activeView.editor, evt);
             }
-
-            // 检查是否应该触发处理
-            const shouldTrigger = this.settings.clickWithoutAlt ?
-                (evt.button === 0) : (evt.altKey && evt.button === 0);
-            if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
 
             // 处理编辑器中的代码块
             if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
