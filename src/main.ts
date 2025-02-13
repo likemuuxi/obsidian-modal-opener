@@ -259,12 +259,9 @@ export default class ModalOpenerPlugin extends Plugin {
         
         if (linkElement?.closest('.annotated-link')) {
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
-            let file: TFile | undefined;
 
             if (abstractFile instanceof TFile) {
                 this.openInFloatPreview(abstractFile.path);
-            } else {
-                file = undefined;
             }
             return;
         }
@@ -276,10 +273,38 @@ export default class ModalOpenerPlugin extends Plugin {
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
-            if (!folderPlugin || !isFolderLink) {
-                this.openInFloatPreview(link);
+
+            if(this.isValidURL(link)) {
+                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'external') {
+                    if (!folderPlugin || !isFolderLink) {
+                        this.openInFloatPreview(link);
+                    } else {
+                        this.folderNoteOpenInFloatPreview(link);
+                    }
+                    return;
+                }
+                this.app.workspace.getLeaf(true).setViewState({
+                    type: "webviewer",
+                    active: true,
+                    state: {
+                        url: link,
+                        target: "_self",
+                    }
+                });
             } else {
-                this.folderNoteOpenInFloatPreview(link);
+                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
+                    if (!folderPlugin || !isFolderLink) {
+                        this.openInFloatPreview(link);
+                    } else {
+                        this.folderNoteOpenInFloatPreview(link);
+                    }
+                    return;
+                } 
+                const [filePath, fragment] = link.split('#');
+                const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
+                if (file instanceof TFile) {
+                    this.app.workspace.openLinkText(link, filePath, false);
+                }
             }
         }
     }
@@ -290,13 +315,39 @@ export default class ModalOpenerPlugin extends Plugin {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
-
+    
         if (linkMatch) {
-            this.openInFloatPreview(linkMatch);
+            if(this.isValidURL(linkMatch)) {
+                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'external') {
+                    this.openInFloatPreview(linkMatch);
+                    return;
+                }
+                this.app.workspace.getLeaf(true).setViewState({
+                    type: "webviewer",
+                    active: true,
+                    state: {
+                        url: linkMatch,
+                        target: "_self",
+                    }
+                });
+                return;
+            } else {
+                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
+                    this.openInFloatPreview(linkMatch);
+                    return;
+                }
+                const [filePath, fragment] = linkMatch.split('#');
+                const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
+                if (file instanceof TFile) {
+                    this.app.workspace.openLinkText(linkMatch, filePath, false);
+                }
+                return;
+            }
         } else {
             new Notice(t("No link found at cursor position"));
         }
     }
+    
 
     // 等canvas alt+click和其他类型一样表现为选取链接 可以改用此方法
     // private registerAltClickHandler() {
@@ -1287,19 +1338,20 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private findLinkAtPosition(line: string, position: number): string | null {
-        // 匹配![[]]和[[]]格式的内部链接、Markdown链接和URL
-        const linkRegex = /!?\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)/g;
+        // 匹配内部链接、Markdown 链接和 URL
+        const linkRegex = /!?\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
         let match;
-
+    
         while ((match = linkRegex.exec(line)) !== null) {
             if (match.index <= position && position <= match.index + match[0].length) {
-                // 返回内部链接、Markdown链接的URL，或直接的URL
-                return match[1] || match[3] || match[4] || null;
+                // 返回内部链接、Markdown 链接的 URL，或直接的 URL
+                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
             }
         }
-
+    
         return null;
     }
+    
 
     private isValidURL = (url: string) =>
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
@@ -1382,14 +1434,8 @@ export default class ModalOpenerPlugin extends Plugin {
             window.immersiveTranslateConfig = {
                 isAutoTranslate: false,
                 pageRule: {
-                    // 智能选择需要翻译的内容
-                    selectors: ["body"],
                     // 排除不需要翻译的元素
-                    excludeSelectors: ["pre", "code", ".code", "script", "style"],
-                    // 将译文作为 block 的最小字符数
-                    blockMinTextCount: 0,
-                    // 原文段落的最小字符数
-                    paragraphMinTextCount: 1
+                    excludeSelectors: ["pre", "code", "nav", "footer"],
                 }
             };
 

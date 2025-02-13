@@ -27,6 +27,7 @@ export interface ModalOpenerPluginSettings {
 	enableRefreshOnClose: boolean;
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
+	typeOfClickTrigger: string;
 	enabledCommands: {
 		markdown: boolean;
 		canvas: boolean;
@@ -74,6 +75,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	enableRefreshOnClose: true,
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
+	typeOfClickTrigger: 'both',
 	enabledCommands: {
 		markdown: true,
 		canvas: true,
@@ -231,6 +233,20 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.plugin.settings.clickWithoutAlt = value;
 						await this.plugin.saveSettings();
 						await this.reloadPlugin();
+					}));
+		}
+
+		if (this.plugin.settings.clickWithoutAlt) {
+			new Setting(containerEl)
+				.setName(t("Select trigger type"))
+				.addDropdown(dropdown => dropdown
+					.addOption('both', t('Both'))
+					.addOption('internal', t('Internal link'))
+					.addOption('external', t('External link'))
+					.setValue(this.plugin.settings.typeOfClickTrigger)
+					.onChange(async (value) => {
+						this.plugin.settings.typeOfClickTrigger = value as 'both' | 'internal' | 'external';
+						await this.plugin.saveSettings();
 					}));
 		}
 

@@ -208,7 +208,7 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 
 /* command-toggle */
 
-.command-toggle-container {
+.modal-opener-settings .command-toggle-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 12px;
@@ -218,7 +218,7 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     margin: 12px 0;
 }
 
-.command-toggle-item {
+.modal-opener-settings .command-toggle-item {
     background: var(--background-primary);
     padding: 8px 12px;
     border-radius: 6px;
@@ -228,26 +228,26 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     justify-content: space-between;
 }
 
-.command-toggle-item .setting-item-name {
+.modal-opener-settings .command-toggle-item .setting-item-name {
     font-size: 0.95em;
     margin: 0;
 }
 
 /* 自定义命令区域样式 */
-.custom-commands-container {
+.modal-opener-settings .custom-commands-container {
     background: var(--background-secondary);
     padding: 12px;
     border-radius: 8px;
     margin-top: 12px;
 }
 
-.custom-commands-container .setting-item {
+.modal-opener-settings .custom-commands-container .setting-item {
     background: var(--background-primary);
     margin-bottom: 8px;
     padding: 12px;
 }
 
-.custom-command-input {
+.modal-opener-settings .custom-command-input {
     width: 180px !important;
 }
 
@@ -264,7 +264,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 .modal-opener-settings .setting-item {
     padding: 0.75em 1em;
     border: none;
-    margin-bottom: 8px;
     border-radius: 8px;
 }
 
@@ -296,7 +295,8 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 }
 
 /* 分组标题样式 */
-.modal-opener-settings .setting-item-heading {
-    font-size: 1.2em;
-    font-weight: 500;
+.modal-opener-settings .setting-item-heading .setting-item-name {
+    font-size: 1.5em;  /* 调整为二级标题的字号 */
+    font-weight: bold; /* 设置为粗体 */
 }
+

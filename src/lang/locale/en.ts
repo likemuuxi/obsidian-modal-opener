@@ -1,12 +1,5 @@
 // English
 export default {
-
-  'General': 'General',
-  'Behavior': 'Behavior',
-  'Style': 'Style',
-  'Commands': 'Commands',
-  'Advanced': 'Advanced',
-
   "No active modal window":"No active modal window",
   "No link found at cursor position":"No link found at cursor position",
 
@@ -57,7 +50,11 @@ export default {
   'More options': 'More options',
   'Copied to clipboard': 'Link copied to clipboard',
 
+  'Behavior': 'Behavior',
   'Single-click trigger':'Single-click trigger',
+  'Select trigger type': 'Select trigger type',
+  'Internal link': 'Internal link',
+  'External link': 'External link',
   'If enabled, clicking links will open them in modal window without holding Alt.':'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close':'Disable external click close',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
