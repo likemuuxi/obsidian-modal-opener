@@ -300,3 +300,7 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
     font-weight: bold; /* 设置为粗体 */
 }
 
+/* 强制覆盖内联样式 */
+webview[style*="background-color: white"] {
+    background-color: var(--ctp-crust) !important;
+}

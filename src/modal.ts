@@ -926,7 +926,7 @@ export class ModalWindow extends Modal {
 								console.error('Failed to load dark reader: ', err);
 
 							}
-						};0
+						};
 					`);
 				} catch (e) {
 					console.error(e);

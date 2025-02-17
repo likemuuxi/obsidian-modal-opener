@@ -44,7 +44,7 @@ export default class ModalOpenerPlugin extends Plugin {
             
             // 检查是否点击了链接，并且没有 'external-link' 类
             if ((target.tagName === "A" && !target.hasClass("external-link") && target instanceof HTMLAnchorElement) || target instanceof HTMLAnchorElement) {
-                if (evt.altKey && !evt.ctrlKey) {
+                if ((evt.altKey && !evt.ctrlKey) || (this.settings.clickWithoutAlt && !evt.ctrlKey)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
 
@@ -232,7 +232,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.dragHandler();
     }
 
-    private handlePreviewModeLink(evt: MouseEvent) {
+    private handlePreviewModeLink(evt: MouseEvent, isAltClick: boolean) {
         let target = evt.target as HTMLElement;
         // 向上查找包含 'internal-embed' 类的父元素
         if (target.classList.contains('canvas-minimap')
@@ -283,14 +283,18 @@ export default class ModalOpenerPlugin extends Plugin {
                     }
                     return;
                 }
-                this.app.workspace.getLeaf(true).setViewState({
-                    type: "webviewer",
-                    active: true,
-                    state: {
-                        url: link,
-                        target: "_self",
-                    }
-                });
+                if (isAltClick) {
+                    this.openInFloatPreview(link);
+                } else {
+                    this.app.workspace.getLeaf(true).setViewState({
+                        type: "webviewer",
+                        active: true,
+                        state: {
+                            url: link,
+                            target: "_self",
+                        }
+                    });
+                }
             } else {
                 if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
                     if (!folderPlugin || !isFolderLink) {
@@ -303,13 +307,17 @@ export default class ModalOpenerPlugin extends Plugin {
                 const [filePath, fragment] = link.split('#');
                 const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
                 if (file instanceof TFile) {
-                    this.app.workspace.openLinkText(link, filePath, false);
+                    if (isAltClick) {
+                        this.openInFloatPreview(filePath);
+                    } else {
+                        this.app.workspace.openLinkText(link, filePath, false);
+                    }
                 }
             }
         }
     }
 
-    private handleEditModeLink(editor: Editor, evt: MouseEvent | TouchEvent) {
+    private handleEditModeLink(editor: Editor, evt: MouseEvent | TouchEvent, isAltClick: boolean) {
         evt.preventDefault();
         evt.stopImmediatePropagation();
         const cursor = editor.getCursor();
@@ -322,15 +330,18 @@ export default class ModalOpenerPlugin extends Plugin {
                     this.openInFloatPreview(linkMatch);
                     return;
                 }
-                this.app.workspace.getLeaf(true).setViewState({
-                    type: "webviewer",
-                    active: true,
-                    state: {
-                        url: linkMatch,
-                        target: "_self",
-                    }
-                });
-                return;
+                if (isAltClick) {
+                    this.openInFloatPreview(linkMatch);
+                } else {
+                    this.app.workspace.getLeaf(true).setViewState({
+                        type: "webviewer",
+                        active: true,
+                        state: {
+                            url: linkMatch,
+                            target: "_self",
+                        }
+                    });
+                }
             } else {
                 if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
                     this.openInFloatPreview(linkMatch);
@@ -339,9 +350,12 @@ export default class ModalOpenerPlugin extends Plugin {
                 const [filePath, fragment] = linkMatch.split('#');
                 const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
                 if (file instanceof TFile) {
-                    this.app.workspace.openLinkText(linkMatch, filePath, false);
+                    if (isAltClick) {
+                        this.openInFloatPreview(filePath);
+                    } else {
+                        this.app.workspace.openLinkText(linkMatch, filePath, false);
+                    }
                 }
-                return;
             }
         } else {
             new Notice(t("No link found at cursor position"));
@@ -409,6 +423,7 @@ export default class ModalOpenerPlugin extends Plugin {
             const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
             // 检查是否应该触发处理
+            const isAltClick = evt.altKey && evt.button === 0;
             const shouldTrigger = this.settings.clickWithoutAlt ?
                 (evt.button === 0) : (evt.altKey && evt.button === 0);
             if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
@@ -419,11 +434,11 @@ export default class ModalOpenerPlugin extends Plugin {
                 target.classList.contains('cm-link')
             ) {
                 // new Notice("isMobile Click");
-                this.handleEditModeLink(activeView.editor, evt);
+                this.handleEditModeLink(activeView.editor, evt, isAltClick);
             }
 
             // 处理编辑器中的代码块
-            if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
+            if (!this.settings.clickWithoutAlt && activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
                 (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
                 return;
             }
@@ -435,7 +450,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
 
             // 处理链接点击
-            this.handleLinkClick(evt, target, activeView);
+            this.handleLinkClick(evt, target, activeView, isAltClick);
         };
         
         document.addEventListener('click', this.altClickHandler, { capture: true });
@@ -492,29 +507,28 @@ export default class ModalOpenerPlugin extends Plugin {
         );
     }
 
-
     private shouldSkipElement(target: HTMLElement): boolean {
         // 适配diagram.net svg 类型的文件 alt+点击  不做处理
         const altText = target.getAttribute("alt");
         return !!(altText?.endsWith(".svg"));
     }
 
-    private handleLinkClick(evt: MouseEvent, target: HTMLElement, activeView: MarkdownView | null) {
+    private handleLinkClick(evt: MouseEvent, target: HTMLElement, activeView: MarkdownView | null, isAltClick: boolean) {
         if (activeView) {
             if (this.isPreviewModeLink(target)) {
-                this.handlePreviewModeLink(evt);
+                this.handlePreviewModeLink(evt, isAltClick);
             } else if (activeView.getMode() === 'source') {
                 // 适配在编辑模式下 richfoot tldraw markmind 的 alt 点击
                 // if (target.closest(this.settings.customElementSelectors)) {
                 if (target.closest('svg, img, .rich-foot, .annotated-link')) {
-                    this.handlePreviewModeLink(evt);
+                    this.handlePreviewModeLink(evt, isAltClick);
                 } else {
                     this.handleEditModeLink(activeView.editor, evt);
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
                 }
             } else {
-                this.handlePreviewModeLink(evt);
+                this.handlePreviewModeLink(evt, isAltClick);
             }
         } else {
             const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
@@ -523,7 +537,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (excalidrawView && link) {
                 this.openInFloatPreview(link);
             } else if (this.isPreviewModeLink(target)) {
-                this.handlePreviewModeLink(evt);
+                this.handlePreviewModeLink(evt, isAltClick);
             }
         }
     }
@@ -1206,7 +1220,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.activeLeafChangeTimeout) {
             clearTimeout(this.activeLeafChangeTimeout);
         }
-
+        
         if (activeLeaf?.view?.getViewType() === "webviewer") {
             const activeLeafEl = document.querySelector(".workspace-leaf.mod-active");
             if (activeLeafEl) {
@@ -1388,12 +1402,10 @@ export default class ModalOpenerPlugin extends Plugin {
 								});
 								console.log(DarkReader);
 							} catch (err) {
-
 								window.myPostPort?.postMessage('darkreader-failed');
 								console.error('Failed to load dark reader: ', err);
-
 							}
-						};0
+						};
 					`);
 				} catch (e) {
 					console.error(e);

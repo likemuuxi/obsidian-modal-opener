@@ -301,30 +301,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		if(!Platform.isMobile) {
-			new Setting(containerEl).setName(t('Extend')).setHeading();
-
-			new Setting(containerEl)
-				.setName(t('Automatically switch to dark mode'))
-				.setDesc(t('Automatically switch to dark mode in web view'))
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enableWebAutoDarkMode)
-					.onChange(async (value) => {
-						this.plugin.settings.enableWebAutoDarkMode = value;
-						await this.plugin.saveSettings();
-					}));
-			
-			new Setting(containerEl)
-			.setName(t('Enable immersive translation'))
-			.setDesc(t('Load immersive translation plugin in web view'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableImmersiveTranslation)
-				.onChange(async (value) => {
-					this.plugin.settings.enableImmersiveTranslation = value;
-					await this.plugin.saveSettings();
-				}));
-		}
-
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
 		new Setting(containerEl)
@@ -417,6 +393,30 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					}));
 		}
 
+		if(!Platform.isMobile) {
+			new Setting(containerEl).setName(t('Extend')).setHeading();
+
+			new Setting(containerEl)
+				.setName(t('Automatically switch to dark mode'))
+				.setDesc(t('Automatically switch to dark mode in web view'))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.enableWebAutoDarkMode)
+					.onChange(async (value) => {
+						this.plugin.settings.enableWebAutoDarkMode = value;
+						await this.plugin.saveSettings();
+					}));
+			
+			new Setting(containerEl)
+			.setName(t('Enable immersive translation'))
+			.setDesc(t('Load immersive translation plugin in web view'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableImmersiveTranslation)
+				.onChange(async (value) => {
+					this.plugin.settings.enableImmersiveTranslation = value;
+					await this.plugin.saveSettings();
+				}));
+		}
+
 		new Setting(containerEl).setName(t('Menu item')).setHeading();
 
 		new Setting(containerEl)
@@ -454,9 +454,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.plugin.settings.modalOpenDelay = value;
 						await this.plugin.saveSettings();
 					}));
-
-			new Setting(containerEl)
-				.setDesc(t('Toggle menu items to show or hide in the right-click context menu'));
 
 			const commandsContainer = containerEl.createDiv('command-toggle-container');
 			// Markdown
