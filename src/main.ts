@@ -523,7 +523,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (target.closest('svg, img, .rich-foot, .annotated-link')) {
                     this.handlePreviewModeLink(evt, isAltClick);
                 } else {
-                    this.handleEditModeLink(activeView.editor, evt);
+                    this.handleEditModeLink(activeView.editor, evt, isAltClick);
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
                 }
