@@ -375,9 +375,7 @@ export class ModalWindow extends Modal {
             this.associatedLeaf = leaf;
         }
 
-        setTimeout(() => {
-            this.setContainerHeight(fileContainer, false);
-        }, 100);
+        this.setContainerHeight(fileContainer, false);
 
         const noteToolbarPlugin = this.getPlugin("note-toolbar");
         if (noteToolbarPlugin) {
@@ -487,6 +485,7 @@ export class ModalWindow extends Modal {
             active: true,
             state: {
                 url: link,
+                navigate: true,
                 target: "_self",
             }
         });
@@ -507,7 +506,8 @@ export class ModalWindow extends Modal {
                         active: true,
                         state: {
                             url: event.url,
-                            active: event.disposition !== "background-tab",
+                            navigate: true,
+                            target: "_self",
                         }
                     });
                     return {

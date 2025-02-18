@@ -139,7 +139,7 @@ export default class ModalOpenerPlugin extends Plugin {
             this.settings.modalWidth,
             this.settings.modalHeight
         ).open();
-
+        this.isProcessing = true;
         if (shouldDetach) {
             activeLeaf.detach();
         }
@@ -291,6 +291,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         active: true,
                         state: {
                             url: link,
+                            navigate: true,
                             target: "_self",
                         }
                     });
@@ -338,6 +339,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         active: true,
                         state: {
                             url: linkMatch,
+                            navigate: true,
                             target: "_self",
                         }
                     });
@@ -438,9 +440,11 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 处理编辑器中的代码块
-            if (!this.settings.clickWithoutAlt && activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
-                (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                return;
+            if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
+                if ((!this.settings.clickWithoutAlt) || (this.settings.clickWithoutAlt && isAltClick)) {
+                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                    return;
+                }
             }
             
             // 检查特殊元素
@@ -694,6 +698,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.settings.modalWidth,
                 this.settings.modalHeight
             ).open();
+            this.isProcessing = true;
         } catch (error) {
             new Notice(t("Open in modal window error"));
         }
@@ -730,6 +735,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.settings.modalWidth,
                 this.settings.modalHeight
             ).open();
+            this.isProcessing = true;
         } catch (error) {
             new Notice(t("Open in modal window error"));
         }
@@ -1209,6 +1215,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this.settings.modalWidth,
                 this.settings.modalHeight
             ).open();
+            this.isProcessing = true;
         } catch (error) {
             new Notice(t("Failed to create file: ") + error.message);
         }
@@ -1241,22 +1248,20 @@ export default class ModalOpenerPlugin extends Plugin {
 
         this.activeLeafChangeTimeout = setTimeout(async () => {
             // 状态锁定：确保同一时间只有一个处理流程
+            if (!this.settings.preventsDuplicateTabs) {
+                return;
+            }
             if (this.isProcessing) {
                 // console.log("正在处理其他叶子，跳过本次调用");
+                if (!activeLeaf.view.containerEl.closest('.modal-opener')) {
+                    this.isProcessing = false;
+                }
                 return;
             }
 
             this.isProcessing = true; // 锁定状态
 
             try {
-                if (!this.settings.preventsDuplicateTabs) {
-                    return;
-                }
-
-                if (activeLeaf.view.containerEl.closest('.modal-opener')) {
-                    return;
-                }
-
                 const { id } = activeLeaf;
                 if (this.processors.has(id)) {
                     // console.log(`已经在处理叶子 ${id}`);
@@ -1274,7 +1279,7 @@ export default class ModalOpenerPlugin extends Plugin {
             } finally {
                 this.isProcessing = false; // 释放状态锁定
             }
-        }, 100); // 防抖延迟时间：100ms
+        }, 100);
     }
 
     private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {

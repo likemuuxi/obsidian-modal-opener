@@ -67,7 +67,7 @@
     padding: 0;
 }
 
-.modal.modal-opener:has(.workspace-leaf-content[data-type="markdown"]) {
+.modal-opener:has(.workspace-leaf-content[data-type="markdown"]) {
     padding-left: 8px;
     padding-right: 8px;
 }
@@ -154,11 +154,6 @@ body:not(.show-metadata) .modal-opener-content .metadata-container {
 }
 
 /* float button */
-
-.modal-opener .modal-opener-content {
-    width: 100%;
-    height: 100%;
-}
 
 .modal-opener .floating-button-container,
 .modal-opener .floating-menu-container {
