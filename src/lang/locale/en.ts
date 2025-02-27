@@ -1,5 +1,8 @@
 // English
 export default {
+  'General': 'General',
+  'Menu Items': 'Menu Items',
+  'Custom Commands': 'Custom Commands',
   "No active modal window":"No active modal window",
   "No link found at cursor position":"No link found at cursor position",
 
@@ -88,6 +91,8 @@ export default {
   'Show the web viewer\'s navigation bar in the modal window':'Show the web viewer\'s navigation bar in the modal window',
   'Show metadata':'Display metadata',
   'Show file metadata in the modal window':'Show file metadata in the modal window',
+  'Hide scroll': 'Hide scroll',
+  'Hide scrollbar in the modal window': 'Hide scrollbar in the modal window',
   'Hide tab header':'Hide tab header',
   'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 

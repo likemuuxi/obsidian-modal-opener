@@ -1,5 +1,8 @@
 // 简体中文
 export default {
+    'General': '常规',
+    'Menu Items': '菜单',
+    'Custom Commands': '自定义命令',
     "No active modal window":"没有活动的模态窗口",
     "No link found at cursor position":"在光标位置找不到链接",
 
@@ -89,6 +92,8 @@ export default {
     'Show the web viewer\'s navigation bar in the modal window':'在模态窗口中显示 Web viewer 的导航栏',
     'Show metadata':'显示元数据',
     'Show file metadata in the modal window':'在模态窗口中显示文件元数据',
+    'Hide scroll': '隐藏滚动条',
+    'Hide scrollbar in the modal window': '在模态窗口中隐藏滚动条',
     'Hide tab header':'隐藏标签页头部',
     'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
 

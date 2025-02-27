@@ -100,6 +100,7 @@ export default class ModalOpenerPlugin extends Plugin {
         document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
         document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
         document.body.classList.toggle('show-metadata', this.settings.showMetadata);
+        document.body.classList.toggle('hider-scroll', !this.settings.hideScroll);
     }
 
     onunload() {

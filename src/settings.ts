@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting, Notice, Platform } from "obsidian";
+import { App, PluginSettingTab, Setting, Notice, Platform, ButtonComponent } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -20,6 +20,7 @@ export interface ModalOpenerPluginSettings {
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
+	hideScroll: boolean;
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
@@ -68,6 +69,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	showFileViewHeader: false,
 	showLinkViewHeader: false,
 	showMetadata: false,
+	hideScroll: true,
 	hideTabHeader: true,
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
@@ -109,6 +111,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	showFileViewHeader: boolean;
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
+	hideScroll: boolean;
 	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
@@ -132,6 +135,14 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	showDeleteCommands: boolean;
 	customElementSelectors: string;
 
+	private activeTab: string = "general"; // 当前激活的tab
+	private tabs: {id: string, name: string}[] = [
+		{id: "general", name: t("General")},
+		{id: "style", name: t("Styles")},  // 添加样式标签页
+		{id: "menu", name: t("Menu Items")},
+		{id: "commands", name: t("Custom Commands")}
+	];
+
 	constructor(app: App, plugin: ModalOpenerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
@@ -140,6 +151,45 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
+		
+		// 创建tab容器
+		const tabsContainer = containerEl.createDiv("nav-buttons-container");
+		tabsContainer.addClasses(["modal-opener-tabs"]);
+
+		// 创建tab按钮
+		this.tabs.forEach(tab => {
+			const btn = new ButtonComponent(tabsContainer)
+				.setButtonText(tab.name)
+				.onClick(() => {
+					this.activeTab = tab.id;
+					this.display();
+				});
+
+			if(this.activeTab === tab.id) {
+				btn.buttonEl.addClass("is-active");
+			}
+		});
+
+		// 根据当前tab显示对应内容
+		switch(this.activeTab) {
+			case "general":
+				this.displayGeneralSettings(containerEl);
+				break;
+			case "style":
+				this.displayStyleSettings(containerEl);
+				break;
+			case "menu":
+				this.displayMenuSettings(containerEl);  
+				break;
+			case "commands":
+				this.displayCommandsSettings(containerEl);
+				break;
+		}
+	}
+
+	private displayGeneralSettings(containerEl: HTMLElement): void {
+		// 把原来的基础设置放这里
+		// 从开头到 Menu item 部分的设置
 		// 添加全局样式
 		containerEl.addClass("modal-opener-settings");
 
@@ -301,6 +351,32 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		if(!Platform.isMobile) {
+			new Setting(containerEl).setName(t('Extend')).setHeading();
+
+			new Setting(containerEl)
+				.setName(t('Automatically switch to dark mode'))
+				.setDesc(t('Automatically switch to dark mode in web view'))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.enableWebAutoDarkMode)
+					.onChange(async (value) => {
+						this.plugin.settings.enableWebAutoDarkMode = value;
+						await this.plugin.saveSettings();
+					}));
+			
+			new Setting(containerEl)
+			.setName(t('Enable immersive translation'))
+			.setDesc(t('Load immersive translation plugin in web view'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableImmersiveTranslation)
+				.onChange(async (value) => {
+					this.plugin.settings.enableImmersiveTranslation = value;
+					await this.plugin.saveSettings();
+				}));
+		}
+	}
+
+	private displayStyleSettings(containerEl: HTMLElement): void {
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
 		new Setting(containerEl)
@@ -309,7 +385,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.addText((text) => text
 				.setValue(this.plugin.settings.modalWidth)
 				.onChange(async (value) => {
-					this.plugin.settings.modalWidth = value;
 					this.plugin.settings.modalWidth = value;
 					await this.plugin.saveSettings();
 				}));
@@ -320,7 +395,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.addText((text) => text
 				.setValue(this.plugin.settings.modalHeight)
 				.onChange(async (value) => {
-					this.plugin.settings.modalHeight = value;
 					this.plugin.settings.modalHeight = value;
 					await this.plugin.saveSettings();
 				}));
@@ -370,6 +444,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName(t('Hide scroll'))
+			.setDesc(t('Hide scrollbar in the modal window'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideScroll)
+				.onChange(async (value) => {
+					this.plugin.settings.hideScroll = value;
+					await this.plugin.saveSettings();
+					this.plugin.applyStyles();
+				}));
+
+		new Setting(containerEl)
 			.setName(t('Show view header of the file'))
 			.setDesc(t('Show the file\'s navigation bar in the modal window'))
 			.addToggle(toggle => toggle
@@ -380,7 +465,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.applyStyles();
 				}));
 
-		if (!Platform.isMobile) {
+		const webviewerPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+		if (!Platform.isMobile && webviewerPlugin) {
 			new Setting(containerEl)
 				.setName(t('Show view header of the link'))
 				.setDesc(t('Show the web viewer\'s navigation bar in the modal window'))
@@ -392,31 +478,10 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.plugin.applyStyles();
 					}));
 		}
+	}
 
-		if(!Platform.isMobile) {
-			new Setting(containerEl).setName(t('Extend')).setHeading();
-
-			new Setting(containerEl)
-				.setName(t('Automatically switch to dark mode'))
-				.setDesc(t('Automatically switch to dark mode in web view'))
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enableWebAutoDarkMode)
-					.onChange(async (value) => {
-						this.plugin.settings.enableWebAutoDarkMode = value;
-						await this.plugin.saveSettings();
-					}));
-			
-			new Setting(containerEl)
-			.setName(t('Enable immersive translation'))
-			.setDesc(t('Load immersive translation plugin in web view'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableImmersiveTranslation)
-				.onChange(async (value) => {
-					this.plugin.settings.enableImmersiveTranslation = value;
-					await this.plugin.saveSettings();
-				}));
-		}
-
+	private displayMenuSettings(containerEl: HTMLElement): void {
+		// 把Menu item部分的设置放这里
 		new Setting(containerEl).setName(t('Menu item')).setHeading();
 
 		new Setting(containerEl)
@@ -553,7 +618,10 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				"dataloom"
 			);
 		}
+	}
 
+	private displayCommandsSettings(containerEl: HTMLElement): void {
+		// 把Custom commands部分的设置放这里
 		new Setting(containerEl).setName(t('Custom commands')).setHeading();
 
 		new Setting(containerEl)
