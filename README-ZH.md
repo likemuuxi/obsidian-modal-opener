@@ -8,6 +8,8 @@
 
 ![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
 
+![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
+
 # ✨Feature
 
 - 支持Markdown文件标题，块链接锚跳转
@@ -18,10 +20,29 @@
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
   ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
 
-  > `Diagrams` 的使用需要安装我的修改版：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+  > `Diagrams` 需要安装修改版插件：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
   > 
-  > 使用 `alt+click` 进入模态窗口编辑代码块需要使用 `VSCode Edit` 插件修改版：[下载链接](https://github.com/likemuuxi/obsidian-modal-opener/releases/tag/0.7.8)
+  > 使用 `alt+click` 在模态窗口编辑代码块需要使用修改版插件: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor)
+  >
+  > 在模态窗口中添加目录，可以使用修改版插件: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
   > 
+
+# ✨Feature
+
+- Support Markdown file titles and block link anchor jumps
+- Support switching between editing modes
+- Double click the modal border to restore to the tab
+- Support setting shortcut keys to open current files and links
+- Support adding custom commands, one click opening of files or links (can be combined with Command plugin to add icons)
+- Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
+  ![image](https://github.com/user-attachments/assets/a6303d46-10a1-4f82-a758-5dd6ddfbec40)
+
+> The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+> 
+> Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
+>
+> Add toc in the modal window requires modified plugin: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
+> 
 
 # 🎯How to use
 
@@ -38,19 +59,6 @@
 ## 从社区安装
 
 [obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
-
-## 手动安装
-
-复制 `main.js`, `styles.css`, `manifest.json` 到你的 Obsidian 库的下面路径 `VaultFolder/.obsidian/plugins/modal-opener/`.
-
-## 通过 BRAT 安装
-
-1. 安装 [BRAT](https://github.com/TfTHacker/obsidian42-brat) 插件.
-2. 添加 "Modal Plugin" 到 BRAT:
-   1. 打开 "BRAT" 的社区插件部分
-   2. 点击 "Add Beta plugin"
-   3. 粘贴如下链接 `https://github.com/likemuuxi/obsidian-modal-plugin`
-3. 安装后启用插件即可使用
 
 # 🚧兼容性
 
