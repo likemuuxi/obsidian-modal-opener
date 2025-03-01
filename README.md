@@ -22,7 +22,12 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 > The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
 > Using `alt+click` to enter the modal window to Edit the code block requires a modified version using the `VSCode Edit` plugin: [download link](https://github.com/likemuuxi/obsidian-modal-opener/releases/tag/0.7.8)
-> 
+>
+> [Another Sticky Headings](https://github.com/zhouhua/obsidian-sticky-headings) can add toc in the modal window.
+> Here is my modified version, Only modify style.css: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
+
+![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
+
 
 # 🎯How to use
 
@@ -41,20 +46,6 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 ## Install from community
 
 [obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
-
-## Manual installation
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/modal-opener/`.
-
-## Install by BRAT
-
-1. Install [BRAT](https://github.com/TfTHacker/obsidian42-brat) Plugin.
-2. Add "Modal Plugin" to BRAT:
-   1. Go to *Settings > BRAT > Beta Plugin List*
-   2. Click on "Add Beta plugin"
-   3. Enter `https://github.com/likemuuxi/obsidian-modal-plugin`
-   4. Click on Add Plugin
-3. After installation, enable the plugin to use it
 
 # 🚧Compatibility
 
