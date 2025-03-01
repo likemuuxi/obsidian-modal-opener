@@ -70,7 +70,11 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
         });
-        
+        this.addCommand({
+            id: 'toggle-background-blur',
+            name: 'Toggle background blur',
+            callback: () => this.toggleBackgroundBlur()
+        });
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current tab content in modal',
@@ -144,6 +148,12 @@ export default class ModalOpenerPlugin extends Plugin {
         if (shouldDetach) {
             activeLeaf.detach();
         }
+    }
+
+    private toggleBackgroundBlur() {
+        this.settings.enableAnimation = !this.settings.enableAnimation;
+        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+        this.saveSettings();
     }
 
     private openCurrentContentInModal() {
@@ -260,7 +270,6 @@ export default class ModalOpenerPlugin extends Plugin {
         
         if (linkElement?.closest('.annotated-link')) {
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
-
             if (abstractFile instanceof TFile) {
                 this.openInFloatPreview(abstractFile.path);
             }
@@ -271,6 +280,7 @@ export default class ModalOpenerPlugin extends Plugin {
             evt.preventDefault();
             evt.stopImmediatePropagation();
             const link = this.getPreviewModeLinkText(target);
+            new Notice(link);
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -310,7 +320,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
                 if (file instanceof TFile) {
                     if (isAltClick) {
-                        this.openInFloatPreview(filePath);
+                        this.openInFloatPreview(link);
                     } else {
                         this.app.workspace.openLinkText(link, filePath, false);
                     }
@@ -325,7 +335,6 @@ export default class ModalOpenerPlugin extends Plugin {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
-    
         if (linkMatch) {
             if(this.isValidURL(linkMatch)) {
                 if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'external') {
@@ -354,7 +363,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
                 if (file instanceof TFile) {
                     if (isAltClick) {
-                        this.openInFloatPreview(filePath);
+                        this.openInFloatPreview(linkMatch);
                     } else {
                         this.app.workspace.openLinkText(linkMatch, filePath, false);
                     }
@@ -1353,25 +1362,47 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private getPreviewModeLinkText(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path')
-            || target.getAttribute('filesource') || target.getAttribute('src') || target.textContent?.trim() || '';
+        // 如果点击的是别名部分
+        if (target.classList.contains('cm-link-alias')) {
+            // 查找同级的原始链接元素
+            const parentElement = target.parentElement;
+            if (parentElement) {
+                const originalLink = parentElement.querySelector('.cm-link-has-alias');
+                if (originalLink) {
+                    return originalLink.textContent?.trim() || '';
+                }
+            }
+        }
+        
+        // 原有的链接获取逻辑
+        return target.getAttribute('data-href') || 
+                target.getAttribute('href') || 
+                target.getAttribute('data-path') ||
+                target.getAttribute('filesource') || 
+                target.getAttribute('src') || 
+                target.textContent?.trim() || '';
     }
 
     private findLinkAtPosition(line: string, position: number): string | null {
-        // 匹配内部链接、Markdown 链接和 URL
-        const linkRegex = /!?\[\[([^\]]+)\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
+        
+        // 更新正则表达式以匹配所有可能的链接格式
+        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
         let match;
     
         while ((match = linkRegex.exec(line)) !== null) {
+            // 检查光标是否在整个链接范围内
             if (match.index <= position && position <= match.index + match[0].length) {
-                // 返回内部链接、Markdown 链接的 URL，或直接的 URL
+                // 如果是内部链接带别名的情况
+                if (match[1] && match[1].includes("|")) {
+                    // 只返回别名前的实际链接部分
+                    return match[1].split("|")[0];
+                }
+                // 返回匹配到的第一个非空组(实际链接)
                 return match[1] || match[3] || match[4] || match[5] || match[6] || null;
             }
         }
-    
         return null;
     }
-    
 
     private isValidURL = (url: string) =>
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));

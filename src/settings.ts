@@ -337,9 +337,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.preventsDuplicateTabs = value;
 					await this.plugin.saveSettings();
+					this.display();
 				}));
 
-		new Setting(containerEl)
+		if(this.plugin.settings.preventsDuplicateTabs) {
+			new Setting(containerEl)
 			.setName(t('Delay time'))
 			.setDesc(t('Delay in milliseconds before performing operations'))
 			.addSlider(slider => slider
@@ -350,6 +352,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.delayInMs = value;
 					await this.plugin.saveSettings();
 				}));
+		}
 
 		if(!Platform.isMobile) {
 			new Setting(containerEl).setName(t('Extend')).setHeading();
@@ -491,7 +494,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.onChange(async (value) => {
 					this.plugin.settings.showDeleteCommands = value;
 					await this.plugin.saveSettings();
-
 				}));
 
 		new Setting(containerEl)
