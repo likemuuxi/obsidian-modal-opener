@@ -9,6 +9,8 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 
 ![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
 
+![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
+
 # ✨Feature
 
 - Support Markdown file titles and block link anchor jumps
@@ -21,13 +23,10 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 
 > The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
-> Using `alt+click` to enter the modal window to Edit the code block requires a modified version using the `VSCode Edit` plugin: [download link](https://github.com/likemuuxi/obsidian-modal-opener/releases/tag/0.7.8)
+> Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
 >
-> [Another Sticky Headings](https://github.com/zhouhua/obsidian-sticky-headings) can add toc in the modal window.
-> Here is my modified version, Only modify style.css: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
-
-![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
-
+> Add toc in the modal window requires modified plugin: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
+> 
 
 # 🎯How to use
 
