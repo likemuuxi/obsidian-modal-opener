@@ -6,8 +6,6 @@
 
 ![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
 
-![image](https://github.com/user-attachments/assets/f826b237-f1b9-4b3a-bf1b-2b2c43a32325)
-
 ![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
 
 # ✨Feature
