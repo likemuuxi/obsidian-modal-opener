@@ -25,23 +25,6 @@
   > 在模态窗口中添加目录，可以使用修改版插件: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
   > 
 
-# ✨Feature
-
-- Support Markdown file titles and block link anchor jumps
-- Support switching between editing modes
-- Double click the modal border to restore to the tab
-- Support setting shortcut keys to open current files and links
-- Support adding custom commands, one click opening of files or links (can be combined with Command plugin to add icons)
-- Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
-  ![image](https://github.com/user-attachments/assets/a6303d46-10a1-4f82-a758-5dd6ddfbec40)
-
-> The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
-> 
-> Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
->
-> Add toc in the modal window requires modified plugin: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
-> 
-
 # 🎯How to use
 
 - 阅读模式
