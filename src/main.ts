@@ -279,8 +279,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.isPreviewModeLink(target)) {
             evt.preventDefault();
             evt.stopImmediatePropagation();
-            const link = this.getPreviewModeLinkText(target);
-            new Notice(link);
+            const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
             const isFolderLink = target.classList.contains('has-folder-note');
             const app = this.app as any;
             const folderPlugin = app.plugins.plugins["folder-notes"];
@@ -1347,25 +1346,30 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private isPreviewModeLink(target: HTMLElement): boolean {
-        return target.tagName === 'A' && (target.classList.contains('external-link') || target.classList.contains('internal-link'))
-            || target.classList.contains('auto-card-link-card') || target.classList.contains('recent-files-title-content') || target.classList.contains('metadata-link-inner')
-            || target.classList.contains('has-folder-note') || target.classList.contains("homepage-button") || target.classList.contains('view-header-breadcrumb')
-            || target.classList.contains('cm-hmd-internal-link')
-            || target.classList.contains('internal-embed')
-            || target.classList.contains('file-embed-title')
-            || target.classList.contains('embed-title')
-            || target.classList.contains('markdown-embed-link')
-            || target.classList.contains('markdown-embed-content')
-            || target.classList.contains('canvas-minimap')
-            || Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))
-            || target.classList.contains('svg')
+        const element = target.closest('.ge-grid-item') || target;
+        return element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))
+            || element.classList.contains('auto-card-link-card') || element.classList.contains('recent-files-title-content') || element.classList.contains('metadata-link-inner')
+            || element.classList.contains('has-folder-note') || element.classList.contains("homepage-button") || element.classList.contains('view-header-breadcrumb')
+            || element.classList.contains('ge-grid-item')  // 这里会正确检测
+            || element.classList.contains('cm-hmd-internal-link')
+            || element.classList.contains('internal-embed')
+            || element.classList.contains('file-embed-title')
+            || element.classList.contains('embed-title')
+            || element.classList.contains('markdown-embed-link')
+            || element.classList.contains('markdown-embed-content')
+            || element.classList.contains('canvas-minimap')
+            || Array.from(element.classList).some(cls => cls.startsWith('excalidraw-svg'))
+            || element.classList.contains('svg');
     }
+    
 
     private getPreviewModeLinkText(target: HTMLElement): string {
+        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
+        const container = target.closest('.ge-grid-item') || target;
+    
         // 如果点击的是别名部分
-        if (target.classList.contains('cm-link-alias')) {
-            // 查找同级的原始链接元素
-            const parentElement = target.parentElement;
+        if (container.classList.contains('cm-link-alias')) {
+            const parentElement = container.parentElement;
             if (parentElement) {
                 const originalLink = parentElement.querySelector('.cm-link-has-alias');
                 if (originalLink) {
@@ -1373,15 +1377,17 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
         }
-        
-        // 原有的链接获取逻辑
-        return target.getAttribute('data-href') || 
-                target.getAttribute('href') || 
-                target.getAttribute('data-path') ||
-                target.getAttribute('filesource') || 
-                target.getAttribute('src') || 
-                target.textContent?.trim() || '';
-    }
+    
+        // 添加对 `data-folder-path` 的支持
+        return  container.getAttribute('data-folder-path') || 
+                container.getAttribute('data-file-path') ||
+                container.getAttribute('data-href') || 
+                container.getAttribute('href') || 
+                container.getAttribute('data-path') ||
+                container.getAttribute('filesource') || 
+                container.getAttribute('src') || 
+                container.textContent?.trim() || '';
+    }    
 
     private findLinkAtPosition(line: string, position: number): string | null {
         
