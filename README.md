@@ -5,9 +5,9 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 > This is a plugin that uses the Obsidian modal window to open files and links.
 > It can be combined with other plug-ins to easily read and edit various types of files, block various interferences for you.
 
-![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
+![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083421538.png)
 
-![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
+![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083433159.png)
 
 # ✨Feature
 
@@ -17,7 +17,7 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 - Support setting shortcut keys to open current files and links
 - Support adding custom commands, one click opening of files or links (can be combined with Command plugin to add icons)
 - Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
-  ![image](https://github.com/user-attachments/assets/a6303d46-10a1-4f82-a758-5dd6ddfbec40)
+  ![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083438702.png)
 
 > The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
