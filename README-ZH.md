@@ -4,9 +4,9 @@
 
 > 这是一个使用黑曜石模式窗口打开文件和链接的插件。它可以与其他插件结合使用，轻松读取和编辑各种类型的文件，为您提供便利和阻止各种干扰。
 
-![image](https://github.com/user-attachments/assets/dd59221d-701e-4ca6-9235-807c2b5ea1fa)
+![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083421538.png)
 
-![image](https://github.com/user-attachments/assets/74cdb6a5-c53e-4c4b-b663-5fcfced20a51)
+![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083433159.png)
 
 # ✨Feature
 
@@ -16,7 +16,7 @@
 - 支持使设置快捷键打开当前文件和网页
 - 支持添加自定义命令，一键打开文件或链接(可以搭配 Command 插件添加图标)
 - 支持右键菜单创建多种文件类型，并在模态窗口中进行编辑，编辑完成后将自动嵌入链接到当前光标位置
-  ![image](https://github.com/user-attachments/assets/76e88429-88a4-4ffe-a324-729a9f8ce27d)
+  ![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083438702.png)
 
   > `Diagrams` 需要安装修改版插件：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
   > 
