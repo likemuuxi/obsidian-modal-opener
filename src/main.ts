@@ -140,9 +140,7 @@ export default class ModalOpenerPlugin extends Plugin {
             this,
             linkValue,
             file instanceof TFile ? file : undefined,
-            "",
-            this.settings.modalWidth,
-            this.settings.modalHeight
+            ""
         ).open();
         this.isProcessing = true;
         if (shouldDetach) {
@@ -703,9 +701,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this,
                 this.isValidURL(link) ? link : "",
                 file,
-                fragment ?? "",
-                this.settings.modalWidth,
-                this.settings.modalHeight
+                fragment ?? ""
             ).open();
             this.isProcessing = true;
         } catch (error) {
@@ -740,9 +736,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this,
                 "",
                 file,
-                "",
-                this.settings.modalWidth,
-                this.settings.modalHeight
+                ""
             ).open();
             this.isProcessing = true;
         } catch (error) {
@@ -1220,9 +1214,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 this,
                 "",
                 newFile,
-                "",
-                this.settings.modalWidth,
-                this.settings.modalHeight
+                ""
             ).open();
             this.isProcessing = true;
         } catch (error) {

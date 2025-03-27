@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, WorkspaceWindow, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -8,30 +8,29 @@ export class ModalWindow extends Modal {
     link: string;
     file?: TFile;
     fragment: string;
-    width: string;
-    height: string;
     public scope: Scope;
-    private associatedLeaf?: WorkspaceLeaf;
-    private handledLeaves: WorkspaceLeaf[] = [];
+    private modalLeafRef?: WorkspaceLeaf;
+    private prevActiveLeaf?: WorkspaceLeaf;
     private static instances: ModalWindow[] = [];
     private static activeInstance: ModalWindow | null = null;
     private boundHandleActiveLeafChange: () => void;
+    private boundHandleInternalLinkClick: (event: MouseEvent) => void;
+
     private updateFragmentLink: boolean;
     private observer: MutationObserver | null = null;
     private webviewPlugin: boolean;
-    private loaded = false;
 
-    constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, width?: string, height?: string) {
+
+    constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string) {
         super(plugin.app);
         this.plugin = plugin;
         this.link = link;
         this.file = file;
         this.fragment = fragment || '';
-        this.width = width || `${this.plugin.settings.modalWidth}%`;
-        this.height = height || `${this.plugin.settings.modalHeight}%`;
         this.scope = new Scope(this.app.scope); // Allow app commands to work inside modal
-        this.boundHandleActiveLeafChange = this.handleActiveLeafChange.bind(this);
         this.webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        this.boundHandleActiveLeafChange = this.handleActiveLeafChange.bind(this);
+        this.boundHandleInternalLinkClick = this.handleInternalLinkClick.bind(this);
 
         ModalWindow.instances.push(this);
         ModalWindow.activeInstance = this;
@@ -52,7 +51,16 @@ export class ModalWindow extends Modal {
             return;
         }
 
-        this.containerEl.addEventListener('click', this.handleInternalLinkClick, true);
+        this.prevActiveLeaf = this.app.workspace.getMostRecentLeaf() ?? undefined;
+
+        this.modalLeafRef = this.app.workspace.createLeafInParent(
+            this.app.workspace.rootSplit,
+            0
+        );
+
+        if (this.modalLeafRef) {
+            (this.modalLeafRef as any).containerEl.style.display = "none";
+        }
 
         const modalBgElement = this.containerEl.querySelector(".modal-bg.modal-opener-bg");
         if (modalBgElement) {
@@ -65,8 +73,8 @@ export class ModalWindow extends Modal {
 
         const modal = this.containerEl.lastChild as HTMLElement;
         if (modal) {
-            modal.style.width = this.width;
-            modal.style.height = this.height;
+            modal.style.width = this.plugin.settings.modalWidth;
+            modal.style.height = this.plugin.settings.modalHeight;
         }
 
         if (this.file) {
@@ -97,6 +105,7 @@ export class ModalWindow extends Modal {
             this.close();
         });
 
+        this.containerEl.addEventListener('click', this.boundHandleInternalLinkClick, true);
         setTimeout(() => {
             if (ModalWindow.activeInstance === this) {
                 this.app.workspace.on('active-leaf-change', this.boundHandleActiveLeafChange);
@@ -106,71 +115,29 @@ export class ModalWindow extends Modal {
 
     close() {
         super.close();
-        this.containerEl.removeEventListener('click', this.handleInternalLinkClick, true);
         this.app.workspace.off('active-leaf-change', this.boundHandleActiveLeafChange);
+        this.containerEl.removeEventListener('click', this.boundHandleInternalLinkClick, true);
         ModalWindow.instances = ModalWindow.instances.filter(instance => instance !== this);
         if (ModalWindow.activeInstance === this) {
             ModalWindow.activeInstance = ModalWindow.instances[ModalWindow.instances.length - 1] || null;
         }
         if (ModalOpenerPlugin.activeModalWindow === this) {
-            ModalOpenerPlugin.activeModalWindow = null;
+            ModalOpenerPlugin.activeModalWindow = ModalWindow.instances[ModalWindow.instances.length - 1] || null;
         }
     }
 
-    private isTabStacked = (element: HTMLElement) => {
-        const innerContainer = element.closest('.workspace-tab-header-container-inner');
-        const outerContainer = element.closest('.workspace-tab-container');
-
-        if (innerContainer) {
-            return false;
-        } else if (outerContainer) {
-            return true;
-        }
-        return false;
-    };
-
     onClose() {
-        // 当是isTabStacked时，检查右侧有无标签页，如果有，聚焦右侧标签页再聚焦回来
-        if (this.associatedLeaf) {
-            const tabHeaderEl = (this.associatedLeaf as any).tabHeaderEl;
-            if (tabHeaderEl && this.isTabStacked(tabHeaderEl)) {
-                // 在外部声明 allLeafs 数组来存储所有根标签页
-                const allLeafs: WorkspaceLeaf[] = [];
-                this.app.workspace.iterateRootLeaves((leaf: WorkspaceLeaf) => {
-                    allLeafs.push(leaf);  // 将每个 root leaf 存入数组
-                });
-        
-                // 找到当前标签页的索引
-                const currentIndex = allLeafs.findIndex(leaf => leaf === this.associatedLeaf);
-                // 获取右侧标签页
-                const nextLeaf = allLeafs[currentIndex + 1];
-        
-                if (nextLeaf) {
-                    // 保存当前活动的叶子
+        // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新 ModalWindow.instances.length == 1 && 
+        if (ModalWindow.activeInstance && this.plugin.settings.enableRefreshOnClose) {
+            const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
+            if(leafContent) {
+                const dataType = leafContent.getAttribute('data-type');
+                if (dataType == "canvas" || dataType == "mindmapview") {
+                    // new Notice("Refreshing the content...");
                     setTimeout(() => {
-                        const currentLeaf = this.app.workspace.getLeaf(false);
-                        // 点击右侧标签页
-                        this.app.workspace.setActiveLeaf(nextLeaf, { focus: true });
-                        // 延迟后再切回原来的标签页
-                        setTimeout(() => {
-                            if (currentLeaf) {
-                                this.app.workspace.setActiveLeaf(currentLeaf, { focus: true });
-                            }
-                        }, 50);
-                    }, 200);
+                        this.refreshMarkdownViews();
+                    }, this.plugin.settings.delayInMs);
                 }
-            }
-        }
-        
-        // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新
-        const modalOpener = this.containerEl.querySelector('.modal-opener');
-        if (modalOpener && this.plugin.settings.enableRefreshOnClose) {
-            const canvasView = this.app.workspace.getLeavesOfType("canvas").first()?.view;
-            const mindmapView = this.app.workspace.getLeavesOfType("mindmapview").first()?.view;
-            if (canvasView || mindmapView) {
-                setTimeout(() => {
-                    this.refreshMarkdownViews();
-                }, this.plugin.settings.delayInMs);
             }
         }
 
@@ -179,136 +146,24 @@ export class ModalWindow extends Modal {
             this.observer = null;
         }
 
-        if (this.associatedLeaf) {
-            this.associatedLeaf.detach();
-            this.associatedLeaf = undefined;
-        }
-
-        this.handledLeaves.forEach(leaf => {
-            if (leaf.view) {
-                leaf.detach();
-            }
-        });
-
-        this.handledLeaves = [];
-
         const { contentEl } = this;
         contentEl.empty();
 
-        // 检查是否所有模态窗口都已关闭，退出多光标模式
-        if (document.querySelectorAll('.modal-opener').length === 0) {
+        if (this.modalLeafRef) {
+            this.modalLeafRef.detach();
+            this.modalLeafRef = undefined;
+        }
+
+        // 恢复之前的活动叶子
+        if (this.prevActiveLeaf) {
+            this.app.workspace.setActiveLeaf(this.prevActiveLeaf);
+        }
+
+        // 仅一个模态窗口关闭前，退出多光标模式
+        if (ModalWindow.instances.length === 1) {
             setTimeout(() => {
                 this.exitMultiCursorMode();
             }, 100);
-        }
-    }
-
-    private exitMultiCursorMode() {
-        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView && activeView.editor) {
-            const editor = activeView.editor;
-            const cursor = editor.getCursor();
-            editor.setCursor(cursor);
-        }
-    }
-
-    private refreshMarkdownViews = async () => {
-        // 获取处理前滚动条位置百分比
-        const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-        if (!view) return;
-        let scrollPosition: any;
-        if (view.getMode() === "preview") {
-            scrollPosition = view.previewMode.getScroll();
-            // refresh the previewView.
-            setTimeout(() => {
-                view.previewMode.rerender(true);
-            }, 100);
-        } else if (view.getMode() === "source") {
-            const editView = view.currentMode;
-            if (editView && typeof editView.getScroll === 'function') {
-                scrollPosition = editView.getScroll();
-            } else if (view.editor) {
-                scrollPosition = view.editor.getScrollInfo();
-            }
-            // refresh the editView.
-            const editor = view.editor;
-            const content = editor.getValue();
-            // 第一步：移除所有 ![[]] 中的感叹号
-            const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
-            editor.setValue(modifiedContent);
-
-            // 第二步：重新添加感叹号到原本是 ![[]] 的链接
-            setTimeout(() => {
-                const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
-                    // 检查原始内容中是否存在 ![[p1]]
-                    return content.includes(`![[${p1}]]`) ? `![[${p1}]]` : `[[${p1}]]`;
-                });
-                editor.setValue(finalContent);
-                // 保持光标位置不变
-                const cursor = editor.getCursor();
-                editor.setCursor(cursor);
-            }, 100);
-        }
-
-        // 处理后滚动条滚动回去
-        setTimeout(() => {
-            const editView = view.currentMode;
-            editView.applyScroll(scrollPosition);
-        }, 500);
-    }
-
-    private handleActiveLeafChange() {
-        if (ModalWindow.activeInstance !== this) {
-            return;
-        }
-        
-        const activeLeaf = this.app.workspace.getLeaf(false);
-        this.associatedLeaf = activeLeaf;
-        if (activeLeaf) {
-            const modalElement = this.containerEl.querySelector('.modal-opener');
-            if (!modalElement) return;
-
-            const modalContainer = modalElement.querySelector('.modal-opener-content');
-            if (modalContainer) {
-                modalContainer.empty();
-                modalContainer.appendChild(activeLeaf.view.containerEl);
-
-                this.handledLeaves.push(activeLeaf);
-
-                const activeFile = this.app.workspace.getActiveFile();
-                const webViewContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
-                if (webViewContent) {
-                    const webviewElement = webViewContent.querySelector('webview');
-                    if (webviewElement) {
-                        const webviewerContent = activeLeaf.view.containerEl.querySelector('.webviewer-content');
-                        if (webviewerContent && this.plugin.settings.showFloatingButton) {
-                            // 移除现有的悬浮按钮
-                            const existingButton = document.querySelector('.floating-button-container');
-                            const existingMenuButton = document.querySelector('.floating-menu-container');
-                            if (existingButton) {
-                                existingButton.remove();
-                            }
-                            
-                            if ((this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link')
-                                && !existingMenuButton) {
-                                this.addFloatingButton(webviewerContent as HTMLElement);
-                            }
-                        }
-                        webviewElement.addEventListener("dom-ready", async (event: any) => {
-                            const srcValue = webviewElement.getAttribute('src');
-                            if (srcValue && srcValue != "data:text/plain,") {
-                                modalContainer.setAttribute('data-src', srcValue);
-                            }
-                        });
-                    }
-                } else if (activeFile && !this.updateFragmentLink) {
-                    const filePath = activeFile.path;
-                    modalContainer.setAttribute('data-src', filePath);
-                }
-
-                this.focusOnModalContent();
-                this.updateFragmentLink = false;
-            }
         }
     }
 
@@ -318,17 +173,15 @@ export class ModalWindow extends Modal {
         }
 
         this.contentEl.empty();
+        this.contentEl.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
-        fileContainer.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
-        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
-                this.addOpenInNewLeafButton(wrapperContainer);
+                this.addOpenInNewLeafButton(this.contentEl);
             }
         }
 
-        let mode: 'source' | 'preview';
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        let mode;
         switch (this.plugin.settings.fileOpenMode) {
             case 'source':
                 mode = 'source';
@@ -337,44 +190,22 @@ export class ModalWindow extends Modal {
                 mode = 'preview';
                 break;
             default:
-                mode = activeView?.getMode() === 'source' ? 'source' : 'preview';
+                mode = (this.prevActiveLeaf?.view instanceof MarkdownView) && this.prevActiveLeaf.view.getMode() === 'source' ? 'source' : 'preview';
         }
 
-        if (fragment) {
-            const filePath = `${file.path}#${fragment}`;
-            const newLeaf = this.app.workspace.getLeaf(true);
-            this.handledLeaves.push(newLeaf);
-            await newLeaf.openFile(file);
-
-            if (this.plugin.settings.hideTabHeader) {
-                (newLeaf as any).tabHeaderEl.style.display = 'none';
-            }
-            this.associatedLeaf = newLeaf;
-
-            setTimeout(() => {
+        if (this.modalLeafRef) {
+            await this.modalLeafRef.openFile(file, { state: { mode } });
+            fileContainer.appendChild(this.modalLeafRef.view.containerEl);
+            if (fragment) {
+                const filePath = `${file.path}#${fragment}`;
                 this.app.workspace.openLinkText(filePath, file.path, false);
-            }, 100);
-
-            const view = newLeaf.view as MarkdownView;
-            if (view instanceof MarkdownView) {
-                const currentState = view.getState();
-                currentState.mode = mode;
-                view.setState(currentState, { history: false });
-                fileContainer.appendChild(view.containerEl);
+                // setTimeout(() => {
+                //     this.app.workspace.openLinkText(filePath, file.path, false);
+                // }, 100);
             }
-        } else {
-            const leaf = this.app.workspace.getLeaf(true);
-            await leaf.openFile(file, { state: { mode } });
-            this.handledLeaves.push(leaf);
-            if (this.plugin.settings.hideTabHeader) {
-                (leaf as any).tabHeaderEl.style.display = 'none';
-            }
-
-            fileContainer.appendChild(leaf.view.containerEl);
-            this.leaf = leaf;
-            this.associatedLeaf = leaf;
         }
 
+        this.setupDoubleClickHandler();
         this.setContainerHeight(fileContainer, false);
 
         const noteToolbarPlugin = this.getPlugin("note-toolbar");
@@ -382,11 +213,9 @@ export class ModalWindow extends Modal {
             this.setupToolbarObserver();
         }
 
-        this.setupDoubleClickHandler();
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
     }
-
 
     private async displayLinkContent(link: string) {
         if (!this.contentEl) {
@@ -394,44 +223,148 @@ export class ModalWindow extends Modal {
         }
 
         this.contentEl.empty();
-        const linkContainer = this.contentEl.createEl("div", "modal-opener-content");
-        linkContainer.setAttribute("data-src", this.link);
-        const wrapperContainer = this.contentEl.createEl("div", "modal-content-wrapper");
+        this.contentEl.setAttribute("data-src", this.link);
+
+        const linkContainer = this.contentEl.createEl("div", "modal-opener-content"); 
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'link') {
-                wrapperContainer.appendChild(linkContainer);
-                this.addFloatingButton(wrapperContainer);
+                this.addFloatingButton(this.contentEl);
             }
         }
 
-        if (this.webviewPlugin) {
-            const currentLeaf = this.app.workspace.getLeaf(true)
-            this.loadSiteByWebViewer(link, currentLeaf)
-
-            this.handledLeaves.push(currentLeaf);
-            if (this.plugin.settings.hideTabHeader) {
-                (currentLeaf as any).tabHeaderEl.style.display = 'none';
-            }
-            linkContainer.appendChild(currentLeaf.view.containerEl);
-            if (this.associatedLeaf) {
-                this.associatedLeaf.detach();
-                this.associatedLeaf = undefined;
-            }
-            this.associatedLeaf = currentLeaf;
+        if (this.webviewPlugin && this.modalLeafRef) {
+            this.loadSiteByWebViewer(link, this.modalLeafRef);
+            linkContainer.appendChild(this.modalLeafRef.view.containerEl);
         } else {
-            if(Platform.isMobile) {
+            if (Platform.isMobile) {
                 const frame = linkContainer.createEl("iframe", { cls: "modal-iframe" });
                 frame.src = link;
             } else {
                 this.createWebview(this.contentEl, linkContainer);
             }
         }
-        this.setContainerHeight(linkContainer, true);
+
         this.setupDoubleClickHandler();
+        this.setContainerHeight(linkContainer, true);
+    }
+    
+    private handleInternalLinkClick(event: MouseEvent) {
+        let target = event.target as HTMLElement;
+        // 检查点击事件是否来自 workspace-leaf-content 内的元素
+        const isInWorkspaceLeaf = target.closest('.workspace-leaf-content');
+        if (!isInWorkspaceLeaf) return;
+
+        let linkText = this.getLinkFromTarget(target);
+        if (!linkText) return;
+
+        if (ModalWindow.activeInstance?.contentEl) {
+            if (this.isValidURL(linkText)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+
+                this.link = linkText;
+                ModalWindow.activeInstance?.contentEl.setAttribute('data-src', linkText);
+
+                if (this.webviewPlugin && this.modalLeafRef) { // 使用 webviewer 插件
+                    this.loadSiteByWebViewer(linkText, this.modalLeafRef);
+                } else {
+                    const modalContainer = this.containerEl.querySelector('.modal-opener-content') as HTMLElement;
+                    if (Platform.isMobile) {
+                        const frame = modalContainer.createEl("iframe", { cls: "modal-iframe" });
+                        frame.src = linkText;
+                    } else {
+                        this.createWebview(this.contentEl, modalContainer);
+                    }
+
+                    const buttons = document.querySelectorAll('.floating-button-container, .floating-menu-container');
+                    buttons.forEach(button => button.remove());
+                    if (this.plugin.settings.viewOfDisplayButton === 'both' || 
+                        this.plugin.settings.viewOfDisplayButton === 'link') {
+                        this.addFloatingButton(ModalWindow.activeInstance?.contentEl as HTMLElement);
+                    }
+                }
+            } else {
+                if (linkText?.startsWith('#')) {
+                    const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+                    linkText = currentFilePath + linkText;
+                }
+                const [path, fragment] = linkText.split(/[#]/);
+                const file = this.app.metadataCache.getFirstLinkpathDest(path, "") as TFile | undefined;
+                if (!file) return;
+                if(fragment) {
+                    ModalWindow.activeInstance?.contentEl.setAttribute('data-src', `${file.path}#${fragment}`);
+                } else {
+                    ModalWindow.activeInstance?.contentEl.setAttribute('data-src', `${file.path}`);
+                }
+                
+                this.updateFragmentLink = true;
+            }
+        }
     }
 
+    private handleActiveLeafChange() {
+        if (ModalWindow.activeInstance !== this) {
+            return;
+        }
 
-    createWebview = (contentEl: HTMLElement, containerEl: HTMLElement) => {
+        if (this.modalLeafRef) { // 跳转网页 canvas 或其他文件处理
+            const modalElement = this.containerEl.querySelector('.modal-opener');
+            if (!modalElement) return;
+
+            const modalContainer = modalElement.querySelector('.modal-opener-content');
+            if (modalContainer) {
+                modalContainer.empty();
+                modalContainer.appendChild(this.modalLeafRef.view.containerEl);
+
+                // 检查内容类型并添加相应按钮
+                if (this.plugin.settings.showFloatingButton) {
+                    const buttons = document.querySelectorAll('.floating-button-container, .floating-menu-container');
+                    buttons.forEach(button => button.remove());
+
+                    const hasWebContent = this.modalLeafRef.view.containerEl.querySelector('webview, iframe, .webviewer-content');
+                    if (hasWebContent) {
+                        if (this.plugin.settings.viewOfDisplayButton === 'both' || 
+                            this.plugin.settings.viewOfDisplayButton === 'link') {
+                            const webviewerContent = hasWebContent.classList.contains('webviewer-content') 
+                                ? hasWebContent 
+                                : ModalWindow.activeInstance?.contentEl;
+                            this.addFloatingButton(webviewerContent as HTMLElement);
+                        }
+
+                        const webviewElement = hasWebContent.querySelector('webview');
+                        if (webviewElement) {
+                            webviewElement.addEventListener("dom-ready", async () => {
+                                const srcValue = webviewElement.getAttribute('src');
+                                if (srcValue && srcValue !== "data:text/plain,") {
+                                    // new Notice(`Updating data-src to ${srcValue}`);
+                                    ModalWindow.activeInstance?.contentEl.setAttribute('data-src', srcValue);
+                                }
+                            });
+                        }
+                    } else {
+                        if (this.plugin.settings.viewOfDisplayButton === 'both' || 
+                            this.plugin.settings.viewOfDisplayButton === 'file') {
+                            this.addOpenInNewLeafButton(ModalWindow.activeInstance?.contentEl);
+                        }
+
+                        const activeFile = this.app.workspace.getActiveFile();
+                        if (activeFile && !this.updateFragmentLink) {
+                            // new Notice(`Updating data-src to ${activeFile.path}`);
+                            ModalWindow.activeInstance?.contentEl.setAttribute('data-src', activeFile.path);
+                        }
+                    }
+                }
+                this.focusOnModalContent();
+                this.updateFragmentLink = false;
+            }
+        }
+    }
+
+    private createWebview = (contentEl: HTMLElement, containerEl: HTMLElement) => {
+        if (!this.contentEl) {
+            return;
+        }
+        containerEl.empty();
         const doc = contentEl.doc;
         const webviewEl = doc.createElement('webview');
         webviewEl.setAttribute("allowpopups", "");
@@ -440,7 +373,7 @@ export class ModalWindow extends Modal {
         webviewEl.addClass("modal-webview");
         containerEl.appendChild(webviewEl);
 
-        if (this.link) webviewEl.setAttribute("src", this.link);;
+        if (this.link) webviewEl.setAttribute("src", this.link);
 
         webviewEl.addEventListener("dom-ready", async (event: any) => {
             const { remote } = (window as any).require('electron');
@@ -455,14 +388,13 @@ export class ModalWindow extends Modal {
                 this.createWebview(contentEl, containerEl);
             });
 
-            if(this.plugin.settings.enableWebAutoDarkMode) {
+            if (this.plugin.settings.enableWebAutoDarkMode) {
                 await this.registerWebAutoDarkMode(webContents);
             }
-            if(this.plugin.settings.enableImmersiveTranslation) {
+            if (this.plugin.settings.enableImmersiveTranslation) {
                 await this.registerImmersiveTranslation(webContents);
             }
         });
-
 
         webviewEl.addEventListener('destroyed', () => {
             if (doc !== this.contentEl.doc) {
@@ -491,14 +423,14 @@ export class ModalWindow extends Modal {
         });
 
         const webviewEl = document.querySelector("webview");
-        if(webviewEl) {
+        if (webviewEl) {
             webviewEl.addEventListener("dom-ready", async (event: any) => {
                 const { remote } = (window as any).require('electron');
                 // @ts-ignore
                 const webContents = remote.webContents.fromId(
                     (webviewEl as any).getWebContentsId()
                 );
-    
+
                 // Open new browser tab if the web view requests it.
                 webContents.setWindowOpenHandler((event: any) => {
                     this.app.workspace.getLeaf(true).setViewState({
@@ -514,77 +446,30 @@ export class ModalWindow extends Modal {
                         action: "allow",
                     };
                 });
-    
-                if(this.plugin.settings.enableWebAutoDarkMode) {
+
+                if (this.plugin.settings.enableWebAutoDarkMode) {
                     await this.registerWebAutoDarkMode(webContents);
                 }
-                if(this.plugin.settings.enableImmersiveTranslation) {
+                if (this.plugin.settings.enableImmersiveTranslation) {
                     await this.registerImmersiveTranslation(webContents);
                 }
             });
         }
     }
 
-    private handleInternalLinkClick = (event: MouseEvent) => {
-        let target = event.target as HTMLElement;
-        let linkText = this.getLinkFromTarget(target);
-        if(this.isValidURL(linkText)) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-            const leaf = this.app.workspace.getLeaf(true);
-            this.loadSiteByWebViewer(linkText, leaf);
-            return;
-        }
-        // 更新带锚点的链接
-        if (linkText?.startsWith('#')) {
-            const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
-            linkText = currentFilePath + linkText;
-        }
-        const [path, fragment] = linkText.split(/[#]/);
-        const abstractFile = this.app.metadataCache.getFirstLinkpathDest(path, "");
-        let file: TFile | undefined;
-
-        if (abstractFile instanceof TFile) {
-            file = abstractFile;
-        } else {
-            file = undefined;
-        }
-
-        // 检测文件是否存在
-        if (!file && !this.isValidURL(linkText)) {
-            return;
-        }
-
-        if (file) {
-            const filePath = `${file.path}#${fragment}`;
-            const modalContainer = this.containerEl.querySelector('.modal-opener-content');
-            if (modalContainer) {
-                modalContainer.setAttribute('data-src', filePath);
-                this.updateFragmentLink = true;
-            }
-        }
-    }
-
-    private getLinkFromTarget(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
-    }
-
     private focusOnModalContent() {
-        if (this.associatedLeaf?.view instanceof MarkdownView) {
-            const editor = this.associatedLeaf.view.editor;
+        if (this.modalLeafRef?.view instanceof MarkdownView) {
+            const editor = this.modalLeafRef.view.editor;
             editor.focus();
         } else {
-            const modalContainer = this.containerEl.querySelector('.modal-opener-content');
-            if (modalContainer instanceof HTMLElement) {
-                modalContainer.focus();
+            if (ModalWindow.activeInstance?.contentEl) {
+                ModalWindow.activeInstance?.contentEl.focus();
             }
         }
     }
 
     private setupDoubleClickHandler() {
-        this.modalEl = this.containerEl.querySelector('.modal-opener') as HTMLElement;
-
-        if (this.modalEl) {
+        if (ModalWindow.activeInstance?.contentEl) {
             this.modalEl.addEventListener('dblclick', (event: MouseEvent) => {
                 const target = event.target as HTMLElement;
                 if (!this.isClickableArea(target)) {
@@ -615,27 +500,6 @@ export class ModalWindow extends Modal {
         return true;
     }
 
-    private openExternalLink(link: string) {
-        if (this.webviewPlugin) {
-            const leaf = this.app.workspace.getLeaf(true);
-            this.loadSiteByWebViewer(link, leaf);
-        } else {
-            const newLeaf = this.app.workspace.getLeaf(true);
-            const contentEl = newLeaf.view.containerEl;
-            contentEl.empty();
-            if(Platform.isMobile) {
-                const frame = contentEl.createEl("iframe", { cls: "modal-iframe" });
-                frame.src = link;
-            } else {
-                const activeLeaf = document.querySelector(".workspace-leaf.mod-active")
-                if (activeLeaf) {
-                    const linkContainer = activeLeaf.querySelector(".workspace-leaf-content") as HTMLElement;
-                    this.createWebview(contentEl, linkContainer);
-                }
-            }
-        }
-    }
-
     private setContainerHeight(container: HTMLElement, isLinkView: boolean) {
         const baseHeight = parseInt(this.plugin.settings.modalHeight, 10);
         let heightAdjustment = 5; // 默认调整值
@@ -644,9 +508,9 @@ export class ModalWindow extends Modal {
             if (this.webviewPlugin) {
                 heightAdjustment = 6;
             } else {
-                if(Platform.isMobile) {
+                if (Platform.isMobile) {
                     heightAdjustment = 5.5;
-                } else{
+                } else {
                     heightAdjustment = 4;
                 }
             }
@@ -717,11 +581,6 @@ export class ModalWindow extends Modal {
         container.style.setProperty('--adjusted-modal-height', adjustedModalHeight);
     }
 
-    private getPlugin(pluginId: string) {
-        const app = this.plugin.app as any;
-        return app.plugins.plugins[pluginId];
-    }
-
     private async checkURLReachability(url: string): Promise<boolean> {
         try {
             const response: RequestUrlResponse = await requestUrl({
@@ -735,7 +594,11 @@ export class ModalWindow extends Modal {
         }
     }
 
-    isValidURL(url: string): boolean {
+    private getLinkFromTarget(target: HTMLElement): string {
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+    }
+
+    private isValidURL(url: string): boolean {
         try {
             const parsedURL = new URL(url);
             // 允许 http 和 https 协议
@@ -748,6 +611,60 @@ export class ModalWindow extends Modal {
         } catch {
             return false;
         }
+    }
+
+    private exitMultiCursorMode() {
+        const activeView = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (activeView && activeView.editor) {
+            const editor = activeView.editor;
+            const cursor = editor.getCursor();
+            editor.setCursor(cursor);
+        }
+    }
+
+    private refreshMarkdownViews = async () => {
+        // 获取处理前滚动条位置百分比
+        const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
+        if (!view) return;
+        let scrollPosition: any;
+        if (view.getMode() === "preview") {
+            scrollPosition = view.previewMode.getScroll();
+            // refresh the previewView.
+            setTimeout(() => {
+                view.previewMode.rerender(true);
+            }, 100);
+        } else if (view.getMode() === "source") {
+            const editView = view.currentMode;
+            if (editView && typeof editView.getScroll === 'function') {
+                scrollPosition = editView.getScroll();
+            } else if (view.editor) {
+                scrollPosition = view.editor.getScrollInfo();
+            }
+            // refresh the editView.
+            const editor = view.editor;
+            const content = editor.getValue();
+            // 第一步：移除所有 ![[]] 中的感叹号
+            const modifiedContent = content.replace(/!\[\[(.+?)\]\]/g, '[[$1]]');
+            editor.setValue(modifiedContent);
+
+            // 第二步：重新添加感叹号到原本是 ![[]] 的链接
+            setTimeout(() => {
+                const finalContent = editor.getValue().replace(/\[\[(.+?)\]\]/g, (match, p1) => {
+                    // 检查原始内容中是否存在 ![[p1]]
+                    return content.includes(`![[${p1}]]`) ? `![[${p1}]]` : `[[${p1}]]`;
+                });
+                editor.setValue(finalContent);
+                // 保持光标位置不变
+                const cursor = editor.getCursor();
+                editor.setCursor(cursor);
+            }, 100);
+        }
+
+        // 处理后滚动条滚动回去
+        setTimeout(() => {
+            const editView = view.currentMode;
+            editView.applyScroll(scrollPosition);
+        }, 500);
     }
 
     // 适配NoteToolBar
@@ -775,6 +692,63 @@ export class ModalWindow extends Modal {
             // 保留第一个工具栏，移除其他的
             for (let i = 1; i < toolbars.length; i++) {
                 toolbars[i].remove();
+            }
+        }
+    }
+
+    private copyWebLink() {
+        if (ModalWindow.activeInstance?.contentEl) {
+            const src = ModalWindow.activeInstance.contentEl.getAttribute('data-src') || '';
+            if (src) {
+                navigator.clipboard.writeText(src)
+                    .then(() => new Notice(t("Copied to clipboard")));
+            }
+        }
+    }
+
+    public openInNewTab() {
+        if (ModalWindow.activeInstance?.contentEl) {
+            const src = ModalWindow.activeInstance.contentEl.getAttribute('data-src') || '';
+            // 关闭所有 modal 实例
+            ModalWindow.instances.forEach((instance) => {
+                instance.close();
+            });
+
+            if (this.isValidURL(src)) {
+                if (this.webviewPlugin) {
+                    const leaf = this.app.workspace.getLeaf(true);
+                    this.loadSiteByWebViewer(src, leaf);
+                } else {
+                    const newLeaf = this.app.workspace.getLeaf(true);
+                    const contentEl = newLeaf.view.containerEl;
+                    contentEl.empty();
+                    if (Platform.isMobile) {
+                        const frame = contentEl.createEl("iframe", { cls: "modal-iframe" });
+                        frame.src = src;
+                    } else {
+                        this.createWebview(contentEl, newLeaf.view.containerEl);
+                    }
+                }
+            } else {
+                const [filePath, fragment] = src.split('#');
+                const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+                if (file instanceof TFile) {
+                    this.plugin.app.workspace.openLinkText(src, filePath, 'tab');
+                }
+            }
+        }
+    }
+
+    private openInBrowser() {
+        if (ModalWindow.activeInstance?.contentEl) {
+            const src = ModalWindow.activeInstance.contentEl.getAttribute('data-src') || '';
+            if (this.isValidURL(src)) {
+                if (this.webviewPlugin) {
+                    (window as any).require("electron").shell.openExternal(src);
+                } else {
+                    window.open(src);
+                }
+                // this.close();
             }
         }
     }
@@ -843,63 +817,17 @@ export class ModalWindow extends Modal {
         return button;
     }
 
-    private copyWebLink() {
-        const modalElement = this.containerEl.querySelector('.modal-opener-content');
-        if (!modalElement) return;
-
-        const dataSrc = modalElement.getAttribute('data-src');
-        if (dataSrc) {
-            navigator.clipboard.writeText(dataSrc)
-                .then(() => new Notice(t("Copied to clipboard")));
-        }
+    private getPlugin(pluginId: string) {
+        const app = this.plugin.app as any;
+        return app.plugins.plugins[pluginId];
     }
 
-    public openInNewTab() {
-        const modalElement = this.containerEl.querySelector('.modal-opener');
-        if (!modalElement) return;
-        const modalContainer = modalElement.querySelector('.modal-opener-content');
-
-        if (modalContainer) {
-            const src = modalContainer.getAttribute('data-src') || '';
-            if (this.isValidURL(src)) {
-                this.openExternalLink(src);
-            } else {
-                const [filePath, fragment] = src.split('#');
-                const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
-                if (file instanceof TFile) {
-                    this.plugin.app.workspace.openLinkText(src, filePath, 'tab');
-                }
-            }
-            // 关闭所有 modal 实例
-            ModalWindow.instances.forEach((instance) => {
-                instance.close();
-            });
-        }
-    }
-
-    private openInBrowser() {
-        const modalElement = this.containerEl.querySelector('.modal-opener');
-        if (!modalElement) return;
-        const modalContainer = modalElement.querySelector('.modal-opener-content');
-
-        if (modalContainer) {
-            const src = modalContainer.getAttribute('data-src') || '';
-            if (this.isValidURL(src)) {
-                if (this.webviewPlugin) {
-                    (window as any).require("electron").shell.openExternal(src);
-                } else {
-                    window.open(src);
-                }
-                // this.close();
-            }
-        }
-    }
     async registerWebAutoDarkMode(webContents: any) {
-		try {
+        try {
             const isDarkMode = document.body.classList.contains('theme-dark');
-			if (isDarkMode) {
-				try {
-					await webContents.executeJavaScript(`
+            if (isDarkMode) {
+                try {
+                    await webContents.executeJavaScript(`
 						const element = document.createElement('script');
 
 						fetch('https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js')
@@ -928,10 +856,10 @@ export class ModalWindow extends Modal {
 							}
 						};
 					`);
-				} catch (e) {
-					console.error(e);
-				}
-			} else {
+                } catch (e) {
+                    console.error(e);
+                }
+            } else {
                 try {
                     await webContents.executeJavaScript(`
                         if (DarkReader) {
@@ -943,12 +871,12 @@ export class ModalWindow extends Modal {
                     console.error('Error disabling dark mode: ', e);
                 }
             }
-		} catch (err) {
-			console.error("Failed to get background color: ", err);
-		}
+        } catch (err) {
+            console.error("Failed to get background color: ", err);
+        }
 
-		// https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
-		webContents.executeJavaScript(`
+        // https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
+        webContents.executeJavaScript(`
 			window.addEventListener('mouseover', (e) => {
 				if(!e.target) return;
 				if(!e.ctrlKey && !e.metaKey) return;
@@ -984,5 +912,5 @@ export class ModalWindow extends Modal {
             script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-latest.js';
             document.head.appendChild(script);
         `);
-	}
+    }
 }

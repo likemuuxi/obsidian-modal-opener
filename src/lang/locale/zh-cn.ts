@@ -94,8 +94,6 @@ export default {
     'Show file metadata in the modal window':'在模态窗口中显示文件元数据',
     'Hide scroll': '隐藏滚动条',
     'Hide scrollbar in the modal window': '在模态窗口中隐藏滚动条',
-    'Hide tab header':'隐藏标签页头部',
-    'Hides the tab header associated with the modal window':'隐藏与模态窗口关联的标签页头部',
 
     'Enable the right-click menu':'启用右键菜单',
     'Show or hide the menu and its menu options':'显示或隐藏菜单及其菜单选项',

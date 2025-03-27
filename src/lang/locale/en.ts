@@ -93,8 +93,6 @@ export default {
   'Show file metadata in the modal window':'Show file metadata in the modal window',
   'Hide scroll': 'Hide scroll',
   'Hide scrollbar in the modal window': 'Hide scrollbar in the modal window',
-  'Hide tab header':'Hide tab header',
-  'Hides the tab header associated with the modal window':'Hides the tab header associated with the modal window',
 
   'Enable the right-click menu':'Enable the right-click menu',
   'Show or hide the menu and its menu options':'Show or hide the menu and select menu items',

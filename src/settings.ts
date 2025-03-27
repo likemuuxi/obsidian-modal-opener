@@ -21,7 +21,6 @@ export interface ModalOpenerPluginSettings {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideScroll: boolean;
-	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	modalOpenDelay: number;
@@ -70,7 +69,6 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	showLinkViewHeader: false,
 	showMetadata: false,
 	hideScroll: true,
-	hideTabHeader: true,
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
 	modalOpenDelay: 0,
@@ -112,7 +110,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideScroll: boolean;
-	hideTabHeader: boolean;
 	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	modalOpenDelay: number;
@@ -425,12 +422,12 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName(t('Hide tab header'))
-			.setDesc(t('Hides the tab header associated with the modal window'))
+			.setName(t('Hide scroll'))
+			.setDesc(t('Hide scrollbar in the modal window'))
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideTabHeader)
+				.setValue(this.plugin.settings.hideScroll)
 				.onChange(async (value) => {
-					this.plugin.settings.hideTabHeader = value;
+					this.plugin.settings.hideScroll = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
@@ -442,17 +439,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.showMetadata)
 				.onChange(async (value) => {
 					this.plugin.settings.showMetadata = value;
-					await this.plugin.saveSettings();
-					this.plugin.applyStyles();
-				}));
-
-		new Setting(containerEl)
-			.setName(t('Hide scroll'))
-			.setDesc(t('Hide scrollbar in the modal window'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideScroll)
-				.onChange(async (value) => {
-					this.plugin.settings.hideScroll = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));
