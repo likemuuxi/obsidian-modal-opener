@@ -19,30 +19,25 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 - Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
   ![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083438702.png)
 
-> The use of Diagrams requires the installation of my modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+> Create Diagrams from menu requires modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
 > Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
 >
 > Add toc in the modal window requires modified plugin: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
-> 
+
+# 🪒How to install
+
+[obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
 
 # 🎯How to use
 
 - Reading mode
-
   - Drag and drop
   - Right click menu
   - `alt` + Left mouse button
 - Edit mode
-
   - Right click menu
   - `alt` + Left mouse button
-
-# 🪒How to install
-
-## Install from community
-
-[obsidian-modal-opener](https://obsidian.md/plugins?id=modal-opener)
 
 # 🥰Special thanks
 
