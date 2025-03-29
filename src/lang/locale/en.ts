@@ -6,6 +6,8 @@ export default {
   "No active modal window":"No active modal window",
   "No link found at cursor position":"No link found at cursor position",
 
+  'Toggle table of contents': 'Toggle table of contents',
+
   "Create and edit in modal":"Create and edit in modal",
   "Enter new file name": "Enter new file name: ",
   "Wiki link": "Wiki link",
@@ -14,9 +16,10 @@ export default {
   'Custom element selectors':'Custom element selectors',
   'Enter CSS selectors for elements that should trigger preview mode (comma-separated)':'Enter CSS selectors for elements that should trigger preview mode (comma-separated)',
 
+  'File not found: ': 'File not found: ',
   "Unsupported file or link format": "Unsupported file or link format",
   "Drag duration too short": "Drag duration too short",
-  "The file or link does not exist: ": "The file or link does not exist: ",
+  "The file or link does not valid: ": "The file or link does not valid: ",
   "Failed to create file: ": "Failed to create file: ",
   "Open in modal window error": "Open in modal window error",
   "Open in modal window": "Open in modal window",

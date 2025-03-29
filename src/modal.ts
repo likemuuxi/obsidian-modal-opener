@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -19,7 +19,7 @@ export class ModalWindow extends Modal {
     private updateFragmentLink: boolean;
     private observer: MutationObserver | null = null;
     private webviewPlugin: boolean;
-
+    private hideTimeout: NodeJS.Timeout;
 
     constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string) {
         super(plugin.app);
@@ -159,12 +159,16 @@ export class ModalWindow extends Modal {
             this.app.workspace.setActiveLeaf(this.prevActiveLeaf);
         }
 
-        // 仅一个模态窗口关闭前，退出多光标模式
-        if (ModalWindow.instances.length === 1) {
-            setTimeout(() => {
-                this.exitMultiCursorMode();
-            }, 100);
-        }
+        // 最后一个模态窗口关闭前，退出多光标模式
+        // if (ModalWindow.instances.length === 1) {
+        //     const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
+        //     console.log(cursorPosition);
+        //     if (cursorPosition !== 0) {
+        //         setTimeout(() => {
+        //             this.exitMultiCursorMode();
+        //         }, 100);
+        //     }
+        // }
     }
 
     private async displayFileContent(file: TFile, fragment: string) {
@@ -177,6 +181,7 @@ export class ModalWindow extends Modal {
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
         if (this.plugin.settings.showFloatingButton) {
             if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
+                this.addTocButton(this.contentEl);
                 this.addOpenInNewLeafButton(this.contentEl);
             }
         }
@@ -311,7 +316,7 @@ export class ModalWindow extends Modal {
             const modalElement = this.containerEl.querySelector('.modal-opener');
             if (!modalElement) return;
 
-            const modalContainer = modalElement.querySelector('.modal-opener-content');
+            const modalContainer = modalElement.querySelector('.modal-opener-content') as HTMLElement;
             if (modalContainer) {
                 modalContainer.empty();
                 modalContainer.appendChild(this.modalLeafRef.view.containerEl);
@@ -341,6 +346,7 @@ export class ModalWindow extends Modal {
                                 }
                             });
                         }
+                        this.setContainerHeight(modalContainer, true);
                     } else {
                         if (this.plugin.settings.viewOfDisplayButton === 'both' || 
                             this.plugin.settings.viewOfDisplayButton === 'file') {
@@ -352,8 +358,10 @@ export class ModalWindow extends Modal {
                             // new Notice(`Updating data-src to ${activeFile.path}`);
                             ModalWindow.activeInstance?.contentEl.setAttribute('data-src', activeFile.path);
                         }
+                        this.setContainerHeight(modalContainer, false);
                     }
                 }
+                
                 this.focusOnModalContent();
                 this.updateFragmentLink = false;
             }
@@ -820,6 +828,132 @@ export class ModalWindow extends Modal {
     private getPlugin(pluginId: string) {
         const app = this.plugin.app as any;
         return app.plugins.plugins[pluginId];
+    }
+
+    private addTocButton(container: HTMLElement) {
+        // 获取当前文件的元数据
+        const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+        if (!(file instanceof TFile)) return;
+    
+        const metadata = this.app.metadataCache.getCache(file.path);
+        const headings = metadata?.headings || [];
+    
+        // 如果没有标题，不显示目录按钮
+        if (!headings || headings.length === 0) return;
+    
+        const buttonContainer = container.createEl('div', { cls: 'floating-button-container toc-button' });
+        const tocButton = this.createMenuItem(buttonContainer, 'list', t('Toggle table of contents'), () => {
+            this.toggleTableOfContents(buttonContainer);
+        });
+        tocButton.addClass('toc-toggle');
+    
+        // 添加鼠标悬浮事件
+        buttonContainer.addEventListener('mouseenter', () => {
+            clearTimeout(this.hideTimeout);
+            this.toggleTableOfContents(buttonContainer, true);
+        });
+    }
+    
+    private toggleTableOfContents(buttonContainer: HTMLElement, isHover: boolean = false) {
+        let tocContainer = this.contentEl.querySelector('.modal-toc-container') as HTMLElement;
+        
+        if (tocContainer) {
+            if (!isHover) {
+                tocContainer.remove();
+            }
+            return;
+        }
+    
+        // 创建目录容器
+        tocContainer = this.contentEl.createEl('div', { cls: 'modal-toc-container' });
+        
+        // 获取当前文件的元数据
+        const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+        if (!(file instanceof TFile)) return;
+    
+        const metadata = this.app.metadataCache.getCache(file.path);
+        const headings = metadata?.headings || [];
+    
+        // 添加目录标题
+        tocContainer.createEl('div', { cls: 'toc-header', text: '目录' });
+        
+        // 生成目录内容
+        this.renderTocContent(tocContainer, headings);
+        
+        // 定位目录容器到按钮左上方
+        const buttonRect = buttonContainer.getBoundingClientRect();
+        tocContainer.style.bottom = `${window.innerHeight - buttonRect.bottom + 50}px`;
+        tocContainer.style.right = `${window.innerWidth - buttonRect.right + 30}px`;
+    
+        // 添加鼠标离开事件
+        const handleMouseLeave = () => {
+            this.hideTimeout = setTimeout(() => {
+                tocContainer.remove();
+            }, 100);
+        };
+    
+        tocContainer.addEventListener('mouseenter', () => {
+            clearTimeout(this.hideTimeout);
+        });
+    
+        tocContainer.addEventListener('mouseleave', handleMouseLeave);
+    
+        buttonContainer.addEventListener('mouseleave', (e) => {
+            const toElement = e.relatedTarget as HTMLElement;
+            if (!tocContainer.contains(toElement)) {
+                handleMouseLeave();
+            }
+        });
+    }
+    
+    private renderTocContent(container: HTMLElement, headings: any[]) {
+        if (!headings.length) {
+            container.createEl('div', { cls: 'toc-empty', text: 'No headings found' });
+            return;
+        }
+    
+        const tocList = container.createEl('div', { cls: 'toc-list' });
+        const minLevel = Math.min(...headings.map(h => h.level));
+        
+        // 创建目录项
+        headings.forEach((heading) => {
+            const tocItem = tocList.createEl('div', { 
+                cls: 'toc-item',
+                attr: { 'data-heading': heading.heading }
+            });
+            
+            // 创建内容容器，并应用缩进
+            const contentContainer = tocItem.createEl('div', { cls: 'toc-item-content' });
+            contentContainer.style.paddingLeft = `${(heading.level - minLevel) * 20}px`;
+            
+            // 添加无序列表样式的圆点
+            contentContainer.createEl('span', { cls: 'toc-bullet' });
+            
+            // 添加标题文本，使用Markdown渲染
+            const textContainer = contentContainer.createEl('span', { cls: 'toc-item-text' });
+            
+            // 使用Obsidian的MarkdownRenderer渲染标题文本
+            MarkdownRenderer.render(this.app,
+                heading.heading,
+                textContainer,
+                '',
+                this.plugin
+            );
+            
+            // 添加点击事件
+            tocItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+                if (file instanceof TFile) {
+                    this.app.workspace.openLinkText(`${file.path}#${heading.heading}`, file.path, false);
+                    
+                    // 高亮当前选中项
+                    const allItems = container.querySelectorAll('.toc-item');
+                    allItems.forEach(item => item.removeClass('active'));
+                    tocItem.addClass('active');
+                }
+            });
+        });
     }
 
     async registerWebAutoDarkMode(webContents: any) {

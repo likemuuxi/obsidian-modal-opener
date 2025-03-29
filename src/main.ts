@@ -1,9 +1,9 @@
-import { App, Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
+import { t } from "./lang/helpers"
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
-import { t } from "./lang/helpers"
 import { DEFAULT_SETTINGS, ModalOpenerPluginSettings, } from "./settings";
-import { platform } from "os";
+
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -22,12 +22,12 @@ export default class ModalOpenerPlugin extends Plugin {
     private dragStartTime: number | null = null;
     private dragHandler: (() => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
-
+    private documentClickHandler: ((evt: MouseEvent) => void) | undefined;
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
     private activeLeafChangeTimeout: NodeJS.Timeout | null = null;
-    private isProcessing: boolean = false; // 用于状态锁定
-
+    private isProcessing: boolean = false;
+    private webviewPlugin: boolean = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
 
     async onload() {
         await this.loadSettings();
@@ -39,10 +39,9 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
         this.registerEvent(this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this)));
 
-        this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+        this.documentClickHandler = (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
-            
-            // 检查是否点击了链接，并且没有 'external-link' 类
+            // 修改启用webviewer的ctrl+click点击行为
             if ((target.tagName === "A" && !target.hasClass("external-link") && target instanceof HTMLAnchorElement) || target instanceof HTMLAnchorElement) {
                 if ((evt.altKey && !evt.ctrlKey) || (this.settings.clickWithoutAlt && !evt.ctrlKey)) {
                     evt.preventDefault();
@@ -51,25 +50,27 @@ export default class ModalOpenerPlugin extends Plugin {
                     if (this.isValidURL(target.href)) {
                         this.openInFloatPreview(target.href);
                     }
-                } else if (evt.ctrlKey && !evt.altKey) {
-                    evt.preventDefault();
-                    evt.stopPropagation();
-                    evt.stopImmediatePropagation();
-                    const settingTab = document.querySelector('.modal.mod-settings.mod-sidebar-layout');
-                    if (settingTab) {
-                        (window as any).require("electron").shell.openExternal(target.href);
-                    } else {
-                        setTimeout(() => {
-                            const currentLeaf = this.app.workspace.getLeaf(false);
-                            if (currentLeaf?.view?.getViewType() === "webviewer") {
-                                (window as any).require("electron").shell.openExternal(target.href);
-                                currentLeaf.detach();
-                            }
-                        }, 100);
+                } if (evt.ctrlKey && !evt.altKey) {
+                    if (this.webviewPlugin) {
+                        const settingTab = document.querySelector('.modal.mod-settings.mod-sidebar-layout');
+                        if (settingTab) {
+                            (window as any).require("electron").shell.openExternal(target.href);
+                        } else {
+                            setTimeout(() => {
+                                const currentLeaf = this.app.workspace.getLeaf(false);
+                                if (currentLeaf?.view?.getViewType() === "webviewer") {
+                                    (window as any).require("electron").shell.openExternal(target.href);
+                                    currentLeaf.detach();
+                                }
+                            }, 50);
+                        }
                     }
                 }
             }
-        });
+        };
+
+        document.addEventListener('click', this.documentClickHandler);
+    
         this.addCommand({
             id: 'toggle-background-blur',
             name: 'Toggle background blur',
@@ -109,7 +110,19 @@ export default class ModalOpenerPlugin extends Plugin {
 
     onunload() {
         this.app.workspace.off("active-leaf-change", this.onActiveLeafChange.bind(this));
-        this.removeEventListeners();
+        if (this.documentClickHandler) {
+            document.removeEventListener('click', this.documentClickHandler);
+            this.documentClickHandler = undefined;
+        }
+        if (this.dragHandler) {
+            document.removeEventListener('dragstart', this.dragHandler);
+            document.removeEventListener('dragend', this.dragHandler);
+            this.dragHandler = undefined; // Clear reference
+        }
+        if (this.altClickHandler) {
+            document.removeEventListener('click', this.altClickHandler, { capture: true });
+            this.altClickHandler = undefined;
+        }
     }
 
     async loadSettings() {
@@ -122,17 +135,26 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
     }
 
+    private openCurrentContentInModal() {
+        this.openContentInModal(true);
+    }
+
+    private duplicateCurrentContentInModal() {
+        const leaf = this.app.workspace.activeLeaf; 
+        const isPinned = leaf?.getViewState().pinned;
+        isPinned ? this.openContentInModal(true) : this.openContentInModal(false);
+    }
+
     private openContentInModal(shouldDetach: boolean = false) {
-        const currentFile = this.app.workspace.getActiveFile()?.path || '';
-        const file = this.app.vault.getAbstractFileByPath(currentFile);
+        const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
+        const file = this.app.vault.getAbstractFileByPath(currentFilePath);
         const activeLeaf = this.app.workspace.getLeaf(false);
 
         if (!activeLeaf) {
             return;
         }
 
-        const webviewerPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
-        const frameSelector = webviewerPlugin ? 'webview' : 'iframe';
+        const frameSelector = this.webviewPlugin ? 'webview' : 'iframe';
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
 
@@ -154,14 +176,6 @@ export default class ModalOpenerPlugin extends Plugin {
         this.saveSettings();
     }
 
-    private openCurrentContentInModal() {
-        this.openContentInModal(true);
-    }
-
-    private duplicateCurrentContentInModal() {
-        this.openContentInModal(false);
-    }
-
     registerCustomCommands() {
         this.settings.customCommands.forEach(command => {
             this.addCommand({
@@ -176,15 +190,65 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.isValidURL(command)) {
             this.openInFloatPreview(command);
         } else {
-            if (command.includes('.canvas') || command.includes('.md') || command.includes('.excalidraw')) {
+            const abstractFile = this.app.vault.getAbstractFileByPath(command);
+            if (abstractFile instanceof TFile) {
                 this.openInFloatPreview(command);
             } else {
-                new Notice(t("Unsupported file or link format"));
+                const file = this.app.metadataCache.getFirstLinkpathDest(command, "");
+                if (file instanceof TFile) {
+                    this.openInFloatPreview(command);
+                } else {
+                    new Notice(t("File not found: ") + command);
+                }
             }
         }
     }
 
-    private removeEventListeners() {
+    private registerContextMenuHandler() {
+        this.registerEvent(
+            this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
+                const folderTarget = document.querySelector(`.nav-folder-title[data-path="${file.path}"]`);
+                const app = this.app as any;
+                const folderPlugin = app.plugins.plugins["folder-notes"];
+                if (folderPlugin) {
+                    if (folderTarget && folderTarget.classList.contains("has-folder-note")) {
+                        this.addFolderFloatMenuItem(menu, file.path);
+                    } else if (!folderTarget) {
+                        this.addFileFloatMenuItem(menu, file.path);
+                    }
+                } else {
+                    if (!folderTarget) {
+                        this.addFileFloatMenuItem(menu, file.path);
+                    }
+                }
+            })
+        );
+
+        this.registerEvent(
+            this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
+                this.addLinkFloatMenuItem(menu, link);
+            })
+        );
+
+        this.registerEvent(
+            this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView) => {
+                let parentPath = "";
+                if (view.file && view.file.parent) {
+                    parentPath = view.file.parent.path;
+                }
+
+                if (this.settings.showDeleteCommands) {
+                    this.addDeleteAttachmentMenuItem(menu, editor);
+                }
+
+                if (this.settings.showCommandsContainer) {
+                    this.addCreateFileMenuItem(menu, parentPath);
+                }
+            })
+        );
+    }
+
+    private registerOpenHandler() {
         if (this.dragHandler) {
             document.removeEventListener('dragstart', this.dragHandler);
             document.removeEventListener('dragend', this.dragHandler);
@@ -194,17 +258,12 @@ export default class ModalOpenerPlugin extends Plugin {
             document.removeEventListener('click', this.altClickHandler, { capture: true });
             this.altClickHandler = undefined;
         }
-    }
-
-    private registerOpenHandler() {
-        this.removeEventListeners();
-
         if (this.settings.openMethod === "drag" || this.settings.openMethod === "both") {
             this.registerDragHandler();
         }
         if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
             this.registerAltClickHandler();
-            this.registerTouchClickHandler();
+            if (Platform.isMobile) this.registerTouchClickHandler();
         }
     }
 
@@ -241,172 +300,326 @@ export default class ModalOpenerPlugin extends Plugin {
         this.dragHandler();
     }
 
-    private handlePreviewModeLink(evt: MouseEvent, isAltClick: boolean) {
-        let target = evt.target as HTMLElement;
-        // 向上查找包含 'internal-embed' 类的父元素
-        if (target.classList.contains('canvas-minimap')
-            || target.classList.contains('file-embed-title')
-            || target.classList.contains('markdown-embed-link')
-            || target.closest('svg')
-            || target.closest('.ptl-tldraw-image-container')
-            || target.closest('.dataloom-padding')
-            || target.closest('.dataloom-bottom-bar')
-            || target.closest('[data-viewport-type="element"]')
-            || target.closest('.dataloom-bottom-bar')
-        ) {
-            target = target.closest('.internal-embed') as HTMLElement || target;
-        }
+    private registerTouchClickHandler() {
+        // 移动端触摸事件监听
+        document.addEventListener('touchstart', (touchEvt: TouchEvent) => {
+            const target = touchEvt.target as HTMLElement;
+            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 
-        // 检查是否是链接或链接内的元素
-        const linkElement = target.tagName === 'A' ? target : target.closest('a');
-        if (linkElement && linkElement.hasAttribute('data-tooltip-position')) {
-            target = linkElement;
-        }
-        if (linkElement?.closest('.block-language-table-of-contents')) {
-            return;
-        }
-        
-        if (linkElement?.closest('.annotated-link')) {
-            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
-            if (abstractFile instanceof TFile) {
-                this.openInFloatPreview(abstractFile.path);
+            // 如果是移动端，处理触摸事件的链接点击
+            if (
+                this.settings.clickWithoutAlt &&
+                activeView?.getMode() === 'source' &&
+                target.classList.contains('cm-underline')
+            ) {
+                touchEvt.preventDefault();
+                touchEvt.stopImmediatePropagation();
+                // new Notice("isMobile Touch");
+                // this.handleSourceModeLink(activeView.editor, touchEvt);
             }
-            return;
-        }
+        }, { capture: true });
+    }
 
-        if (this.isPreviewModeLink(target)) {
-            evt.preventDefault();
-            evt.stopImmediatePropagation();
-            const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
-            const isFolderLink = target.classList.contains('has-folder-note');
-            const app = this.app as any;
-            const folderPlugin = app.plugins.plugins["folder-notes"];
+    /*
+    // 等canvas alt+click和其他类型一样表现为选取链接 可以改用此方法
+    private registerAltClickHandler() {
+        this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
+            if (evt.altKey && evt.button === 0) {
+                // 使用 setTimeout 来确保我们的处理在默认操作之后执行
+                setTimeout(() => {
+                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (activeView) {
+                        let targetElement = evt.target as HTMLElement;
+                        let altText = targetElement.getAttribute("alt");
 
-            if(this.isValidURL(link)) {
-                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'external') {
-                    if (!folderPlugin || !isFolderLink) {
-                        this.openInFloatPreview(link);
-                    } else {
-                        this.folderNoteOpenInFloatPreview(link);
-                    }
-                    return;
-                }
-                if (isAltClick) {
-                    this.openInFloatPreview(link);
-                } else {
-                    this.app.workspace.getLeaf(true).setViewState({
-                        type: "webviewer",
-                        active: true,
-                        state: {
-                            url: link,
-                            navigate: true,
-                            target: "_self",
+                        if (this.isPreviewModeLink(targetElement)) {
+                            this.handlePreviewModeLink(evt);
+                        } else {
+                            if (activeView.getMode() === 'source') {
+                                // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
+                                if (targetElement.closest('svg')) {
+                                    this.handlePreviewModeLink(evt);
+                                    return;
+                                }
+                                // 适配diagram.net svg 类型的文件 alt+点击  不做处理
+                                if (altText && altText.endsWith(".svg")) {
+                                    return;
+                                }
+                                this.handleSourceModeLink(activeView.editor);
+                            } else {
+                                this.handlePreviewModeLink(evt);
+                            }
                         }
-                    });
-                }
-            } else {
-                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
-                    if (!folderPlugin || !isFolderLink) {
-                        this.openInFloatPreview(link);
-                    } else {
-                        this.folderNoteOpenInFloatPreview(link);
                     }
-                    return;
-                } 
-                const [filePath, fragment] = link.split('#');
-                const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
-                if (file instanceof TFile) {
-                    if (isAltClick) {
-                        this.openInFloatPreview(link);
-                    } else {
-                        this.app.workspace.openLinkText(link, filePath, false);
+                }, 10);
+            }
+        });
+    } */
+
+    private registerAltClickHandler() {
+        this.altClickHandler = (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            // const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+            // const activeView = this.app.workspace.getLeaf(false).view;
+            const activeView = this.app.workspace.getMostRecentLeaf()?.view;
+
+            // 检查是否应该触发处理
+            const isAltClick = evt.altKey && evt.button === 0;
+            const shouldTrigger = this.settings.clickWithoutAlt ?
+                (evt.button === 0) : (evt.altKey && evt.button === 0);
+            if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
+
+            if (activeView instanceof MarkdownView) {
+                if (
+                    this.settings.clickWithoutAlt &&
+                    activeView?.getMode() === 'source' &&
+                    target.classList.contains('cm-link')
+                ) {
+                    // new Notice("isMobile Click");
+                    this.handleSourceModeLink(activeView.editor, evt);
+                }
+    
+                // 处理编辑器中的代码块
+                if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
+                    if ((!this.settings.clickWithoutAlt) || (this.settings.clickWithoutAlt && isAltClick)) {
+                        (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                        return;
                     }
                 }
             }
+            
+            // 检查特殊元素 diagram.svg
+            if (target.getAttribute("alt")?.endsWith(".svg")) return;
+
+            // 如果启用无Alt点击，检查是否为有效链接
+            if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
+
+            // 处理链接点击
+            this.handleLinkClick(evt, target, activeView);
+        };
+        
+        document.addEventListener('click', this.altClickHandler, { capture: true });
+    }
+
+    private handleLinkClick(evt: MouseEvent, target: HTMLElement, activeView: any) {
+        if (activeView) {
+            if (this.isPreviewModeLink(target)) {
+                this.handlePreviewModeLink(evt);
+            } else if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
+                // if (target.closest(this.settings.customElementSelectors)) {
+                if (target.closest('.markdown-source-view')) {
+                    this.handleSourceModeLink(activeView.editor, evt);
+                }
+            }
+            // else {
+            //     this.handlePreviewModeLink(evt);
+            // }
         }
     }
 
-    private handleEditModeLink(editor: Editor, evt: MouseEvent | TouchEvent, isAltClick: boolean) {
+    private handlePreviewModeLink(evt: MouseEvent) {
+        let target = evt.target as HTMLElement;
+        const embedElement = this.findClosestEmbedElement(target);
+        if (embedElement) {
+            target = embedElement;
+        }
+        
+        // 检查是否是链接或链接内的元素
+        const linkElement = target.closest('a');
+        if (linkElement) {
+            if (linkElement.hasAttribute('data-tooltip-position')) {
+                target = linkElement;
+            }
+        
+            const parentClass = linkElement.closest('.block-language-table-of-contents') || linkElement.closest('.annotated-link');
+            if (parentClass) {
+                if (parentClass.classList.contains('annotated-link')) {
+                    const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
+                    if (abstractFile instanceof TFile) {
+                        this.openInFloatPreview(abstractFile.path);
+                    }
+                }
+                return;
+            }
+        }
+        
         evt.preventDefault();
         evt.stopImmediatePropagation();
+
+        // const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
+        const link = this.getPreviewModeLinkText(target).replace(/^\[\[(.*?)\]\]$/, "$1");
+        const folderPlugin = this.getPlugin("folder-notes");
+        const isFolderLink = target.classList.contains('has-folder-note');
+        if (folderPlugin && isFolderLink) {
+            this.folderNoteOpenInFloatPreview(link);
+        } else {
+            this.openInFloatPreview(link);
+        }
+    }
+
+    private handleSourceModeLink(editor: Editor, evt: MouseEvent | TouchEvent) {
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
         if (linkMatch) {
-            if(this.isValidURL(linkMatch)) {
-                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'external') {
-                    this.openInFloatPreview(linkMatch);
-                    return;
-                }
-                if (isAltClick) {
-                    this.openInFloatPreview(linkMatch);
-                } else {
-                    this.app.workspace.getLeaf(true).setViewState({
-                        type: "webviewer",
-                        active: true,
-                        state: {
-                            url: linkMatch,
-                            navigate: true,
-                            target: "_self",
-                        }
-                    });
+            this.openInFloatPreview(linkMatch);
+        } else {
+            let target = evt.target as HTMLElement;
+            const embedElement = this.findClosestEmbedElement(target);
+            if (embedElement) {
+                if (this.isValidInternalLink(target)) {
+                    this.handlePreviewModeLink(evt as MouseEvent);
                 }
             } else {
-                if(this.settings.typeOfClickTrigger === 'both' || this.settings.typeOfClickTrigger === 'internal') {
-                    this.openInFloatPreview(linkMatch);
-                    return;
-                }
-                const [filePath, fragment] = linkMatch.split('#');
-                const file = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
-                if (file instanceof TFile) {
-                    if (isAltClick) {
-                        this.openInFloatPreview(linkMatch);
-                    } else {
-                        this.app.workspace.openLinkText(linkMatch, filePath, false);
-                    }
-                }
+                new Notice(t("No link found at cursor position"));
             }
-        } else {
-            new Notice(t("No link found at cursor position"));
         }
     }
     
+    private findClosestEmbedElement(element: Element): HTMLElement | null {
+        // 先判断是否匹配某些特定的类
+        if (
+            element.classList.contains('canvas-minimap') ||
+            element.classList.contains('file-embed-title') ||
+            element.classList.contains('markdown-embed-link') ||
+            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg, rect')
+        ) {
+            // 向上查找包含 'internal-embed' 类的父元素
+            while (element) {
+                if (element.classList?.contains('internal-embed')) {
+                    return element as HTMLElement;
+                }
+                element = element.parentElement || element.parentNode as Element;
+            }
+        }
+        return null;
+    }
 
-    // 等canvas alt+click和其他类型一样表现为选取链接 可以改用此方法
-    // private registerAltClickHandler() {
-    //     this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-    //         if (evt.altKey && evt.button === 0) {
-    //             // 使用 setTimeout 来确保我们的处理在默认操作之后执行
-    //             setTimeout(() => {
-    //                 const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-    //                 if (activeView) {
-    //                     let targetElement = evt.target as HTMLElement;
-    //                     let altText = targetElement.getAttribute("alt");
+    private getPreviewModeLinkText(target: HTMLElement): string {
+        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
+        const container = target.closest('.ge-grid-item') || target;
+    
+        // 查找 img 元素并获取 filesource 属性 excalidraw
+        const imgElement = container.querySelector('img');
+        if (imgElement) {
+            const fileSource = imgElement.getAttribute('filesource');
+            if (fileSource) {
+                return fileSource; // 返回 filesource 的值
+            }
+        }
+    
+        // 如果点击的是别名部分
+        if (container.classList.contains('cm-link-alias')) {
+            const parentElement = container.parentElement;
+            if (parentElement) {
+                const originalLink = parentElement.querySelector('.cm-link-has-alias');
+                if (originalLink) {
+                    return originalLink.textContent?.trim() || '';
+                }
+            }
+        }
+    
+        // 添加对 `data-folder-path` 的支持
+        return container.getAttribute('data-folder-path') ||
+                container.getAttribute('data-file-path') ||
+                container.getAttribute('data-href') || 
+                container.getAttribute('href') || 
+                container.getAttribute('data-path') ||
+                container.getAttribute('filesource') || 
+                container.getAttribute('src') || 
+                container.textContent?.trim() || '';
+    }
 
-    //                     if (this.isPreviewModeLink(targetElement)) {
-    //                         this.handlePreviewModeLink(evt);
-    //                     } else {
-    //                         if (activeView.getMode() === 'source') {
-    //                             // 适配 markmind 在编辑模式下嵌入视图的 alt 点击
-    //                             if (targetElement.closest('svg')) {
-    //                                 this.handlePreviewModeLink(evt);
-    //                                 return;
-    //                             }
-    //                             // 适配diagram.net svg 类型的文件 alt+点击  不做处理
-    //                             if (altText && altText.endsWith(".svg")) {
-    //                                 return;
-    //                             }
-    //                             this.handleEditModeLink(activeView.editor);
-    //                         } else {
-    //                             this.handlePreviewModeLink(evt);
-    //                         }
-    //                     }
-    //                 }
-    //             }, 10);
-    //         }
-    //     });
-    // }
+    private isPreviewModeLink(target: HTMLElement): boolean {
+        const element = target.closest('.ge-grid-item') || target;
+        
+        if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
+            return true;
+        }
 
+        // 添加对 Nav Link Header
+        if (target.closest('.annotated-link')) {
+            return true;
+        }
+
+        let current: Node | null = element;
+        while (current) {
+            if (current instanceof HTMLElement && current.classList.contains('internal-embed')) {
+                return true;
+            }
+            current = current.parentNode; // 通过 parentNode 穿透 SVG 元素层级
+        }
+
+        const previewClasses = new Set([
+            'excalidraw-hyperlinkContainer-link',
+            'auto-card-link-card',
+            'recent-files-title-content',
+            'metadata-link-inner',
+            'has-folder-note',
+            'homepage-button',
+            'view-header-breadcrumb',
+            'ge-grid-item',
+            'cm-hmd-internal-link',
+            'internal-embed',
+            'file-embed-title',
+            'embed-title',
+            'markdown-embed-link',
+            'markdown-embed-content',
+            'canvas-minimap',
+            'svg',
+        ]);
+    
+        return Array.from(element.classList).some(cls => previewClasses.has(cls) || cls.startsWith('excalidraw-svg'));
+    }
+
+    private isValidURL = (url: string) =>
+        ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
+    
+
+    private isValidInternalLink(target: HTMLElement): boolean {
+        const linkElement = target.tagName === 'A' ? target : target.closest('a');
+    
+        if (linkElement && (
+            linkElement.classList.contains('internal-link') ||
+            linkElement.classList.contains('external-link') ||
+            linkElement.hasAttribute('data-tooltip-position')
+        )) {
+            return true;
+        }
+    
+        // 检查是否匹配特定的类
+        if (target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link')) {
+            return true;
+        }
+    
+        // 检查是否属于 excalidraw-svg
+        if (Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg'))) {
+            return true;
+        }
+    
+        // 处理 SVG / IMG 相关情况
+        if (
+            (target.tagName === 'SVG' && target.classList.contains('canvas-minimap')) ||
+            ((target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) || target.closest('.ptl-tldraw-image')) ||
+            (target.closest('svg') && (target.closest('.mm-mindmap-container') || target.closest('.cm-mindmap-container')))
+        ) {
+            return true;
+        }
+    
+        // 向上遍历查找最近的 `.internal-embed`
+        while (target) {
+            if (target.classList?.contains('internal-embed')) {
+                return true;
+            }
+            target = target.parentElement || target.parentNode as HTMLElement;
+        }
+    
+        return false;
+    }
+    
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         if (document.querySelector('.monaco-editor')) {
             return false;
@@ -426,179 +639,90 @@ export default class ModalOpenerPlugin extends Plugin {
         return fenceCount % 2 === 1;
     }
 
-    private registerAltClickHandler() {
-        this.altClickHandler = (evt: MouseEvent) => {
-            const target = evt.target as HTMLElement;
-            const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-            // 检查是否应该触发处理
-            const isAltClick = evt.altKey && evt.button === 0;
-            const shouldTrigger = this.settings.clickWithoutAlt ?
-                (evt.button === 0) : (evt.altKey && evt.button === 0);
-            if (!shouldTrigger || (evt.ctrlKey && evt.button === 0)) return;
-
-            if (
-                this.settings.clickWithoutAlt &&
-                activeView?.getMode() === 'source' &&
-                target.classList.contains('cm-link')
-            ) {
-                // new Notice("isMobile Click");
-                this.handleEditModeLink(activeView.editor, evt, isAltClick);
+    private findLinkAtPosition(line: string, position: number): string | null {
+        // 更新正则表达式以匹配所有可能的链接格式
+        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
+        let match;
+    
+        while ((match = linkRegex.exec(line)) !== null) {
+            // 检查光标是否在整个链接范围内
+            if (match.index <= position && position <= match.index + match[0].length) {
+                // 如果是内部链接带别名的情况
+                if (match[1] && match[1].includes("|")) {
+                    // 只返回别名前的实际链接部分
+                    return match[1].split("|")[0];
+                }
+                // 返回匹配到的第一个非空组(实际链接)
+                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
             }
-
-            // 处理编辑器中的代码块
-            if (activeView?.getMode() === 'source' && this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
-                if ((!this.settings.clickWithoutAlt) || (this.settings.clickWithoutAlt && isAltClick)) {
-                    (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
-                    return;
-                }
-            }
-            
-            // 检查特殊元素
-            if (this.shouldSkipElement(target)) return;
-
-            // 如果启用无Alt点击，检查是否为有效链接
-            if (this.settings.clickWithoutAlt && !this.isValidInternalLink(target)) return;
-
-            // 处理链接点击
-            this.handleLinkClick(evt, target, activeView, isAltClick);
-        };
-        
-        document.addEventListener('click', this.altClickHandler, { capture: true });
-    }
-
-    private registerTouchClickHandler() {
-        // 移动端触摸事件监听
-        if (Platform.isMobile) {
-            document.addEventListener('touchstart', (touchEvt: TouchEvent) => {
-                const target = touchEvt.target as HTMLElement;
-                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-
-                // 如果是移动端，处理触摸事件的链接点击
-                if (
-                    this.settings.clickWithoutAlt &&
-                    activeView?.getMode() === 'source' &&
-                    target.classList.contains('cm-underline')
-                ) {
-                    touchEvt.preventDefault();
-                    touchEvt.stopImmediatePropagation();
-                    // new Notice("isMobile Touch");
-                    // this.handleEditModeLink(activeView.editor, touchEvt);
-                }
-            }, { capture: true });
         }
+        return null;
     }
 
-    private isValidInternalLink(target: HTMLElement): boolean {
-        const linkElement = target.tagName === 'A' ? target : target.closest('a');
+    private async openInFloatPreview(link: string) {
+        try {
+            // console.log("OpenLink:", link);
+            const [linkWithoutAlias] = link.split('|');
+            const [filePath, fragment] = linkWithoutAlias.split('#');
+            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
 
-        // 如果在 block-language-table-of-contents 中，直接返回 false
-        if (linkElement?.closest('.block-language-table-of-contents')) {
-            return false;
-        }
-
-        return !!(
-            linkElement && (
-                linkElement.classList.contains('internal-link') ||
-                linkElement.classList.contains('external-link') ||
-                linkElement.hasAttribute('data-tooltip-position')
-            ) ||
-            target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link') ||
-            Array.from(target.classList).some(cls => cls.startsWith('excalidraw-svg')) ||
-            (
-                target.tagName === 'SVG' &&
-                target.classList.contains('canvas-minimap')
-            ) ||
-            (
-                ((target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) || target.closest('.ptl-tldraw-image'))
-            ) ||
-            (
-                target.closest('svg') && (target.closest('.mm-mindmap-container') || target.closest('.cm-mindmap-container'))
-            )
-        );
-    }
-
-    private shouldSkipElement(target: HTMLElement): boolean {
-        // 适配diagram.net svg 类型的文件 alt+点击  不做处理
-        const altText = target.getAttribute("alt");
-        return !!(altText?.endsWith(".svg"));
-    }
-
-    private handleLinkClick(evt: MouseEvent, target: HTMLElement, activeView: MarkdownView | null, isAltClick: boolean) {
-        if (activeView) {
-            if (this.isPreviewModeLink(target)) {
-                this.handlePreviewModeLink(evt, isAltClick);
-            } else if (activeView.getMode() === 'source') {
-                // 适配在编辑模式下 richfoot tldraw markmind 的 alt 点击
-                // if (target.closest(this.settings.customElementSelectors)) {
-                if (target.closest('svg, img, .rich-foot, .annotated-link')) {
-                    this.handlePreviewModeLink(evt, isAltClick);
-                } else {
-                    this.handleEditModeLink(activeView.editor, evt, isAltClick);
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation();
-                }
+            let file: TFile | undefined;
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
             } else {
-                this.handlePreviewModeLink(evt, isAltClick);
+                file = undefined;
             }
-        } else {
-            const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-            const link = target.textContent?.trim().replace(/\[\[(.*?)\]\]/, '$1');
 
-            if (excalidrawView && link) {
-                this.openInFloatPreview(link);
-            } else if (this.isPreviewModeLink(target)) {
-                this.handlePreviewModeLink(evt, isAltClick);
+            if (!file && !this.isValidURL(link)) {
+                new Notice(t("The file or link does not valid: ") + link);
+                return;
             }
+
+            new ModalWindow (
+                this,
+                link,
+                file,
+                fragment ?? ""
+            ).open();
+            this.isProcessing = true;
+        } catch (error) {
+            new Notice(t("Open in modal window error"));
         }
     }
 
-    private registerContextMenuHandler() {
-        // Handle file menu
-        this.registerEvent(
-            this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
-                const folderTarget = this.getFolderElement(file.path); // 通过 file.path 获取对应的 DOM 元素
-                const app = this.app as any;
-                const folderPlugin = app.plugins.plugins["folder-notes"];
-                if (folderPlugin) {
-                    if (folderTarget && folderTarget.classList.contains("has-folder-note")) {
-                        this.addFolderFloatMenuItem(menu, file.path);
-                    } else if (!folderTarget) {
-                        this.addFileFloatMenuItem(menu, file.path);
-                    }
+    private async folderNoteOpenInFloatPreview(link: string) {
+        try {
+            let file: TFile | undefined;
+            const fileNameOnly = link.split(/[/\\]/).pop() || link;
+
+            let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
+            if (abstractFile instanceof TFile) {
+                file = abstractFile;
+            } else {
+                abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.canvas`);
+                if (abstractFile instanceof TFile) {
+                    file = abstractFile;
                 } else {
-                    if (!folderTarget) {
-                        this.addFileFloatMenuItem(menu, file.path);
+                    const possibleFile = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "");
+                    if (possibleFile instanceof TFile) {
+                        file = possibleFile;
                     }
                 }
-            })
-        );
+            }
 
-        // Handle URL menu (including Markdown links)
-        this.registerEvent(
-            this.app.workspace.on("url-menu", (menu: Menu, link: string) => {
-                this.addLinkFloatMenuItem(menu, link);
-            })
-        );
-
-        this.registerEvent(
-            this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView) => {
-                let parentPath = "";
-                if (view.file && view.file.parent) {
-                    parentPath = view.file.parent.path;
-                }
-
-                if (this.settings.showDeleteCommands) {
-                    this.addDeleteAttachmentMenuItem(menu, editor);
-                }
-
-                if (this.settings.showCommandsContainer) {
-                    this.addCreateFileMenuItem(menu, parentPath);
-                }
-            })
-        );
+            new ModalWindow (
+                this,
+                "",
+                file,
+                ""
+            ).open();
+            this.isProcessing = true;
+        } catch (error) {
+            new Notice(t("Open in modal window error"));
+        }
     }
 
+    // menu item
     private addFloatMenuItem(menu: Menu, link: string, title: string, onClick: () => void) {
         menu.addItem((item) =>
             item
@@ -609,8 +733,13 @@ export default class ModalOpenerPlugin extends Plugin {
         );
     }
 
-    private getFolderElement(filePath: string): HTMLElement | null {
-        return document.querySelector(`.nav-folder-title[data-path="${filePath}"]`);
+    private addLinkFloatMenuItem(menu: Menu, link?: string) {
+        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
+            if (link) {
+                // console.log("link");
+                this.openInFloatPreview(link);
+            }
+        });
     }
 
     private addFileFloatMenuItem(menu: Menu, link?: string) {
@@ -660,91 +789,6 @@ export default class ModalOpenerPlugin extends Plugin {
         });
     }
 
-    private addLinkFloatMenuItem(menu: Menu, link?: string) {
-        this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
-            if (link) {
-                // console.log("link");
-                this.openInFloatPreview(link);
-            }
-        });
-    }
-
-    private async openInFloatPreview(link: string) {
-        try {
-            // console.log("OpenLink:", link);
-            // 适配 auto content tco
-            if (link?.startsWith('#')) {
-                const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
-                link = currentFilePath + link;
-            }
-            const [linkWithoutAlias] = link.split('|');
-
-            // 然后分割文件路径和片段
-            const [filePath, fragment] = linkWithoutAlias.split('#');
-            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
-            let file: TFile | undefined;
-
-            if (abstractFile instanceof TFile) {
-                file = abstractFile;
-            } else {
-                file = undefined;
-            }
-
-            // 检测文件是否存在
-            if (!file && !this.isValidURL(link)) {
-                new Notice(t("The file or link does not exist: ") + filePath);
-                return;
-            }
-
-            // 处理网络链接
-            new ModalWindow (
-                this,
-                this.isValidURL(link) ? link : "",
-                file,
-                fragment ?? ""
-            ).open();
-            this.isProcessing = true;
-        } catch (error) {
-            new Notice(t("Open in modal window error"));
-        }
-    }
-
-    private async folderNoteOpenInFloatPreview(link: string) {
-        try {
-            let file: TFile | undefined;
-            const fileNameOnly = link.split(/[/\\]/).pop() || link; // 获取文件名部分
-            let abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.md`);
-
-            if (abstractFile instanceof TFile) {
-                file = abstractFile;
-            } else {
-                // 尝试查找 .canvas 文件
-                abstractFile = this.app.vault.getAbstractFileByPath(`${link}/${fileNameOnly}.canvas`);
-                if (abstractFile instanceof TFile) {
-                    file = abstractFile;
-                } else {
-                    // 通过 metadataCache 查找匹配的文件
-                    const possibleFile = this.app.metadataCache.getFirstLinkpathDest(fileNameOnly, "");
-                    if (possibleFile instanceof TFile) {
-                        file = possibleFile;
-                    }
-                }
-            }
-
-            // 处理网络链接
-            new ModalWindow (
-                this,
-                "",
-                file,
-                ""
-            ).open();
-            this.isProcessing = true;
-        } catch (error) {
-            new Notice(t("Open in modal window error"));
-        }
-    }
-
-    // create File And Open In Modal
     private addCreateFileMenuItem(menu: Menu, parentPath: string) {
         menu.addItem((item) => {
             item
@@ -1337,79 +1381,6 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private isPreviewModeLink(target: HTMLElement): boolean {
-        const element = target.closest('.ge-grid-item') || target;
-        return element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))
-            || element.classList.contains('auto-card-link-card') || element.classList.contains('recent-files-title-content') || element.classList.contains('metadata-link-inner')
-            || element.classList.contains('has-folder-note') || element.classList.contains("homepage-button") || element.classList.contains('view-header-breadcrumb')
-            || element.classList.contains('ge-grid-item')  // 这里会正确检测
-            || element.classList.contains('cm-hmd-internal-link')
-            || element.classList.contains('internal-embed')
-            || element.classList.contains('file-embed-title')
-            || element.classList.contains('embed-title')
-            || element.classList.contains('markdown-embed-link')
-            || element.classList.contains('markdown-embed-content')
-            || element.classList.contains('canvas-minimap')
-            || Array.from(element.classList).some(cls => cls.startsWith('excalidraw-svg'))
-            || element.classList.contains('svg');
-    }
-    
-
-    private getPreviewModeLinkText(target: HTMLElement): string {
-        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
-        const container = target.closest('.ge-grid-item') || target;
-    
-        // 如果点击的是别名部分
-        if (container.classList.contains('cm-link-alias')) {
-            const parentElement = container.parentElement;
-            if (parentElement) {
-                const originalLink = parentElement.querySelector('.cm-link-has-alias');
-                if (originalLink) {
-                    return originalLink.textContent?.trim() || '';
-                }
-            }
-        }
-    
-        // 添加对 `data-folder-path` 的支持
-        return  container.getAttribute('data-folder-path') || 
-                container.getAttribute('data-file-path') ||
-                container.getAttribute('data-href') || 
-                container.getAttribute('href') || 
-                container.getAttribute('data-path') ||
-                container.getAttribute('filesource') || 
-                container.getAttribute('src') || 
-                container.textContent?.trim() || '';
-    }    
-
-    private findLinkAtPosition(line: string, position: number): string | null {
-        
-        // 更新正则表达式以匹配所有可能的链接格式
-        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
-        let match;
-    
-        while ((match = linkRegex.exec(line)) !== null) {
-            // 检查光标是否在整个链接范围内
-            if (match.index <= position && position <= match.index + match[0].length) {
-                // 如果是内部链接带别名的情况
-                if (match[1] && match[1].includes("|")) {
-                    // 只返回别名前的实际链接部分
-                    return match[1].split("|")[0];
-                }
-                // 返回匹配到的第一个非空组(实际链接)
-                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
-            }
-        }
-        return null;
-    }
-
-    private isValidURL = (url: string) =>
-        ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
-
-    public getPlugin(pluginId: string) {
-        const app = this.app as any;
-        return app.plugins.plugins[pluginId];
-    }
-
     async registerWebAutoDarkMode(webContents: any) {
 		try {
             const isDarkMode = document.body.classList.contains('theme-dark');
@@ -1493,4 +1464,9 @@ export default class ModalOpenerPlugin extends Plugin {
             document.head.appendChild(script);
         `);
 	}
+
+    public getPlugin(pluginId: string) {
+        const app = this.app as any;
+        return app.plugins.plugins[pluginId];
+    }
 }

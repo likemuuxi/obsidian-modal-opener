@@ -164,14 +164,20 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
 }
 
 /* float button */
-
 .modal-opener .floating-button-container,
 .modal-opener .floating-menu-container {
     position: absolute;
     bottom: 25px;
-    right: 25px;
+    right: 35px;
     z-index: 1000;
 }
+
+.modal-opener .floating-button-container.toc-button {
+    position: absolute;
+    bottom: 80px;
+    right: 33px;
+    z-index: 1000;
+} 
 
 .modal-opener .floating-button {
     border: none;
@@ -264,7 +270,6 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
     transition: background-color 0.2s ease;
 }
 
-
 /* 设置项布局优化 */
 .modal-opener-settings .setting-item {
     padding: 0.75em 1em;
@@ -347,4 +352,82 @@ webview[style*="background-color: white"] {
     color: var(--text-on-accent);
     background-color: var(--interactive-accent);
     border-bottom: 1px;
+}
+
+
+/* 目录容器样式 */
+.modal-toc-container {
+    position: fixed;
+    width: 280px;
+    max-height: 70vh;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 目录标题 */
+.modal-toc-container .toc-header {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* 目录项内容容器 */
+.modal-toc-container .toc-item-content {
+    display: flex;
+    align-items: center;
+}
+
+/* 目录项样式 */
+.modal-toc-container .toc-item {
+    padding: 2px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--text-normal);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    position: relative;
+    line-height: 0.2 !important;
+    padding: 1px 8px !important;
+}
+
+/* 目录项圆点 */
+.modal-toc-container .toc-bullet {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-muted);
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* 目录项文本 */
+.modal-toc-container .toc-item-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.modal-toc-container .toc-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* 当前选中的目录项 */
+.modal-toc-container .toc-item.active {
+    background-color: var(--background-secondary-alt);
+}
+
+.modal-toc-container .toc-item.active .toc-bullet {
+    background-color: var(--interactive-accent);
 }

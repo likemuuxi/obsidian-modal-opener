@@ -6,6 +6,8 @@ export default {
     "No active modal window":"没有活动的模态窗口",
     "No link found at cursor position":"在光标位置找不到链接",
 
+    'Toggle table of contents': '显示目录',
+
     "Create and edit in modal": "创建并在模态窗口中编辑",
     "Enter new file name": "输入新文件名：",
     "Wiki link": "Wiki链接",
@@ -14,9 +16,10 @@ export default {
     'Custom element selectors':'自定义元素选择器',
     'Enter CSS selectors for elements that should trigger preview mode (comma-separated)':'为应触发预览模式的元素输入CSS选择器（逗号分隔）',
 
+    'File not found: ': '未找到文件: ',
     "Unsupported file or link format": "不支持的文件或链接格式",
     "Drag duration too short": "拖拽时间太短",
-    "The file or link does not exist: ": "文件或链接不存在: ",
+    "The file or link does not valid: ": "文件或链接无效: ",
     "Failed to create file: ": "创建文件失败: ",
     "Open in modal window error": "在模态窗口中打开错误",
     "Open in modal window": "在模态窗口中打开",
