@@ -179,12 +179,6 @@ export class ModalWindow extends Modal {
         this.contentEl.empty();
         this.contentEl.setAttribute("data-src", file.path + (fragment ? '#' + fragment : ''));
         const fileContainer = this.contentEl.createEl("div", "modal-opener-content");
-        if (this.plugin.settings.showFloatingButton) {
-            if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
-                this.addTocButton(this.contentEl);
-                this.addOpenInNewLeafButton(this.contentEl);
-            }
-        }
 
         let mode;
         switch (this.plugin.settings.fileOpenMode) {
@@ -207,6 +201,15 @@ export class ModalWindow extends Modal {
                 // setTimeout(() => {
                 //     this.app.workspace.openLinkText(filePath, file.path, false);
                 // }, 100);
+            }
+            if (this.plugin.settings.showFloatingButton) {
+                if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
+                    const viewType = this.modalLeafRef.view.getViewType();
+                    if (viewType === 'markdown') {
+                        this.addTocButton(this.contentEl, file.path);
+                    }
+                    this.addOpenInNewLeafButton(this.contentEl);
+                }
             }
         }
 
@@ -262,6 +265,19 @@ export class ModalWindow extends Modal {
         let linkText = this.getLinkFromTarget(target);
         if (!linkText) return;
 
+        const evtElement = target.closest('.excalidraw-hyperlinkContainer');
+        if (evtElement) {
+            linkText = this.getLinkFromTarget(target).replace(/^\[\[(.*?)\]\]$/, "$1");
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (this.modalLeafRef) {
+                const file = this.app.metadataCache.getFirstLinkpathDest(linkText, "") as TFile | undefined;
+                if (!file) return;
+                this.modalLeafRef.openFile(file);
+            }
+            return;
+        }
+
         if (ModalWindow.activeInstance?.contentEl) {
             if (this.isValidURL(linkText)) {
                 event.preventDefault();
@@ -301,7 +317,7 @@ export class ModalWindow extends Modal {
                 } else {
                     ModalWindow.activeInstance?.contentEl.setAttribute('data-src', `${file.path}`);
                 }
-                
+
                 this.updateFragmentLink = true;
             }
         }
@@ -348,18 +364,24 @@ export class ModalWindow extends Modal {
                         }
                         this.setContainerHeight(modalContainer, true);
                     } else {
-                        if (this.plugin.settings.viewOfDisplayButton === 'both' || 
-                            this.plugin.settings.viewOfDisplayButton === 'file') {
-                            this.addTocButton(ModalWindow.activeInstance?.contentEl);
-                            this.addOpenInNewLeafButton(ModalWindow.activeInstance?.contentEl);
-                        }
-
                         const activeFile = this.app.workspace.getActiveFile();
                         if (activeFile && !this.updateFragmentLink) {
                             // new Notice(`Updating data-src to ${activeFile.path}`);
                             ModalWindow.activeInstance?.contentEl.setAttribute('data-src', activeFile.path);
                         }
                         this.setContainerHeight(modalContainer, false);
+
+                        if (this.plugin.settings.viewOfDisplayButton === 'both' || 
+                            this.plugin.settings.viewOfDisplayButton === 'file') {
+                            const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
+                            if(leafContent && activeFile) {
+                                const dataType = leafContent.getAttribute('data-type');
+                                if (dataType === "markdown") {
+                                    this.addTocButton(ModalWindow.activeInstance?.contentEl, activeFile.path);
+                                }
+                            }
+                            this.addOpenInNewLeafButton(ModalWindow.activeInstance?.contentEl);
+                        }
                     }
                 }
                 
@@ -604,7 +626,7 @@ export class ModalWindow extends Modal {
     }
 
     private getLinkFromTarget(target: HTMLElement): string {
-        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.textContent?.trim() || '';
+        return target.getAttribute('data-href') || target.getAttribute('href') || target.getAttribute('data-path') || target.getAttribute('filesource') || target.textContent?.trim() || '';
     }
 
     private isValidURL(url: string): boolean {
@@ -831,31 +853,31 @@ export class ModalWindow extends Modal {
         return app.plugins.plugins[pluginId];
     }
 
-    private addTocButton(container: HTMLElement) {
+    private addTocButton(container: HTMLElement, path: string) {
         // 获取当前文件的元数据
-        const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+        const file = this.app.vault.getAbstractFileByPath(path);
+        console.log(file);
         if (!(file instanceof TFile)) return;
-    
+
         const metadata = this.app.metadataCache.getCache(file.path);
         const headings = metadata?.headings || [];
-    
-        // 如果没有标题，不显示目录按钮
+
         if (!headings || headings.length === 0) return;
     
         const buttonContainer = container.createEl('div', { cls: 'floating-button-container toc-button' });
         const tocButton = this.createMenuItem(buttonContainer, 'list', t('Toggle table of contents'), () => {
-            this.toggleTableOfContents(buttonContainer);
+            this.toggleTableOfContents(buttonContainer, path);
         });
         tocButton.addClass('toc-toggle');
     
         // 添加鼠标悬浮事件
         buttonContainer.addEventListener('mouseenter', () => {
             clearTimeout(this.hideTimeout);
-            this.toggleTableOfContents(buttonContainer, true);
+            this.toggleTableOfContents(buttonContainer, path, true);
         });
     }
     
-    private toggleTableOfContents(buttonContainer: HTMLElement, isHover: boolean = false) {
+    private toggleTableOfContents(buttonContainer: HTMLElement, path: string, isHover: boolean = false) {
         let tocContainer = this.contentEl.querySelector('.modal-toc-container') as HTMLElement;
         
         if (tocContainer) {
@@ -869,7 +891,7 @@ export class ModalWindow extends Modal {
         tocContainer = this.contentEl.createEl('div', { cls: 'modal-toc-container' });
         
         // 获取当前文件的元数据
-        const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+        const file = this.app.vault.getAbstractFileByPath(path);
         if (!(file instanceof TFile)) return;
     
         const metadata = this.app.metadataCache.getCache(file.path);
