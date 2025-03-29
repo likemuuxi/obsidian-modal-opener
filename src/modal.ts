@@ -350,6 +350,7 @@ export class ModalWindow extends Modal {
                     } else {
                         if (this.plugin.settings.viewOfDisplayButton === 'both' || 
                             this.plugin.settings.viewOfDisplayButton === 'file') {
+                            this.addTocButton(ModalWindow.activeInstance?.contentEl);
                             this.addOpenInNewLeafButton(ModalWindow.activeInstance?.contentEl);
                         }
 

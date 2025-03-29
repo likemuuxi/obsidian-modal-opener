@@ -358,15 +358,23 @@ webview[style*="background-color: white"] {
 /* 目录容器样式 */
 .modal-toc-container {
     position: fixed;
-    width: 280px;
+    width: auto;
+    min-width: 280px; /* 设置最小宽度 */
+    max-width: 40vw; /* 保留最大宽度限制 */
     max-height: 70vh;
     background: var(--background-primary);
     border: 1px solid var(--background-modifier-border);
     border-radius: 8px;
     padding: 10px;
+    overflow-x: auto; /* 强制显示横向滚动条 */
     overflow-y: auto;
     z-index: 1000;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.modal-toc-container::-webkit-scrollbar:vertical {
+    width: 0 !important; /* 隐藏竖向滚动条 */
+    display: none !important;
 }
 
 /* 目录标题 */
@@ -397,6 +405,7 @@ webview[style*="background-color: white"] {
     display: flex;
     align-items: center;
     position: relative;
+    min-width: fit-content;
     line-height: 0.2 !important;
     padding: 1px 8px !important;
 }
@@ -414,7 +423,7 @@ webview[style*="background-color: white"] {
 
 /* 目录项文本 */
 .modal-toc-container .toc-item-text {
-    flex: 1;
+    flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -425,7 +434,15 @@ webview[style*="background-color: white"] {
 
 /* 当前选中的目录项 */
 .modal-toc-container .toc-item.active {
-    background-color: var(--background-secondary-alt);
+    background-color: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
+}
+
+.modal-toc-container .toc-item.active .toc-bullet {
+    background-color: orange;
+    width: 8px;
+    height: 8px;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 .modal-toc-container .toc-item.active .toc-bullet {
