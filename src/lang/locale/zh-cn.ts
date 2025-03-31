@@ -63,6 +63,8 @@ export default {
     'Internal link': '内部链接',
     'External link': '外部链接',
     'If enabled, clicking links will open them in modal window without holding Alt.':'如果启用，点击链接将在模态窗口中打开链接，而不需要按住Alt键。',
+    'Only works in read mode': '仅在阅读模式下生效',
+    'Click trigger works only in read mode': '单击触发仅在阅读模式下生效',
     'Disable external click close':'禁用外部点击关闭',
     'Use only the Close button and Esc to close.':'仅使用 “关闭” 按钮和 Esc 键关闭',
     'Excalidraw Disables the Esc key': 'Excalidraw 禁用 Esc 键',

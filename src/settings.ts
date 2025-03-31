@@ -28,6 +28,7 @@ export interface ModalOpenerPluginSettings {
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
 	typeOfClickTrigger: string;
+	onlyWorksInReadMode: boolean
 	enabledCommands: {
 		markdown: boolean;
 		canvas: boolean;
@@ -76,6 +77,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
 	typeOfClickTrigger: 'both',
+	onlyWorksInReadMode: true,
 	enabledCommands: {
 		markdown: true,
 		canvas: true,
@@ -296,6 +298,18 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				return dropdown;
 		});
 
+		if(this.plugin.settings.clickWithoutAlt) {
+			new Setting(containerEl)
+				.setName(t('Only works in read mode'))
+				.setDesc(t('Click trigger works only in read mode'))
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.onlyWorksInReadMode)
+					.onChange(async (value) => {
+						this.plugin.settings.onlyWorksInReadMode = value;
+						await this.plugin.saveSettings();
+					}));
+		}
+
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
 			.setDesc(t('Use only the Close button and Esc to close.'))
@@ -306,7 +320,9 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
+		const excalidrawPlugin = this.plugin.getPlugin("obsidian-excalidraw-plugin");
+		if(excalidrawPlugin) {
+			new Setting(containerEl)
 			.setName(t('Excalidraw Disables the Esc key'))
 			.setDesc(t('Disable Esc key to close modal when editing Excalidraw'))
 			.addToggle(toggle => toggle
@@ -315,6 +331,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					this.plugin.settings.disableExcalidrawEsc = value;
 					await this.plugin.saveSettings();
 				}));
+		}
 
 		new Setting(containerEl)
 			.setName(t('Refresh view on close'))

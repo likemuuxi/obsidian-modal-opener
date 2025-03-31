@@ -63,6 +63,8 @@ export default {
   'External link': 'External link',
   'If enabled, clicking links will open them in modal window without holding Alt.':'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close':'Disable external click close',
+  'Only works in read mode': 'Only works in read mode',
+  'Click trigger works only in read mode': 'Click trigger works only in read mode',
   'Use only the Close button and Esc to close.':'Use only the Close button and Esc to close',
   'Excalidraw Disables the Esc key': 'Excalidraw Disables the Esc key',
   'Disable Esc key to close modal when editing Excalidraw': 'Disable Esc key to close modal when editing Excalidraw',

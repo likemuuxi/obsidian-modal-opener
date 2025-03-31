@@ -1,6 +1,7 @@
 import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
+import { clear } from "console";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -258,16 +259,27 @@ export class ModalWindow extends Modal {
     
     private handleInternalLinkClick(event: MouseEvent) {
         let target = event.target as HTMLElement;
-        // 检查点击事件是否来自 workspace-leaf-content 内的元素
-        const isInWorkspaceLeaf = target.closest('.workspace-leaf-content');
-        if (!isInWorkspaceLeaf) return;
+
+        if (!target.closest('.workspace-leaf-content')) return;
 
         let linkText = this.getLinkFromTarget(target);
+
+        // 适配Excalidraw的双链
+        const evtElement = target.closest('.excalidraw-hyperlinkContainer');
+        if (evtElement) linkText = this.getLinkFromTarget(target).replace(/^\[\[(.*?)\]\]$/, "$1");
+
         if (!linkText) return;
 
-        const evtElement = target.closest('.excalidraw-hyperlinkContainer');
+        const isCtrlClick = event.ctrlKey && event.button === 0;
+        if(isCtrlClick) {
+            ModalWindow.instances.forEach((instance) => {
+                instance.close();
+            });
+            // this.plugin.app.workspace.openLinkText(linkText, "", 'tab');
+            return;
+        }
+
         if (evtElement) {
-            linkText = this.getLinkFromTarget(target).replace(/^\[\[(.*?)\]\]$/, "$1");
             event.preventDefault();
             event.stopImmediatePropagation();
             if (this.modalLeafRef) {
@@ -297,11 +309,10 @@ export class ModalWindow extends Modal {
                         this.createWebview(this.contentEl, modalContainer);
                     }
 
-                    const buttons = document.querySelectorAll('.floating-button-container, .floating-menu-container');
-                    buttons.forEach(button => button.remove());
                     if (this.plugin.settings.viewOfDisplayButton === 'both' || 
                         this.plugin.settings.viewOfDisplayButton === 'link') {
-                        this.addFloatingButton(ModalWindow.activeInstance?.contentEl as HTMLElement);
+                        this.clearAllButton(ModalWindow.activeInstance?.contentEl);
+                        this.addFloatingButton(ModalWindow.activeInstance?.contentEl);
                     }
                 }
             } else {
@@ -337,11 +348,17 @@ export class ModalWindow extends Modal {
                 modalContainer.empty();
                 modalContainer.appendChild(this.modalLeafRef.view.containerEl);
 
-                // 检查内容类型并添加相应按钮
-                if (this.plugin.settings.showFloatingButton) {
-                    const buttons = document.querySelectorAll('.floating-button-container, .floating-menu-container');
-                    buttons.forEach(button => button.remove());
+                const leafContent = modalContainer.querySelector('.workspace-leaf-content');
+                if(leafContent) {
+                    const dataType = leafContent.getAttribute('data-type');
+                    if (dataType == "empty") {
+                        ModalWindow.activeInstance.close();
+                        ModalWindow.activeInstance = ModalWindow.instances.length > 0 ? ModalWindow.instances[ModalWindow.instances.length - 1] : null;
+                    }
+                }
 
+                // 检查内容类型并添加相应按钮
+                if (ModalWindow.activeInstance && this.plugin.settings.showFloatingButton) {
                     const hasWebContent = this.modalLeafRef.view.containerEl.querySelector('webview, iframe, .webviewer-content');
                     if (hasWebContent) {
                         if (this.plugin.settings.viewOfDisplayButton === 'both' || 
@@ -349,6 +366,7 @@ export class ModalWindow extends Modal {
                             const webviewerContent = hasWebContent.classList.contains('webviewer-content') 
                                 ? hasWebContent 
                                 : ModalWindow.activeInstance?.contentEl;
+                            this.clearAllButton(webviewerContent as HTMLElement);
                             this.addFloatingButton(webviewerContent as HTMLElement);
                         }
 
@@ -374,6 +392,7 @@ export class ModalWindow extends Modal {
                         if (this.plugin.settings.viewOfDisplayButton === 'both' || 
                             this.plugin.settings.viewOfDisplayButton === 'file') {
                             const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
+                            this.clearAllButton(ModalWindow.activeInstance?.contentEl);
                             if(leafContent && activeFile) {
                                 const dataType = leafContent.getAttribute('data-type');
                                 if (dataType === "markdown") {
@@ -784,9 +803,31 @@ export class ModalWindow extends Modal {
         }
     }
 
+    private getPlugin(pluginId: string) {
+        const app = this.plugin.app as any;
+        return app.plugins.plugins[pluginId];
+    }
+
+    private clearAllButton(container: HTMLElement) {
+        const buttons = container.querySelectorAll('.floating-menu-container, .floating-button-container.toc-button, .floating-button-container.new-leaf-button');
+        buttons.forEach(button => button.remove());
+    }
+
+    private createMenuItem(container: HTMLElement, icon: string, title: string, onClick: () => void): HTMLElement {
+        const button = container.createEl('button', { cls: 'floating-button menu-item' });
+        setIcon(button, icon);
+
+        button.setAttribute('title', title);
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onClick();
+        });
+        return button;
+    }
+
     // 添加悬浮按钮
     private addOpenInNewLeafButton(container: HTMLElement) {
-        const buttonContainer = container.createEl('div', { cls: 'floating-button-container' });
+        const buttonContainer = container.createEl('div', { cls: 'floating-button-container new-leaf-button' });
         const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
 
         setIcon(openButton, 'lucide-panel-top');
@@ -834,23 +875,6 @@ export class ModalWindow extends Modal {
                 menuItems.style.display = 'none';
             }, 300);
         });
-    }
-
-    private createMenuItem(container: HTMLElement, icon: string, title: string, onClick: () => void): HTMLElement {
-        const button = container.createEl('button', { cls: 'floating-button menu-item' });
-        setIcon(button, icon);
-
-        button.setAttribute('title', title);
-        button.addEventListener('click', (e) => {
-            e.stopPropagation();
-            onClick();
-        });
-        return button;
-    }
-
-    private getPlugin(pluginId: string) {
-        const app = this.plugin.app as any;
-        return app.plugins.plugins[pluginId];
     }
 
     private addTocButton(container: HTMLElement, path: string) {

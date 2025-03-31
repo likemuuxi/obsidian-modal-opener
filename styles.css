@@ -164,7 +164,7 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
 }
 
 /* float button */
-.modal-opener .floating-button-container,
+.modal-opener .floating-button-container.new-leaf-button,
 .modal-opener .floating-menu-container {
     position: absolute;
     bottom: 25px;
@@ -175,9 +175,9 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
 .modal-opener .floating-button-container.toc-button {
     position: absolute;
     bottom: 80px;
-    right: 33px;
+    right: 32px;
     z-index: 1000;
-} 
+}
 
 .modal-opener .floating-button {
     border: none;
@@ -439,12 +439,8 @@ webview[style*="background-color: white"] {
 }
 
 .modal-toc-container .toc-item.active .toc-bullet {
-    background-color: orange;
+    background-color: var(--text-on-accent);
     width: 8px;
     height: 8px;
     box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
-}
-
-.modal-toc-container .toc-item.active .toc-bullet {
-    background-color: var(--interactive-accent);
 }
