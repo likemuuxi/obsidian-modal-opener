@@ -320,6 +320,16 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
+		new Setting(containerEl)
+			.setName(t('Refresh view on close'))
+			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enableRefreshOnClose)
+				.onChange(async (value) => {
+					this.plugin.settings.enableRefreshOnClose = value;
+					await this.plugin.saveSettings();
+				}));
+		
 		const excalidrawPlugin = this.plugin.getPlugin("obsidian-excalidraw-plugin");
 		if(excalidrawPlugin) {
 			new Setting(containerEl)
@@ -332,16 +342,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 		}
-
-		new Setting(containerEl)
-			.setName(t('Refresh view on close'))
-			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableRefreshOnClose)
-				.onChange(async (value) => {
-					this.plugin.settings.enableRefreshOnClose = value;
-					await this.plugin.saveSettings();
-				}));
 
 		new Setting(containerEl)
 			.setName(t('Prevents duplicate tabs'))

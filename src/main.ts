@@ -363,8 +363,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (this.isPreviewModeLink(target)) {
                 this.handlePreviewModeLink(evt, isAltClick);
             } else if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
-                // if (target.closest(this.settings.customElementSelectors)) {
-                if (target.closest('.markdown-source-view') || target.classList.contains('cm-link')) { // cm-link new Notice("isMobile Click");
+                if (target.closest('.markdown-source-view') || target.classList.contains('cm-link')) {
                     this.handleSourceModeLink(activeView.editor, evt, isAltClick);
                 }
                 // 处理编辑器中的代码块
@@ -382,6 +381,61 @@ export default class ModalOpenerPlugin extends Plugin {
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
+    private isPreviewModeLink(target: HTMLElement): boolean {
+        const element = target;
+        
+        if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
+            return true;
+        }
+
+        const hasDefDecoration = element.querySelector('.def-decoration') !== null;
+        if (hasDefDecoration || target.closest('.def-decoration')) {
+            return true;
+        }
+
+        const closestList = ['.annotated-link', '.ge-grid-item']; // 适配 Nav Link Header grid exporlor
+        // 检查是否匹配 closestList 中的选择器，并且符合 ge-grid-item 且不含 ge-folder-item
+        if (closestList.some(selector => target.closest(selector) !== null)) {
+            const element = target.closest('.ge-grid-item');
+            if (element && element.classList.contains('ge-folder-item')) {
+                return false;
+            }
+            return true;
+        }
+
+        let current: Node | null = element;
+        const selectorList = ['rect', 'img', 'svg'];
+        if (selectorList.some(selector => target.matches(selector))) {
+            // target 匹配列表中的某个选择器
+            while (current) {
+                if (current instanceof HTMLElement && current.classList.contains('internal-embed')) {
+                    return true;
+                }
+                current = current.parentNode; // 通过 parentNode 穿透 SVG 元素层级
+            }
+        }
+
+        const previewClasses = new Set([
+            'excalidraw-hyperlinkContainer-link',
+            'auto-card-link-card',
+            'recent-files-title-content',
+            'metadata-link-inner',
+            'has-folder-note',
+            'homepage-button',
+            'view-header-breadcrumb',
+            'ge-grid-item',
+            'internal-embed',
+            'file-embed-title',
+            'embed-title',
+            'markdown-embed-link',
+            'markdown-embed-content',
+            'canvas-minimap',
+            'svg',
+        ]);
+    
+        return Array.from(element.classList).some(cls => previewClasses.has(cls) || cls.startsWith('excalidraw-svg'));
+    }
+
     private handlePreviewModeLink(evt: MouseEvent, isAltClick: boolean) {
         let target = evt.target as HTMLElement;
         const embedElement = this.findClosestEmbedElement(target);
@@ -390,21 +444,33 @@ export default class ModalOpenerPlugin extends Plugin {
         }
         
         // 检查是否是链接或链接内的元素
-        const linkElement = target.closest('a');
-        if (linkElement) {
-            if (linkElement.hasAttribute('data-tooltip-position') && this.isValidURL((linkElement as HTMLAnchorElement).href)) {
-                target = linkElement;
-            }
         
-            const parentClass = linkElement.closest('.block-language-table-of-contents') || linkElement.closest('.annotated-link');
-            if (parentClass) {
-                if (parentClass.classList.contains('annotated-link')) {
-                    const abstractFile = this.app.metadataCache.getFirstLinkpathDest(linkElement.getText(), "");
-                    if (abstractFile instanceof TFile) {
-                        this.openInFloatPreview(abstractFile.path);
-                    }
-                }
+        let linkElement = target.closest('a');
+        if (linkElement) {
+            if (linkElement.hasAttribute('data-tooltip-position') && this.isValidURL((linkElement as HTMLAnchorElement).href)) { 
+                target = linkElement;
                 return;
+            }
+
+            const closestList = ['.annotated-link', '.ge-grid-item', '.def-decoration'];
+            const parentClass = closestList.find(selector => linkElement.closest(selector));
+            if (parentClass) {
+                const closestElement = linkElement.closest(parentClass);
+                if (!closestElement) return;  // 避免 null 访问 classList
+        
+                if (closestElement.classList.contains('annotated-link')) {
+                    target = linkElement;
+                    return;
+                }
+                
+                if (closestElement.classList.contains('def-decoration')) {
+                    const tooltipLink = target ? target.closest('a[data-tooltip-position]') as HTMLElement : null;
+                    if (tooltipLink) {
+                        console.log(tooltipLink);
+                        target = tooltipLink;
+                    }
+                    return;
+                }
             }
         }
         
@@ -428,6 +494,30 @@ export default class ModalOpenerPlugin extends Plugin {
         } else {
             this.openInFloatPreview(link);
         }
+    }
+
+    private getPreviewModeLinkText(target: HTMLElement): string {
+        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
+        const container = target.closest('.ge-grid-item') || target;
+    
+        // 如果点击的是别名部分
+        if (container.classList.contains('cm-link-alias')) {
+            const parentElement = container.parentElement;
+            if (parentElement) {
+                const originalLink = parentElement.querySelector('.cm-link-has-alias');
+                if (originalLink) {
+                    return originalLink.textContent?.trim() || '';
+                }
+            }
+        }
+    
+        return container.getAttribute('data-file-path') ||
+                container.getAttribute('data-href') || 
+                container.getAttribute('href') || 
+                container.getAttribute('data-path') ||
+                container.getAttribute('filesource') || 
+                container.getAttribute('src') || 
+                container.textContent?.trim() || '';
     }
 
     private handleSourceModeLink(editor: Editor, evt: MouseEvent | TouchEvent, isAltClick: boolean) {
@@ -461,6 +551,26 @@ export default class ModalOpenerPlugin extends Plugin {
             // }
         }
     }
+
+    private findLinkAtPosition(line: string, position: number): string | null {
+        // 更新正则表达式以匹配所有可能的链接格式
+        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
+        let match;
+    
+        while ((match = linkRegex.exec(line)) !== null) {
+            // 检查光标是否在整个链接范围内
+            if (match.index <= position && position <= match.index + match[0].length) {
+                // 如果是内部链接带别名的情况
+                if (match[1] && match[1].includes("|")) {
+                    // 只返回别名前的实际链接部分
+                    return match[1].split("|")[0];
+                }
+                // 返回匹配到的第一个非空组(实际链接)
+                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
+            }
+        }
+        return null;
+    }
     
     private findClosestEmbedElement(element: Element): HTMLElement | null {
         // 先判断是否匹配某些特定的类
@@ -481,152 +591,8 @@ export default class ModalOpenerPlugin extends Plugin {
         return null;
     }
 
-    private getPreviewModeLinkText(target: HTMLElement): string {
-        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
-        const container = target.closest('.ge-grid-item') || target;
-    
-        // excalidraw：查找 img 元素并获取 filesource 属性 
-        const imgElement = container.querySelector('img');
-        if (imgElement) {
-            const fileSource = imgElement.getAttribute('filesource');
-            if (fileSource) {
-                return fileSource; // 返回 filesource 的值
-            }
-        }
-    
-        // 如果点击的是别名部分
-        if (container.classList.contains('cm-link-alias')) {
-            const parentElement = container.parentElement;
-            if (parentElement) {
-                const originalLink = parentElement.querySelector('.cm-link-has-alias');
-                if (originalLink) {
-                    return originalLink.textContent?.trim() || '';
-                }
-            }
-        }
-    
-        // 添加对 `data-folder-path` 的支持
-        return container.getAttribute('data-file-path') ||
-                container.getAttribute('data-href') || 
-                container.getAttribute('href') || 
-                container.getAttribute('data-path') ||
-                container.getAttribute('filesource') || 
-                container.getAttribute('src') || 
-                container.textContent?.trim() || '';
-    }
-
-    private isPreviewModeLink(target: HTMLElement): boolean {
-        const element = target;
-        
-        if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
-            return true;
-        }
-
-        const closestList = ['.annotated-link', '.ge-grid-item']; // 适配 Nav Link Header grid exporlor
-        // 检查是否匹配 closestList 中的选择器，并且符合 ge-grid-item 且不含 ge-folder-item
-        if (closestList.some(selector => target.closest(selector) !== null)) {
-            const element = target.closest('.ge-grid-item');
-            if (element && element.classList.contains('ge-folder-item')) {
-                return false;
-            }
-            return true;
-        }
-
-        const selectorList = ['rect', 'img', 'svg'];
-
-        let current: Node | null = element;
-        if (selectorList.some(selector => target.matches(selector))) {
-            // target 匹配列表中的某个选择器
-            while (current) {
-                if (current instanceof HTMLElement && current.classList.contains('internal-embed')) {
-                    return true;
-                }
-                current = current.parentNode; // 通过 parentNode 穿透 SVG 元素层级
-            }
-        }
-
-        const previewClasses = new Set([
-            'excalidraw-hyperlinkContainer-link',
-            'auto-card-link-card',
-            'recent-files-title-content',
-            'metadata-link-inner',
-            'has-folder-note',
-            'homepage-button',
-            'view-header-breadcrumb',
-            'ge-grid-item',
-            'internal-embed',
-            'file-embed-title',
-            'embed-title',
-            'markdown-embed-link',
-            'markdown-embed-content',
-            'canvas-minimap',
-            'svg',
-        ]);
-    
-        return Array.from(element.classList).some(cls => previewClasses.has(cls) || cls.startsWith('excalidraw-svg'));
-    }
-
     private isValidURL = (url: string) =>
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
-    
-
-    // private isAllowedTriggerLink(target: HTMLElement): boolean {
-    //     const linkElement = target.tagName === 'A' ? target : target.closest('a.internal-link, a.external-link');
-    
-    //     if (linkElement) {
-    //         const isInternal = linkElement.classList.contains('internal-link');
-    //         const isExternal = linkElement.classList.contains('external-link') || 
-    //                (linkElement.hasAttribute('data-tooltip-position') && this.isValidURL((linkElement as HTMLAnchorElement).href));
- 
-    //         if (
-    //             isInternal && (this.settings.typeOfClickTrigger === 'internal' || this.settings.typeOfClickTrigger === 'both')
-    //         ) {
-    //             new Notice("111");
-    //             return true;
-    //         }
-    
-    //         if (
-    //              isExternal && (this.settings.typeOfClickTrigger === 'external' || this.settings.typeOfClickTrigger === 'both')
-    //         ) {
-    //             new Notice("222");
-    //             return true;
-    //         }
-    //     }
-        
-    //     if (this.settings.typeOfClickTrigger === 'internal') {
-    //         // 直接检查 `excalidraw-svg`
-    //         if (target.classList.contains('excalidraw-svg')) return true;
-
-    //         // 处理 SVG / IMG 相关情况
-    //         if (
-    //             (target.tagName === 'SVG' && target.classList.contains('canvas-minimap')) ||
-    //             (target.tagName === 'IMG' && target.closest('.ptl-tldraw-image')) ||
-    //             (target.closest('svg') && (target.closest('.mm-mindmap-container') || target.closest('.cm-mindmap-container')))
-    //         ) {
-    //             return true;
-    //         }
-
-    //         // 直接匹配类名
-    //         if (target.matches('.cm-underline, .cm-hmd-internal-link, .internal-embed, .file-embed-title, .embed-title, .markdown-embed-link, .markdown-embed-content, .canvas-minimap, .excalidraw-hyperlinkContainer-link')) {
-    //             return true;
-    //         }
-
-    //         // 向上遍历查找最近的 `.internal-embed`
-    //         // if (target.matches("")) {
-    //         //     // while (target) {
-    //         //     //     if (target.classList?.contains('internal-embed')) {
-    //         //     //         return true;
-    //         //     //     }
-    //         //     //     target = target.parentElement || target.parentNode as HTMLElement;
-    //         //     // }
-    //         //     for (let el: HTMLElement | null = target; el; el = el?.parentElement) {
-    //         //         if (el.classList.contains('internal-embed')) return true;
-    //         //     }
-    //         // }
-    //     }
-
-    //     return false;
-    // }
     
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         if (document.querySelector('.monaco-editor')) {
@@ -645,26 +611,6 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         return fenceCount % 2 === 1;
-    }
-
-    private findLinkAtPosition(line: string, position: number): string | null {
-        // 更新正则表达式以匹配所有可能的链接格式
-        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
-        let match;
-    
-        while ((match = linkRegex.exec(line)) !== null) {
-            // 检查光标是否在整个链接范围内
-            if (match.index <= position && position <= match.index + match[0].length) {
-                // 如果是内部链接带别名的情况
-                if (match[1] && match[1].includes("|")) {
-                    // 只返回别名前的实际链接部分
-                    return match[1].split("|")[0];
-                }
-                // 返回匹配到的第一个非空组(实际链接)
-                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
-            }
-        }
-        return null;
     }
 
     private async openInFloatPreview(link: string) {
