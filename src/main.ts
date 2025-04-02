@@ -70,12 +70,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.addCommand({
             id: 'open-in-modal-window',
             name: 'Open current tab content in modal',
-            callback: () => this.openCurrentContentInModal()
-        });
-        this.addCommand({
-            id: 'duplicate-in-modal-window',
-            name: 'Duplicate current tab content in modal',
-            callback: () => this.duplicateCurrentContentInModal()
+            callback: () => this.openContentInModal()
         });
         this.addCommand({ // This command binds the shortcut key in the bindHotkey() function of modal.ts and defines the functionality in the openInNewTab() function
             id: 'open-modal-content-in-new-tab',
@@ -126,17 +121,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
     }
 
-    private openCurrentContentInModal() {
-        this.openContentInModal(true);
-    }
-
-    private duplicateCurrentContentInModal() {
-        const leaf = this.app.workspace.activeLeaf; 
-        const isPinned = leaf?.getViewState().pinned;
-        isPinned ? this.openContentInModal(true) : this.openContentInModal(false);
-    }
-
-    private openContentInModal(shouldDetach: boolean = false) {
+    private openContentInModal() {
         const currentFilePath = this.app.workspace.getActiveFile()?.path || '';
         const file = this.app.vault.getAbstractFileByPath(currentFilePath);
         const activeLeaf = this.app.workspace.getLeaf(false);
@@ -156,9 +141,6 @@ export default class ModalOpenerPlugin extends Plugin {
             ""
         ).open();
         this.isProcessing = true;
-        if (shouldDetach) {
-            activeLeaf.detach();
-        }
     }
 
     private toggleBackgroundBlur() {
@@ -372,12 +354,8 @@ export default class ModalOpenerPlugin extends Plugin {
                         (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
                     }
                 }
-            } 
-            // else {
-            //     this.handlePreviewModeLink(evt);
-            // }
+            }
         };
-        
         document.addEventListener('click', this.altClickHandler, { capture: true });
     }
 
@@ -420,9 +398,9 @@ export default class ModalOpenerPlugin extends Plugin {
             'auto-card-link-card',
             'recent-files-title-content',
             'metadata-link-inner',
-            'has-folder-note',
-            'homepage-button',
-            'view-header-breadcrumb',
+            // 'has-folder-note',
+            // 'homepage-button',
+            // 'view-header-breadcrumb',
             'ge-grid-item',
             'internal-embed',
             'file-embed-title',
@@ -438,20 +416,26 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private handlePreviewModeLink(evt: MouseEvent, isAltClick: boolean) {
         let target = evt.target as HTMLElement;
-        const embedElement = this.findClosestEmbedElement(target);
-        if (embedElement) {
-            target = embedElement;
-        }
         
-        // 检查是否是链接或链接内的元素
+        if (!isAltClick) {
+            const excludeElements = this.settings.customExcludeElements
+                .split(',')
+                .map(s => s.trim())
+                .join(',');
+
+            const excludeContainers = this.settings.customExcludeContainers
+                .split(',')
+                .map(s => s.trim())
+                .join(',');
         
-        let linkElement = target.closest('a');
-        if (linkElement) {
-            if (linkElement.hasAttribute('data-tooltip-position') && this.isValidURL((linkElement as HTMLAnchorElement).href)) { 
-                target = linkElement;
+            // 检查 target 是否匹配，或 target 是否在某个排除的父类下
+            if (target.matches(excludeElements) || target.closest(excludeContainers)) {
                 return;
             }
+        }
 
+        let linkElement = target.closest('a');
+        if (linkElement) {
             const closestList = ['.annotated-link', '.ge-grid-item', '.def-decoration'];
             const parentClass = closestList.find(selector => linkElement.closest(selector));
             if (parentClass) {
@@ -462,16 +446,20 @@ export default class ModalOpenerPlugin extends Plugin {
                     target = linkElement;
                     return;
                 }
-                
+
                 if (closestElement.classList.contains('def-decoration')) {
                     const tooltipLink = target ? target.closest('a[data-tooltip-position]') as HTMLElement : null;
                     if (tooltipLink) {
-                        console.log(tooltipLink);
                         target = tooltipLink;
+                        return;
                     }
-                    return;
                 }
             }
+        }
+
+        const embedElement = this.findClosestEmbedElement(target);
+        if (embedElement) {
+            target = embedElement;
         }
         
         // const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
@@ -628,7 +616,7 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             if (!file && !this.isValidURL(link)) {
-                new Notice(t("The file or link does not valid: ") + link);
+                // new Notice(t("The file or link does not valid: ") + link);
                 return;
             }
 

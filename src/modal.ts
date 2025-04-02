@@ -160,7 +160,7 @@ export class ModalWindow extends Modal {
             this.app.workspace.setActiveLeaf(this.prevActiveLeaf);
         }
 
-        // 最后一个模态窗口关闭前，退出多光标模式
+        // 最后一个模态窗口关闭前，退出多光标模式  在编辑模式下 容易跳来跳去
         // if (ModalWindow.instances.length === 1) {
         //     const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
         //     console.log(cursorPosition);

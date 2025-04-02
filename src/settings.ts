@@ -12,6 +12,9 @@ export interface ModalOpenerPluginSettings {
 	enableAnimation: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
+	onlyWorksInReadMode: boolean
+	customExcludeElements: string;
+	customExcludeContainers: string;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	enableWebAutoDarkMode: boolean;
@@ -28,7 +31,6 @@ export interface ModalOpenerPluginSettings {
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
 	typeOfClickTrigger: string;
-	onlyWorksInReadMode: boolean
 	enabledCommands: {
 		markdown: boolean;
 		canvas: boolean;
@@ -43,7 +45,6 @@ export interface ModalOpenerPluginSettings {
 	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
-	customElementSelectors: string;
 }
 
 interface CustomCommand {
@@ -61,6 +62,10 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	enableAnimation: true,
 	enableRounding: false,
 	clickWithoutAlt: Platform.isMobile ? true : false,
+	typeOfClickTrigger: 'both',
+	onlyWorksInReadMode: true,
+	customExcludeElements: '.folder-overview-list-item',
+	customExcludeContainers: '.block-language-table-of-contents',
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
 	enableWebAutoDarkMode: true,
@@ -76,8 +81,6 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	enableRefreshOnClose: true,
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
-	typeOfClickTrigger: 'both',
-	onlyWorksInReadMode: true,
 	enabledCommands: {
 		markdown: true,
 		canvas: true,
@@ -92,7 +95,6 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	},
 	showCommandsContainer: true,
 	showDeleteCommands: true,
-	customElementSelectors: 'svg, img, .rich-foot',
 };
 
 export default class ModalOpenerSettingTab extends PluginSettingTab {
@@ -105,6 +107,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	enableAnimation: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
+	customExcludeElements: string;
+	customExcludeContainers: string;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
@@ -132,7 +136,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
-	customElementSelectors: string;
 
 	private activeTab: string = "general"; // 当前激活的tab
 	private tabs: {id: string, name: string}[] = [
@@ -309,6 +312,32 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}));
 		}
+
+		// if (this.plugin.settings.clickWithoutAlt) {
+		// 	new Setting(containerEl)
+		// 		.setName(t('Custom exclude elements'))
+		// 		.setDesc(t('Enter CSS selectors for specific elements that should not trigger a click event (comma-separated)'))
+		// 		.addTextArea(text => text
+		// 			.setPlaceholder(t('Enter class names of elements to exclude, e.g., .folder-overview-list-item'))
+		// 			.setValue(this.plugin.settings.customExcludeElements)
+		// 			.onChange(async (value) => {
+		// 				this.plugin.settings.customExcludeElements = value;
+		// 				await this.plugin.saveSettings();
+		// 			})
+		// 		);
+		
+		// 	new Setting(containerEl)
+		// 		.setName(t('Custom exclude containers'))
+		// 		.setDesc(t('Enter CSS selectors for parent containers whose entire content should be excluded from triggering a click event (comma-separated)'))
+		// 		.addTextArea(text => text
+		// 			.setPlaceholder(t('Enter class names of containers to exclude, e.g., .block-language-table-of-contents'))
+		// 			.setValue(this.plugin.settings.customExcludeContainers)
+		// 			.onChange(async (value) => {
+		// 				this.plugin.settings.customExcludeContainers = value;
+		// 				await this.plugin.saveSettings();
+		// 			})
+		// 		);
+		// }
 
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
