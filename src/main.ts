@@ -805,7 +805,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
                             // await waitForNewLeaf();
                             // setTimeout(() => {
-                            //     this.openCurrentContentInModal();
+                            //     this.openContentInModal();
                             // }, this.settings.modalOpenDelay);
                             if (commandId) {
                                 await this.createFileAndInsertLink(commandId, true, false);
@@ -837,7 +837,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .onClick(async () => {
                             // await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
                             // setTimeout(() => {
-                            //     this.openCurrentContentInModal();
+                            //     this.openContentInModal();
                             // },  this.settings.modalOpenDelay);
 
                             await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true, false);
@@ -1012,7 +1012,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         setTimeout(() => {
-            this.openCurrentContentInModal();
+            this.openContentInModal();
         }, this.settings.modalOpenDelay);
     }
 
@@ -1051,7 +1051,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                         const fullFileName = `${fileName}.${fileExtension}`;
                                         this.insertCodeFileLink(fullFileName, "");
                                         setTimeout(() => {
-                                            this.openCurrentContentInModal();
+                                            this.openContentInModal();
                                         }, 200);
                                     }
 

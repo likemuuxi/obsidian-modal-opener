@@ -297,6 +297,8 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.typeOfClickTrigger = value as 'both' | 'internal' | 'external';
 						await this.plugin.saveSettings();
+						await this.reloadPlugin();
+						this.display(); // 重新渲染设置界面
 					});
 				return dropdown;
 		});
