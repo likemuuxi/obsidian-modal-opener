@@ -437,7 +437,7 @@ export default class ModalOpenerPlugin extends Plugin {
         let linkElement = target.closest('a');
         if (linkElement) {
             const closestList = ['.annotated-link', '.ge-grid-item', '.def-decoration'];
-            const parentClass = closestList.find(selector => linkElement.closest(selector));
+            const parentClass = closestList.find(selector => linkElement?.closest(selector));
             if (parentClass) {
                 const closestElement = linkElement.closest(parentClass);
                 if (!closestElement) return;  // 避免 null 访问 classList
