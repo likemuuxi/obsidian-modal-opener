@@ -65,7 +65,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	typeOfClickTrigger: 'both',
 	onlyWorksInReadMode: true,
 	customExcludeElements: '.folder-overview-list-item',
-	customExcludeContainers: '.block-language-table-of-contents',
+	customExcludeContainers: '.block-language-table-of-contents, .components--DynamicDataViewEl-Header ',
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
 	enableWebAutoDarkMode: true,
@@ -313,31 +313,31 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					}));
 		}
 
-		// if (this.plugin.settings.clickWithoutAlt) {
-		// 	new Setting(containerEl)
-		// 		.setName(t('Custom exclude elements'))
-		// 		.setDesc(t('Enter CSS selectors for specific elements that should not trigger a click event (comma-separated)'))
-		// 		.addTextArea(text => text
-		// 			.setPlaceholder(t('Enter class names of elements to exclude, e.g., .folder-overview-list-item'))
-		// 			.setValue(this.plugin.settings.customExcludeElements)
-		// 			.onChange(async (value) => {
-		// 				this.plugin.settings.customExcludeElements = value;
-		// 				await this.plugin.saveSettings();
-		// 			})
-		// 		);
+		if (this.plugin.settings.clickWithoutAlt && (this.plugin.settings.typeOfClickTrigger == 'both' || this.plugin.settings.typeOfClickTrigger == 'internal')) {
+			new Setting(containerEl)
+				.setName(t('Custom exclude elements'))
+				.setDesc(t('Enter CSS selectors for specific elements that should not trigger a click event (comma-separated)'))
+				.addTextArea(text => text
+					.setPlaceholder(t('Enter class names of elements to exclude, e.g., .folder-overview-list-item'))
+					.setValue(this.plugin.settings.customExcludeElements)
+					.onChange(async (value) => {
+						this.plugin.settings.customExcludeElements = value;
+						await this.plugin.saveSettings();
+					})
+				);
 		
-		// 	new Setting(containerEl)
-		// 		.setName(t('Custom exclude containers'))
-		// 		.setDesc(t('Enter CSS selectors for parent containers whose entire content should be excluded from triggering a click event (comma-separated)'))
-		// 		.addTextArea(text => text
-		// 			.setPlaceholder(t('Enter class names of containers to exclude, e.g., .block-language-table-of-contents'))
-		// 			.setValue(this.plugin.settings.customExcludeContainers)
-		// 			.onChange(async (value) => {
-		// 				this.plugin.settings.customExcludeContainers = value;
-		// 				await this.plugin.saveSettings();
-		// 			})
-		// 		);
-		// }
+			new Setting(containerEl)
+				.setName(t('Custom exclude containers'))
+				.setDesc(t('Enter CSS selectors for parent containers whose entire content should be excluded from triggering a click event (comma-separated)'))
+				.addTextArea(text => text
+					.setPlaceholder(t('Enter class names of containers to exclude, e.g., .block-language-table-of-contents'))
+					.setValue(this.plugin.settings.customExcludeContainers)
+					.onChange(async (value) => {
+						this.plugin.settings.customExcludeContainers = value;
+						await this.plugin.saveSettings();
+					})
+				);
+		}
 
 		new Setting(containerEl)
 			.setName(t('Disable external click close'))
