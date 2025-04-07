@@ -38,6 +38,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
 
         this.applyStyles();
+        this.updateExcludeData();
         this.registerOpenHandler();
         this.registerContextMenuHandler();
         this.registerCustomCommands();
@@ -382,6 +383,7 @@ export default class ModalOpenerPlugin extends Plugin {
     
             // 处理链接点击
             if (this.isPreviewModeLink(target)) {
+                // new Notice("isPreviewModeLink: " + target.tagName);
                 this.handlePreviewModeLink(evt, isAltClick);
             } else if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
                 if (target.closest('.markdown-source-view') || target.classList.contains('cm-link')) {
@@ -469,36 +471,44 @@ export default class ModalOpenerPlugin extends Plugin {
         let target = evt.target as HTMLElement;
         
         if (!isAltClick) {
-            if (this.excludeElements && this.excludeElements.some(selector => target.matches(selector))) {
+            // 添加调试信息
+            console.log("Checking exclude conditions for target:", target);
+            console.log("Exclude elements:", this.excludeElements);
+            console.log("Exclude containers:", this.excludeContainers);
+        
+            if (this.excludeElements && this.excludeElements.some(selector => {
+                const matches = target.matches(selector);
+                console.log(`Checking element selector "${selector}":`, matches);
+                return matches;
+            })) {
+                console.log("Target matched excluded element - returning");
                 return;
             }
         
-            if (this.excludeContainers && this.excludeContainers.some(selector => target.closest(selector))) {
+            if (this.excludeContainers && this.excludeContainers.some(selector => {
+                const closest = target.closest(selector);
+                console.log(`Checking container selector "${selector}":`, closest);
+                return closest;
+            })) {
+                console.log("Target matched excluded container - returning");
                 return;
             }
         }
 
         let linkElement = target.closest('a');
         if (linkElement) {
-            const closestList = ['.annotated-link', '.ge-grid-item', '.def-decoration'];
+            const closestList = ['.ge-grid-item', '.def-decoration'];
             const parentClass = closestList.find(selector => linkElement?.closest(selector));
             if (parentClass) {
                 const closestElement = linkElement.closest(parentClass);
                 if (!closestElement) return;  // 避免 null 访问 classList
         
-                if (closestElement.classList.contains('annotated-link')) {
-                    target = linkElement;
-                    return;
-                }
-
                 if (closestElement.classList.contains('def-decoration')) {
                     const tooltipLink = target ? target.closest('a[data-tooltip-position]') as HTMLElement : null;
                     if (tooltipLink) {
                         target = tooltipLink;
-                        return;
                     }
                 }
-
             }
         }
 
@@ -509,7 +519,7 @@ export default class ModalOpenerPlugin extends Plugin {
         
         // const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
         let link = this.getPreviewModeLinkText(target).replace(/^\[\[(.*?)\]\]$/, "$1");
-
+        
         if (target.closest('.outgoing-link-item')) { // 获取出链链接
             const treeItemIcon = target.closest('.outgoing-link-item')?.querySelector('.tree-item-icon');
             const subtext = target.closest('.outgoing-link-item')?.querySelector('.tree-item-inner-subtext')?.textContent?.trim() || '';
@@ -518,8 +528,10 @@ export default class ModalOpenerPlugin extends Plugin {
             if (subtext) {
                 if (treeItemIcon?.querySelector('.heading-glyph')) {
                     link = text ? `${subtext}#${text}` : subtext;
-                } else {
+                } else if (treeItemIcon?.querySelector('.lucide-link')) {
                     link = text ? `${subtext}/${text}` : subtext;
+                } else {
+                    link = subtext;
                 }
             }
         }
@@ -553,6 +565,10 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
     
+        if (target.closest('.annotated-link')) {
+            return container.textContent?.trim() || '';
+        }
+
         return container.getAttribute('data-file-path') ||
                 container.getAttribute('data-href') || 
                 container.getAttribute('href') || 
