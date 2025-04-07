@@ -72,9 +72,11 @@ export class ModalWindow extends Modal {
         }
 
         const modal = this.containerEl.lastChild as HTMLElement;
+        const modalWidth = !Platform.isMobile ? this.plugin.settings.modalWidth : this.plugin.settings.modalWidthOnMobile;
+        const modalHeight = !Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile;
         if (modal) {
-            modal.style.width = !Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile;
-            modal.style.height = !Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile;
+            modal.style.width = modalWidth;
+            modal.style.height = modalHeight;
         }
 
         if (this.file) {

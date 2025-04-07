@@ -483,7 +483,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.addText((text) => text
 				.setValue(!Platform.isMobile ? this.plugin.settings.modalWidth : this.plugin.settings.modalWidthOnMobile)
 				.onChange(async (value) => {
-					!Platform.isMobile ? this.plugin.settings.modalWidth : this.plugin.settings.modalWidthOnMobile = value;
+					if(!Platform.isMobile) {
+						this.plugin.settings.modalWidth = value;
+					} else {
+						this.plugin.settings.modalWidthOnMobile = value;
+					}
 					await this.plugin.saveSettings();
 				}));
 
@@ -493,7 +497,11 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.addText((text) => text
 				.setValue(!Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile)
 				.onChange(async (value) => {
-					!Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile = value;
+					if(!Platform.isMobile) {
+						this.plugin.settings.modalHeight = value;
+					} else {
+						this.plugin.settings.modalHeightOnMobile = value;
+					}
 					await this.plugin.saveSettings();
 				}));
 

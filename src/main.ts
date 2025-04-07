@@ -29,6 +29,10 @@ export default class ModalOpenerPlugin extends Plugin {
     private isProcessing: boolean = false;
     private webviewPlugin: boolean = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
 
+    private excludeElements: string[] = [];
+    private excludeContainers: string[] = [];
+    private excludeFiles: string[] = [];
+
     async onload() {
         await this.loadSettings();
         this.addSettingTab(new ModalOpenerSettingTab(this.app, this));
@@ -118,8 +122,26 @@ export default class ModalOpenerPlugin extends Plugin {
 
     async saveSettings() {
         await this.saveData(this.settings);
+        this.updateExcludeData();
         this.registerOpenHandler();
         this.registerCustomCommands();
+    }
+
+    private updateExcludeData() {
+        this.excludeFiles = this.settings.customExcludeFiles
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        this.excludeElements = this.settings.customExcludeElements
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+
+        this.excludeContainers = this.settings.customExcludeContainers
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
     }
 
     private openContentInModal() {
@@ -345,20 +367,13 @@ export default class ModalOpenerPlugin extends Plugin {
             // 检查特殊元素 diagram.svg
             if (target.getAttribute("alt")?.endsWith(".svg")) return;
 
-            if(singleClick && singleClickType !== 'external') {
-                const excludeFiles = this.settings.customExcludeFiles
-                    .split(',')
-                    .map(s => s.trim())
-                    .filter(s => s);
-
+            if(singleClick && !isAltClick && singleClickType !== 'external') {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path;
-
                 // console.log("Exclude Files:", excludeFiles);
                 // console.log("Current File:", this.app.workspace.getActiveFile()?.path);
             
-                if (currentFilePath && excludeFiles.length > 0) {
-                    const isExcluded = excludeFiles.some(file => currentFilePath === file);
-                    // console.log("Is Excluded:", isExcluded);
+                if (currentFilePath && this.excludeFiles.length > 0) {
+                    const isExcluded = this.excludeFiles.some(file => currentFilePath === file);
                     if (isExcluded) {
                         return;
                     }
@@ -454,18 +469,11 @@ export default class ModalOpenerPlugin extends Plugin {
         let target = evt.target as HTMLElement;
         
         if (!isAltClick) {
-            const excludeElements = this.settings.customExcludeElements
-                .split(',')
-                .map(s => s.trim())
-                .join(',');
-
-            const excludeContainers = this.settings.customExcludeContainers
-                .split(',')
-                .map(s => s.trim())
-                .join(',');
+            if (this.excludeElements && this.excludeElements.some(selector => target.matches(selector))) {
+                return;
+            }
         
-            // 检查 target 是否匹配，或 target 是否在某个排除的父类下
-            if (target.matches(excludeElements) || target.closest(excludeContainers)) {
+            if (this.excludeContainers && this.excludeContainers.some(selector => target.closest(selector))) {
                 return;
             }
         }
