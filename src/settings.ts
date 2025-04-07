@@ -8,13 +8,20 @@ export interface ModalOpenerPluginSettings {
 	fileOpenMode: 'current' | 'source' | 'preview';
 	modalWidth: string;
 	modalHeight: string;
+	modalWidthOnMobile: string;
+	modalHeightOnMobile: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
+	typeOfClickTrigger: string;
 	onlyWorksInReadMode: boolean
+	clickWithoutAltOnMobile: boolean;
+	typeOfClickTriggerOnMobile: string;
+	onlyWorksInReadModeOnMobile: boolean
 	customExcludeElements: string;
 	customExcludeContainers: string;
+	customExcludeFiles: string;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	enableWebAutoDarkMode: boolean;
@@ -30,7 +37,7 @@ export interface ModalOpenerPluginSettings {
 	enableRefreshOnClose: boolean;
 	showFloatingButton: boolean;
 	viewOfDisplayButton: string;
-	typeOfClickTrigger: string;
+
 	enabledCommands: {
 		markdown: boolean;
 		canvas: boolean;
@@ -58,14 +65,20 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	fileOpenMode: 'current',
 	modalWidth: "86vw",
 	modalHeight: "86vh",
+	modalWidthOnMobile: "86vw",
+	modalHeightOnMobile: "86vh",
 	dragThreshold: 200,
 	enableAnimation: true,
 	enableRounding: false,
-	clickWithoutAlt: Platform.isMobile ? true : false,
+	clickWithoutAlt: false,
 	typeOfClickTrigger: 'both',
-	onlyWorksInReadMode: true,
+	onlyWorksInReadMode: false,
+	clickWithoutAltOnMobile: true,
+	typeOfClickTriggerOnMobile: 'both',
+	onlyWorksInReadModeOnMobile: false,
 	customExcludeElements: '.folder-overview-list-item',
 	customExcludeContainers: '.block-language-table-of-contents, .components--DynamicDataViewEl-Header ',
+	customExcludeFiles: '',
 	onlyCloseButton: false,
 	disableExcalidrawEsc: true,
 	enableWebAutoDarkMode: true,
@@ -103,12 +116,16 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	fileOpenMode: string;
 	modalWidth: string;
 	modalHeight: string;
+	modalWidthOnMobile: string;
+	modalHeightOnMobile: string;
 	dragThreshold: number;
 	enableAnimation: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
+	clickWithoutAltOnMobile: boolean;
 	customExcludeElements: string;
 	customExcludeContainers: string;
+	customExcludeFiles: string;
 	onlyCloseButton: boolean;
 	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
@@ -190,9 +207,19 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	}
 
 	private displayGeneralSettings(containerEl: HTMLElement): void {
-		// 把原来的基础设置放这里
-		// 从开头到 Menu item 部分的设置
-		// 添加全局样式
+		const clickEnabled = !Platform.isMobile
+							? this.plugin.settings.clickWithoutAlt
+							: this.plugin.settings.clickWithoutAltOnMobile;
+
+		const clickTriggerType = !Platform.isMobile 
+							? this.plugin.settings.typeOfClickTrigger
+							: this.plugin.settings.typeOfClickTriggerOnMobile;
+
+		const onlyInReadMode = !Platform.isMobile
+							? this.plugin.settings.onlyWorksInReadMode
+							: this.plugin.settings.onlyWorksInReadModeOnMobile;
+
+
 		containerEl.addClass("modal-opener-settings");
 
 		new Setting(containerEl)
@@ -261,7 +288,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}))
 			.addDropdown(dropdown => {
 				dropdown.selectEl.style.display = this.plugin.settings.showFloatingButton ? 'block' : 'none';
-				
 				dropdown
 					.addOption('both', t('Both'))
 					.addOption('file', t('File view'))
@@ -277,45 +303,57 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
 
 		new Setting(containerEl)
-			.setName(t("Single-click trigger"))
+			.setName(t(!Platform.isMobile ? "Single-click trigger" : "Single-click trigger📱"))
 			.setDesc(t("If enabled, clicking links will open them in modal window without holding Alt."))
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.clickWithoutAlt)
+				.setValue(clickEnabled)
 				.onChange(async (value) => {
-					this.plugin.settings.clickWithoutAlt = value;
+					if (!Platform.isMobile) {
+						this.plugin.settings.clickWithoutAlt = value;
+					} else {
+						this.plugin.settings.clickWithoutAltOnMobile = value;
+					}
 					await this.plugin.saveSettings();
 					await this.reloadPlugin();
-					this.display(); // 重新渲染设置界面
+					this.display();
 				}))
 			.addDropdown(dropdown => {
-				dropdown.selectEl.style.display = this.plugin.settings.clickWithoutAlt ? 'block' : 'none'; // 根据按钮显示设置显示/隐藏下拉框
+				dropdown.selectEl.style.display = clickEnabled ? 'block' : 'none';
 				dropdown
 					.addOption('both', t('Both'))
 					.addOption('internal', t('Internal link'))
 					.addOption('external', t('External link'))
-					.setValue(this.plugin.settings.typeOfClickTrigger)
+					.setValue(clickTriggerType)
 					.onChange(async (value) => {
-						this.plugin.settings.typeOfClickTrigger = value as 'both' | 'internal' | 'external';
+						if (!Platform.isMobile) {
+							this.plugin.settings.typeOfClickTrigger = value as 'both' | 'internal' | 'external';
+						} else {
+							this.plugin.settings.typeOfClickTriggerOnMobile = value as 'both' | 'internal' | 'external';
+						}
 						await this.plugin.saveSettings();
 						await this.reloadPlugin();
-						this.display(); // 重新渲染设置界面
+						this.display();
 					});
 				return dropdown;
 		});
 
-		if(this.plugin.settings.clickWithoutAlt) {
+		if(clickEnabled) {
 			new Setting(containerEl)
-				.setName(t('Only works in read mode'))
+				.setName(t(!Platform.isMobile ? 'Only works in read mode' : 'Only works in read mode📱'))
 				.setDesc(t('Click trigger works only in read mode'))
 				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.onlyWorksInReadMode)
+					.setValue(onlyInReadMode)
 					.onChange(async (value) => {
-						this.plugin.settings.onlyWorksInReadMode = value;
+						if (!Platform.isMobile) {
+							this.plugin.settings.onlyWorksInReadMode = value;
+						} else {
+							this.plugin.settings.onlyWorksInReadModeOnMobile = value;
+						}
 						await this.plugin.saveSettings();
 					}));
 		}
 
-		if (this.plugin.settings.clickWithoutAlt && (this.plugin.settings.typeOfClickTrigger == 'both' || this.plugin.settings.typeOfClickTrigger == 'internal')) {
+		if (clickEnabled && clickTriggerType !== 'external') {
 			new Setting(containerEl)
 				.setName(t('Custom exclude elements'))
 				.setDesc(t('Enter CSS selectors for specific elements that should not trigger a click event (comma-separated)'))
@@ -336,6 +374,18 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.customExcludeContainers)
 					.onChange(async (value) => {
 						this.plugin.settings.customExcludeContainers = value;
+						await this.plugin.saveSettings();
+					})
+				);
+
+			new Setting(containerEl)
+				.setName(t('Custom exclude files'))
+				.setDesc(t('Enter files to disable click triggering, links in these files will be ignored. (comma separated)'))
+				.addTextArea(text => text
+					.setPlaceholder(t('Enter file path to exclude, e.g., untitled.md, folder/subfolder/untitled.md'))
+					.setValue(this.plugin.settings.customExcludeFiles)
+					.onChange(async (value) => {
+						this.plugin.settings.customExcludeFiles = value;
 						await this.plugin.saveSettings();
 					})
 				);
@@ -428,22 +478,22 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName(t('Styles')).setHeading();
 
 		new Setting(containerEl)
-			.setName(t("Modal width"))
+			.setName(t(!Platform.isMobile ? "Modal width" : 'Modal width📱'))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.plugin.settings.modalWidth)
+				.setValue(!Platform.isMobile ? this.plugin.settings.modalWidth : this.plugin.settings.modalWidthOnMobile)
 				.onChange(async (value) => {
-					this.plugin.settings.modalWidth = value;
+					!Platform.isMobile ? this.plugin.settings.modalWidth : this.plugin.settings.modalWidthOnMobile = value;
 					await this.plugin.saveSettings();
 				}));
 
 		new Setting(containerEl)
-			.setName(t("Modal height"))
+			.setName(t(!Platform.isMobile ? "Modal height" : 'Modal height📱'))
 			.setDesc(t("Enter any valid CSS unit"))
 			.addText((text) => text
-				.setValue(this.plugin.settings.modalHeight)
+				.setValue(!Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile)
 				.onChange(async (value) => {
-					this.plugin.settings.modalHeight = value;
+					!Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile = value;
 					await this.plugin.saveSettings();
 				}));
 
@@ -748,7 +798,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		this.plugin.saveSettings();
 		this.reloadPlugin();
 		this.display();
-		new Notice(t("Command deleted successfully. Please restart Obsidian for changes to take full effect."));
+		new Notice(t("Command deleted successfully."));
 	}
 
 	async reloadPlugin() {

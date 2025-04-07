@@ -1,7 +1,6 @@
 import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
-import { clear } from "console";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -74,8 +73,8 @@ export class ModalWindow extends Modal {
 
         const modal = this.containerEl.lastChild as HTMLElement;
         if (modal) {
-            modal.style.width = this.plugin.settings.modalWidth;
-            modal.style.height = this.plugin.settings.modalHeight;
+            modal.style.width = !Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile;
+            modal.style.height = !Platform.isMobile ? this.plugin.settings.modalHeight : this.plugin.settings.modalHeightOnMobile;
         }
 
         if (this.file) {
