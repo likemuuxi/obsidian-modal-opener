@@ -138,11 +138,14 @@ export default class ModalOpenerPlugin extends Plugin {
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
-
+        this.excludeElements.push('.folder-overview-list-item');
+        
         this.excludeContainers = this.settings.customExcludeContainers
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
+        this.excludeContainers.push('.block-language-table-of-contents'); 
+        this.excludeContainers.push('.components--DynamicDataViewEl-Header');
     }
 
     private openContentInModal() {
@@ -471,26 +474,34 @@ export default class ModalOpenerPlugin extends Plugin {
         let target = evt.target as HTMLElement;
         
         if (!isAltClick) {
-            // 添加调试信息
-            console.log("Checking exclude conditions for target:", target);
-            console.log("Exclude elements:", this.excludeElements);
-            console.log("Exclude containers:", this.excludeContainers);
+            // // 添加调试信息
+            // console.log("Checking exclude conditions for target:", target);
+            // console.log("Exclude elements:", this.excludeElements);
+            // console.log("Exclude containers:", this.excludeContainers);
         
-            if (this.excludeElements && this.excludeElements.some(selector => {
-                const matches = target.matches(selector);
-                console.log(`Checking element selector "${selector}":`, matches);
-                return matches;
-            })) {
-                console.log("Target matched excluded element - returning");
+            // if (this.excludeElements && this.excludeElements.some(selector => {
+            //     const matches = target.matches(selector);
+            //     console.log(`Checking element selector "${selector}":`, matches);
+            //     return matches;
+            // })) {
+            //     console.log("Target matched excluded element - returning");
+            //     return;
+            // }
+        
+            // if (this.excludeContainers && this.excludeContainers.some(selector => {
+            //     const closest = target.closest(selector);
+            //     console.log(`Checking container selector "${selector}":`, closest);
+            //     return closest;
+            // })) {
+            //     console.log("Target matched excluded container - returning");
+            //     return;
+            // }
+
+            if (this.excludeElements && this.excludeElements.some(selector => target.matches(selector))) {
                 return;
             }
         
-            if (this.excludeContainers && this.excludeContainers.some(selector => {
-                const closest = target.closest(selector);
-                console.log(`Checking container selector "${selector}":`, closest);
-                return closest;
-            })) {
-                console.log("Target matched excluded container - returning");
+            if (this.excludeContainers && this.excludeContainers.some(selector => target.closest(selector))) {
                 return;
             }
         }

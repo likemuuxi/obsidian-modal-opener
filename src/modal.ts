@@ -881,7 +881,7 @@ export class ModalWindow extends Modal {
     private addTocButton(container: HTMLElement, path: string) {
         // 获取当前文件的元数据
         const file = this.app.vault.getAbstractFileByPath(path);
-        console.log(file);
+        // console.log(file);
         if (!(file instanceof TFile)) return;
 
         const metadata = this.app.metadataCache.getCache(file.path);
@@ -991,7 +991,10 @@ export class ModalWindow extends Modal {
             // 添加点击事件
             tocItem.addEventListener('click', (e) => {
                 e.preventDefault();
-                const file = this.app.vault.getAbstractFileByPath(this.contentEl.getAttribute('data-src') || '');
+                const pathData = this.contentEl.getAttribute('data-src') || '';
+                const [filePath, fragment] = pathData.split('#');
+                const file = this.app.metadataCache.getFirstLinkpathDest(filePath, '');
+
                 if (file instanceof TFile) {
                     this.app.workspace.openLinkText(`${file.path}#${heading.heading}`, file.path, false);
                     
