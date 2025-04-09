@@ -130,18 +130,53 @@ export class ModalWindow extends Modal {
 
     onClose() {
         // 在关闭模态窗口之前检查 data-type，只在特定类型下需要刷新 ModalWindow.instances.length == 1 && 
-        if (ModalWindow.activeInstance && this.plugin.settings.enableRefreshOnClose) {
-            const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
+        let leafContent: HTMLElement | null = null;
+        let dataType: string | null = null;
+        if (ModalWindow.activeInstance) {
+            leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
             if(leafContent) {
-                const dataType = leafContent.getAttribute('data-type');
-                if (dataType == "canvas" || dataType == "mindmapview") {
-                    // new Notice("Refreshing the content...");
+                dataType = leafContent.getAttribute('data-type');
+            }
+
+            if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview")) {
+                // new Notice("Refreshing the content...");
+                setTimeout(() => {
+                    this.refreshMarkdownViews();
+                }, this.plugin.settings.delayInMs);
+            }
+    
+            if (ModalWindow.instances.length === 1 && dataType == "markdown") {
+                const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
+                if (cursorPosition !== 0) {
                     setTimeout(() => {
-                        this.refreshMarkdownViews();
-                    }, this.plugin.settings.delayInMs);
+                        this.exitMultiCursorMode();
+                    }, 100);
                 }
             }
         }
+        
+        // if (ModalWindow.activeInstance && this.plugin.settings.enableRefreshOnClose) {
+        //     const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
+        //     if(leafContent) {
+        //         const dataType = leafContent.getAttribute('data-type');
+        //         if (dataType == "canvas" || dataType == "mindmapview") {
+        //             // new Notice("Refreshing the content...");
+        //             setTimeout(() => {
+        //                 this.refreshMarkdownViews();
+        //             }, this.plugin.settings.delayInMs);
+        //         }
+        //     }
+        // }
+
+        // if (ModalWindow.instances.length === 1) {
+        //     const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
+        //     console.log(cursorPosition);
+        //     if (cursorPosition !== 0) {
+        //         setTimeout(() => {
+        //             this.exitMultiCursorMode();
+        //         }, 100);
+        //     }
+        // }
 
         if (this.observer) {
             this.observer.disconnect();
@@ -162,15 +197,7 @@ export class ModalWindow extends Modal {
         }
 
         // 最后一个模态窗口关闭前，退出多光标模式  在编辑模式下 容易跳来跳去
-        // if (ModalWindow.instances.length === 1) {
-        //     const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
-        //     console.log(cursorPosition);
-        //     if (cursorPosition !== 0) {
-        //         setTimeout(() => {
-        //             this.exitMultiCursorMode();
-        //         }, 100);
-        //     }
-        // }
+
     }
 
     private async displayFileContent(file: TFile, fragment: string) {
