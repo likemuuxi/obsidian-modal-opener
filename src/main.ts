@@ -145,7 +145,6 @@ export default class ModalOpenerPlugin extends Plugin {
             .map(s => s.trim())
             .filter(Boolean);
         this.excludeContainers.push('.block-language-table-of-contents'); 
-        this.excludeContainers.push('.components--DynamicDataViewEl-Header');
     }
 
     private openContentInModal() {
@@ -362,12 +361,12 @@ export default class ModalOpenerPlugin extends Plugin {
             const singleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
             const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
             const isAltClick = evt.altKey && evt.button === 0;
-            
+
             // 检查是否应该触发处理
             if (!isAltClick && !singleClick) return;
             if (editor && editor.somethingSelected()) return;
             if (!(evt.button === 0 && (!evt.ctrlKey || evt.altKey))) return;
-    
+
             // 检查特殊元素 diagram.svg
             if (target.getAttribute("alt")?.endsWith(".svg")) return;
 
@@ -383,7 +382,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     }
                 }
             }
-    
+
             // 处理链接点击
             if (this.isPreviewModeLink(target)) {
                 // new Notice("isPreviewModeLink: " + target.tagName);
@@ -433,6 +432,15 @@ export default class ModalOpenerPlugin extends Plugin {
                 return false;
             }
             return true;
+        }
+
+        const componentAncestor = target.closest('[class^="components"]');
+        if (componentAncestor) {
+            const hasLinkClass = target.classList.contains('internal-link') || target.classList.contains('external-link');
+            if (hasLinkClass) {
+                return true;
+            }
+            return false;
         }
 
         let current: Node | null = element;
@@ -581,10 +589,10 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         return container.getAttribute('data-file-path') ||
+                container.getAttribute('filesource') || 
+                container.getAttribute('data-path') ||
                 container.getAttribute('data-href') || 
                 container.getAttribute('href') || 
-                container.getAttribute('data-path') ||
-                container.getAttribute('filesource') || 
                 container.getAttribute('src') || 
                 container.textContent?.trim() || '';
     }
@@ -605,9 +613,12 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
         
-        evt.preventDefault();
-        evt.stopImmediatePropagation();
         if (linkMatch) {
+            if (linkMatch.trim().endsWith('.components')) {
+                return;
+            }
+            evt.preventDefault();
+            evt.stopImmediatePropagation();
             this.openInFloatPreview(linkMatch);
         } else {
             let target = evt.target as HTMLElement;
@@ -617,10 +628,8 @@ export default class ModalOpenerPlugin extends Plugin {
                     this.handlePreviewModeLink(evt as MouseEvent, isAltClick);
                 }
             }
-            //  else {
-            //     new Notice(t("No link found at cursor position"));
-            // }
         }
+        // new Notice(t("No link found at cursor position"));
     }
 
     private findLinkAtPosition(line: string, position: number): string | null {
@@ -649,7 +658,7 @@ export default class ModalOpenerPlugin extends Plugin {
             element.classList.contains('canvas-minimap') ||
             element.classList.contains('file-embed-title') ||
             element.classList.contains('markdown-embed-link') ||
-            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg, rect')
+            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg')
         ) {
             // 向上查找包含 'internal-embed' 类的父元素
             while (element) {
