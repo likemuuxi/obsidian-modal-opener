@@ -839,7 +839,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Markdown")
                         .setIcon("file")
                         .onClick(() => {
-                            this.createFileAndEditInModal(parentPath, "md", true);
+                            this.createFileAndEditInModal("md", true);
                         })
                 );
             }
@@ -852,7 +852,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Canvas")
                         .setIcon("layout-dashboard")
                         .onClick(() => {
-                            this.createFileAndEditInModal(parentPath, "canvas", false);
+                            this.createFileAndEditInModal("canvas", false);
                         })
                 );
             }
@@ -1263,22 +1263,17 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private async createFileAndEditInModal(parentPath: string, fileType: string, isAlias: boolean) {
+    private async createFileAndEditInModal(fileType: string, isAlias: boolean) {
         const result = await this.getNewFileName(fileType);
         if (!result) return;
-
         const { fileName, isEmbed } = result;
-        let newFilePath = '';
-
-        if (fileName.includes('/') || parentPath === '/') {
-            newFilePath = fileName;
-        } else {
-            newFilePath = `${parentPath}/${fileName}`;
-        }
-
-        if (!newFilePath.endsWith(`.${fileType}`)) {
-            newFilePath += `.${fileType}`;
-        }
+        const activeFile = this.app.workspace.getActiveFile();
+        const sourcePath = activeFile ? activeFile.path : "";
+        const newFileName = `${fileName}.${fileType}`
+        const folder = this.app.fileManager.getNewFileParent(sourcePath, newFileName);
+        const newFilePath = folder.path === "/"
+                            ? newFileName
+                            : `${folder.path}/${newFileName}`;
 
         try {
             const newFile = await this.app.vault.create(newFilePath, '');

@@ -143,7 +143,6 @@ export class ModalWindow extends Modal {
 
             modalContent = ModalWindow.activeInstance.containerEl.querySelector('.modal-content');
             if(modalContent) {
-                new Notice("Checking data-src...");
                 const dataSrc = modalContent.getAttribute('data-src');
                 if (dataSrc) {
                     isWebView = this.isValidURL(dataSrc);
@@ -152,41 +151,16 @@ export class ModalWindow extends Modal {
         }
 
         if (ModalWindow.instances.length === 1 && (dataType == "markdown" || isWebView)) {
-            // new Notice("Exiting multi-cursor mode..."); 
             setTimeout(() => {
                 this.exitMultiCursorMode();
             }, 100);
         }
-
+        
         if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview")) {
-            // new Notice("Refreshing the content...");
             setTimeout(() => {
                 this.refreshMarkdownViews();
             }, this.plugin.settings.delayInMs);
         }
-        
-        // if (ModalWindow.activeInstance && this.plugin.settings.enableRefreshOnClose) {
-        //     const leafContent = ModalWindow.activeInstance.containerEl.querySelector('.workspace-leaf-content');
-        //     if(leafContent) {
-        //         const dataType = leafContent.getAttribute('data-type');
-        //         if (dataType == "canvas" || dataType == "mindmapview") {
-        //             // new Notice("Refreshing the content...");
-        //             setTimeout(() => {
-        //                 this.refreshMarkdownViews();
-        //             }, this.plugin.settings.delayInMs);
-        //         }
-        //     }
-        // }
-
-        // if (ModalWindow.instances.length === 1) {
-        //     const cursorPosition = window.getSelection()?.focusOffset;  // 获取光标位置
-        //     console.log(cursorPosition);
-        //     if (cursorPosition !== 0) {
-        //         setTimeout(() => {
-        //             this.exitMultiCursorMode();
-        //         }, 100);
-        //     }
-        // }
 
         if (this.observer) {
             this.observer.disconnect();
