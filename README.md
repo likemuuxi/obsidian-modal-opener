@@ -48,7 +48,7 @@ Special thanks to these amazing plugins! I use these plugins as a reference for 
 # 🌟 Become a Sponsor
 
 <p align="center">
-  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/8ad1ad6807cf421875fa0d3f74a52463.jpg" width="25%" />
-  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/2728c68008f809ed58af9fbe38898ff0.jpg" width="25%" />
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463048990.png" width="25%" />
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463038765.png" width="25%" />
 </p>
 
