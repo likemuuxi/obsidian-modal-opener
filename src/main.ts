@@ -1,4 +1,4 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile, MenuItem, Editor, MarkdownView, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile, TFolder, MenuItem, Editor, MarkdownView, normalizePath, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
 import { t } from "./lang/helpers"
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
@@ -50,12 +50,12 @@ export default class ModalOpenerPlugin extends Plugin {
             const singleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
             const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
 
-            if(target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
-                if ((altKey && !ctrlKey) || 
+            if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
+                if ((altKey && !ctrlKey) ||
                     (singleClick && !altKey && !ctrlKey && singleClickType !== 'internal')) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
-                    this.openInFloatPreview(target.href);
+                    this.openInModalWindow(target.href);
                 }
 
                 if (ctrlKey && !altKey && this.webviewPlugin) {
@@ -65,9 +65,9 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
         };
-        
+
         document.addEventListener("click", this.documentClickHandler, true);
-    
+
         this.addCommand({
             id: 'toggle-background-blur',
             name: 'Toggle background blur',
@@ -139,12 +139,12 @@ export default class ModalOpenerPlugin extends Plugin {
             .map(s => s.trim())
             .filter(Boolean);
         this.excludeElements.push('.folder-overview-list-item');
-        
+
         this.excludeContainers = this.settings.customExcludeContainers
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
-        this.excludeContainers.push('.block-language-table-of-contents'); 
+        this.excludeContainers.push('.block-language-table-of-contents');
     }
 
     private openContentInModal() {
@@ -160,7 +160,7 @@ export default class ModalOpenerPlugin extends Plugin {
         const frameElement = activeLeaf.view.containerEl.querySelector(frameSelector) as HTMLIFrameElement;
         const linkValue = frameElement?.src || "";
 
-        new ModalWindow (
+        new ModalWindow(
             this,
             linkValue,
             file instanceof TFile ? file : undefined,
@@ -187,15 +187,15 @@ export default class ModalOpenerPlugin extends Plugin {
 
     executeCustomCommand(command: string) {
         if (this.isValidURL(command)) {
-            this.openInFloatPreview(command);
+            this.openInModalWindow(command);
         } else {
             const abstractFile = this.app.vault.getAbstractFileByPath(command);
             if (abstractFile instanceof TFile) {
-                this.openInFloatPreview(command);
+                this.openInModalWindow(command);
             } else {
                 const file = this.app.metadataCache.getFirstLinkpathDest(command, "");
                 if (file instanceof TFile) {
-                    this.openInFloatPreview(command);
+                    this.openInModalWindow(command);
                 } else {
                     new Notice(t("File not found: ") + command);
                 }
@@ -231,17 +231,12 @@ export default class ModalOpenerPlugin extends Plugin {
 
         this.registerEvent(
             this.app.workspace.on("editor-menu", (menu: Menu, editor: Editor, view: MarkdownView) => {
-                let parentPath = "";
-                if (view.file && view.file.parent) {
-                    parentPath = view.file.parent.path;
-                }
-
                 if (this.settings.showDeleteCommands) {
                     this.addDeleteAttachmentMenuItem(menu, editor);
                 }
 
                 if (this.settings.showCommandsContainer) {
-                    this.addCreateFileMenuItem(menu, parentPath);
+                    this.addCreateFileMenuItem(menu);
                 }
             })
         );
@@ -281,11 +276,11 @@ export default class ModalOpenerPlugin extends Plugin {
             this.registerDomEvent(document, 'dragend', (_evt: DragEvent) => {
                 if (this.draggedLink) {
                     if (this.settings.dragThreshold === 0) {
-                        this.openInFloatPreview(this.draggedLink);
+                        this.openInModalWindow(this.draggedLink);
                     } else if (this.dragStartTime) {
                         const dragDuration = Date.now() - this.dragStartTime;
                         if (dragDuration >= this.settings.dragThreshold) {
-                            this.openInFloatPreview(this.draggedLink);
+                            this.openInModalWindow(this.draggedLink);
                         } else {
                             new Notice(t("Drag duration too short"));
                         }
@@ -370,11 +365,11 @@ export default class ModalOpenerPlugin extends Plugin {
             // 检查特殊元素 diagram.svg
             if (target.getAttribute("alt")?.endsWith(".svg")) return;
 
-            if(singleClick && !isAltClick && singleClickType !== 'external') {
+            if (singleClick && !isAltClick && singleClickType !== 'external') {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path;
                 // console.log("Exclude Files:", excludeFiles);
                 // console.log("Current File:", this.app.workspace.getActiveFile()?.path);
-            
+
                 if (currentFilePath && this.excludeFiles.length > 0) {
                     const isExcluded = this.excludeFiles.some(file => currentFilePath === file);
                     if (isExcluded) {
@@ -404,7 +399,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private isPreviewModeLink(target: HTMLElement): boolean {
         const element = target;
-        
+
         if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
             return true;
         }
@@ -474,19 +469,19 @@ export default class ModalOpenerPlugin extends Plugin {
             // 'canvas-minimap',
             // 'svg',
         ]);
-    
+
         return Array.from(element.classList).some(cls => previewClasses.has(cls) || cls.startsWith('excalidraw-svg'));
     }
 
     private handlePreviewModeLink(evt: MouseEvent, isAltClick: boolean) {
         let target = evt.target as HTMLElement;
-        
+
         if (!isAltClick) {
             // // 添加调试信息
             // console.log("Checking exclude conditions for target:", target);
             // console.log("Exclude elements:", this.excludeElements);
             // console.log("Exclude containers:", this.excludeContainers);
-        
+
             // if (this.excludeElements && this.excludeElements.some(selector => {
             //     const matches = target.matches(selector);
             //     console.log(`Checking element selector "${selector}":`, matches);
@@ -495,7 +490,7 @@ export default class ModalOpenerPlugin extends Plugin {
             //     console.log("Target matched excluded element - returning");
             //     return;
             // }
-        
+
             // if (this.excludeContainers && this.excludeContainers.some(selector => {
             //     const closest = target.closest(selector);
             //     console.log(`Checking container selector "${selector}":`, closest);
@@ -508,7 +503,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (this.excludeElements && this.excludeElements.some(selector => target.matches(selector))) {
                 return;
             }
-        
+
             if (this.excludeContainers && this.excludeContainers.some(selector => target.closest(selector))) {
                 return;
             }
@@ -521,7 +516,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (parentClass) {
                 const closestElement = linkElement.closest(parentClass);
                 if (!closestElement) return;  // 避免 null 访问 classList
-        
+
                 if (closestElement.classList.contains('def-decoration')) {
                     const tooltipLink = target ? target.closest('a[data-tooltip-position]') as HTMLElement : null;
                     if (tooltipLink) {
@@ -535,15 +530,15 @@ export default class ModalOpenerPlugin extends Plugin {
         if (embedElement) {
             target = embedElement;
         }
-        
+
         // const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
         let link = this.getPreviewModeLinkText(target).replace(/^\[\[(.*?)\]\]$/, "$1");
-        
+
         if (target.closest('.outgoing-link-item')) { // 获取出链链接
             const treeItemIcon = target.closest('.outgoing-link-item')?.querySelector('.tree-item-icon');
             const subtext = target.closest('.outgoing-link-item')?.querySelector('.tree-item-inner-subtext')?.textContent?.trim() || '';
             const text = target.closest('.outgoing-link-item')?.querySelector('.tree-item-inner-text')?.textContent?.trim() || '';
-            
+
             if (subtext) {
                 if (treeItemIcon?.querySelector('.heading-glyph')) {
                     link = text ? `${subtext}#${text}` : subtext;
@@ -557,22 +552,22 @@ export default class ModalOpenerPlugin extends Plugin {
 
         const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
         if (!isAltClick) {
-            if(this.isValidURL(link)) {
-                if(singleClickType === 'internal') return;
+            if (this.isValidURL(link)) {
+                if (singleClickType === 'internal') return;
             } else {
-                if(singleClickType === 'external') return;
+                if (singleClickType === 'external') return;
             }
         }
 
         evt.preventDefault();
         evt.stopImmediatePropagation();
-        this.openInFloatPreview(link);
+        this.openInModalWindow(link);
     }
 
     private getPreviewModeLinkText(target: HTMLElement): string {
         // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
         const container = target.closest('.ge-grid-item') || target;
-    
+
         // 如果点击的是别名部分
         if (container.classList.contains('cm-link-alias')) {
             const parentElement = container.parentElement;
@@ -583,43 +578,43 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
         }
-    
+
         if (target.closest('.annotated-link')) {
             return container.textContent?.trim() || '';
         }
 
         return container.getAttribute('data-file-path') ||
-                container.getAttribute('filesource') || 
-                container.getAttribute('data-path') ||
-                container.getAttribute('data-href') || 
-                container.getAttribute('href') || 
-                container.getAttribute('src') || 
-                container.textContent?.trim() || '';
+            container.getAttribute('filesource') ||
+            container.getAttribute('data-path') ||
+            container.getAttribute('data-href') ||
+            container.getAttribute('href') ||
+            container.getAttribute('src') ||
+            container.textContent?.trim() || '';
     }
 
     private handleSourceModeLink(editor: Editor, evt: MouseEvent | TouchEvent, isAltClick: boolean) {
         const cursor = editor.getCursor();
         const line = editor.getLine(cursor.line);
         const linkMatch = this.findLinkAtPosition(line, cursor.ch);
-        
+
         const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
         const worksInReadMode = !Platform.isMobile ? this.settings.onlyWorksInReadMode : this.settings.onlyWorksInReadModeOnMobile;
         if (!isAltClick) {
-            if(worksInReadMode) return;
-            if(linkMatch && this.isValidURL(linkMatch)) {
-                if(singleClickType === 'internal') return;
+            if (worksInReadMode) return;
+            if (linkMatch && this.isValidURL(linkMatch)) {
+                if (singleClickType === 'internal') return;
             } else {
-                if(singleClickType === 'external') return;
+                if (singleClickType === 'external') return;
             }
         }
-        
+
         if (linkMatch) {
             if (linkMatch.trim().endsWith('.components')) {
                 return;
             }
             evt.preventDefault();
             evt.stopImmediatePropagation();
-            this.openInFloatPreview(linkMatch);
+            this.openInModalWindow(linkMatch);
         } else {
             let target = evt.target as HTMLElement;
             const embedElement = this.findClosestEmbedElement(target);
@@ -636,7 +631,7 @@ export default class ModalOpenerPlugin extends Plugin {
         // 更新正则表达式以匹配所有可能的链接格式
         const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
         let match;
-    
+
         while ((match = linkRegex.exec(line)) !== null) {
             // 检查光标是否在整个链接范围内
             if (match.index <= position && position <= match.index + match[0].length) {
@@ -651,7 +646,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
         return null;
     }
-    
+
     private findClosestEmbedElement(element: Element): HTMLElement | null {
         // 先判断是否匹配某些特定的类
         if (
@@ -673,7 +668,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private isValidURL = (url: string) =>
         ['http://', 'https://', 'www.', '192.', '127.'].some(prefix => url.startsWith(prefix));
-    
+
     private isInFencedCodeBlock(editor: Editor, pos: EditorPosition): boolean {
         if (document.querySelector('.monaco-editor')) {
             return false;
@@ -693,7 +688,7 @@ export default class ModalOpenerPlugin extends Plugin {
         return fenceCount % 2 === 1;
     }
 
-    private async openInFloatPreview(link: string) {
+    public async openInModalWindow(link: string) {
         try {
             // console.log("OpenLink:", link);
             const [linkWithoutAlias] = link.split('|');
@@ -712,7 +707,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 return;
             }
 
-            new ModalWindow (
+            new ModalWindow(
                 this,
                 link,
                 file,
@@ -724,7 +719,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private async folderNoteOpenInFloatPreview(link: string) {
+    private async folderNoteopenInModalWindow(link: string) {
         try {
             let file: TFile | undefined;
             const fileNameOnly = link.split(/[/\\]/).pop() || link;
@@ -744,7 +739,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
 
-            new ModalWindow (
+            new ModalWindow(
                 this,
                 "",
                 file,
@@ -771,7 +766,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 // console.log("link");
-                this.openInFloatPreview(link);
+                this.openInModalWindow(link);
             }
         });
     }
@@ -802,9 +797,9 @@ export default class ModalOpenerPlugin extends Plugin {
                             }
                         }
                     }
-                    this.openInFloatPreview(linkToPreview);
+                    this.openInModalWindow(linkToPreview);
                 } else {
-                    this.openInFloatPreview(link);
+                    this.openInModalWindow(link);
                 }
             }
         });
@@ -814,12 +809,12 @@ export default class ModalOpenerPlugin extends Plugin {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 // console.log("folder");
-                this.folderNoteOpenInFloatPreview(link);
+                this.folderNoteopenInModalWindow(link);
             }
         });
     }
 
-    private addCreateFileMenuItem(menu: Menu, parentPath: string) {
+    private addCreateFileMenuItem(menu: Menu) {
         menu.addItem((item) => {
             item
                 .setTitle(t('Create and edit in modal'))
@@ -863,44 +858,36 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 第二组：Excalidraw、Diagrams 和 Tldraw
-            const excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
-            const excalidrawymjrPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
-            if ((excalidrawPlugin || excalidrawymjrPlugin) && this.settings.enabledCommands.excalidraw) {
+            let excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
+            excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
+            if ((excalidrawPlugin) && this.settings.enabledCommands.excalidraw) {
                 group2Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
-                            // const initialLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                            let commandId;
-                            if (excalidrawPlugin) {
-                                commandId = "obsidian-excalidraw-plugin:excalidraw-autocreate-newtab";
-                            } else if (excalidrawymjrPlugin) {
-                                commandId = "obsidian-excalidraw-plugin-ymjr:excalidraw-autocreate-newtab";
-                            }
-                            // (this.app as any).commands.executeCommandById(commandId);
-                            // const waitForNewLeaf = () => {
-                            //     return new Promise<void>((resolve) => {
-                            //         const checkLeaf = () => {
-                            //             const currentLeafCount = this.app.workspace.getLeavesOfType('excalidraw').length;
-                            //             if (currentLeafCount > initialLeafCount) {
-                            //                 resolve();
-                            //             } else {
-                            //                 setTimeout(checkLeaf, 50);
-                            //             }
-                            //         };
-                            //         checkLeaf();
-                            //     });
-                            // };
+                            const defaultFileName = this.getDrawingFilename(excalidrawPlugin.settings);  // 默认文件名
+                            const result = await this.getNewFileName(undefined, defaultFileName);
+                            if (!result) return;
 
-                            // await waitForNewLeaf();
-                            // setTimeout(() => {
-                            //     this.openContentInModal();
-                            // }, this.settings.modalOpenDelay);
-                            if (commandId) {
-                                await this.createFileAndInsertLink(commandId, true, false);
+                            const { fileName, isEmbed } = result;
+                            if (excalidrawPlugin && excalidrawPlugin.settings) {
+                                const useExcalidrawExtension = excalidrawPlugin.settings.useExcalidrawExtension;
+                                // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
+                                const hasCustomName = fileName !== defaultFileName;
+                                const excalidrawFileName = hasCustomName
+                                    ? fileName + (useExcalidrawExtension ? ".excalidraw.md" : ".md")
+                                    : fileName;
+
+                                try {
+                                    const file = await excalidrawPlugin.createDrawing(excalidrawFileName);
+                                    await this.insertLinkToPreviousView(file.path);
+                                    new ModalWindow(this, "", file, "").open();
+                                } catch (e) {
+                                    console.error("createExcalidrawFile failed:", e);
+                                    new Notice(t("Failed to create file: ") + e.message);
+                                }
                             }
                         })
                 );
@@ -914,7 +901,7 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Diagrams")
                         .setIcon("pencil-ruler")
                         .onClick(() => {
-                            (this.app as any).commands.executeCommandById("obsidian-diagrams-net:app:diagrams-net-new-diagram");
+                            diagramsPlugin.attemptNewDiagram()
                         })
                 );
             }
@@ -927,12 +914,51 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Tldraw")
                         .setIcon("shapes")
                         .onClick(async () => {
-                            // await (this.app as any).commands.executeCommandById("tldraw:embed-new-tldraw-file-.md-new-tab");
-                            // setTimeout(() => {
-                            //     this.openContentInModal();
-                            // },  this.settings.modalOpenDelay);
+                            const defaultName = tldrawPlugin.createDefaultFilename();  // 没输入时使用
+                            const result = await this.getNewFileName(undefined, defaultName);  // 弹出输入框
+                            if (!result) return;
 
-                            await this.createFileAndInsertLink("tldraw:new-tldraw-file-.md-new-tab", true, false);
+                            const { fileName: rawFileName, isEmbed } = result;
+                            const isDefault = rawFileName === defaultName;
+                            const useFileName = isDefault ? defaultName : rawFileName;
+
+                            if (tldrawPlugin && tldrawPlugin.settings) {
+                                const fileDestinations = tldrawPlugin.settings.fileDestinations;
+                                const destinationMethod = fileDestinations.destinationMethod;
+
+                                let folderName: string;
+                                switch (destinationMethod) {
+                                    case "attachments-folder": {
+                                        folderName = (this.app.vault as any).config.attachmentFolderPath ?? '/';
+                                        break;
+                                    }
+                                    case "colocate": {
+                                        folderName = './' + tldrawPlugin.settings.fileDestinations.colocationSubfolder;
+                                        break;
+                                    }
+                                    case "default-folder": {
+                                        folderName = tldrawPlugin.settings.fileDestinations.defaultFolder;
+                                        break;
+                                    }
+                                    default: {
+                                        folderName = ''; // 可选：加个默认值兜底
+                                        break;
+                                    }
+                                }
+
+                                try {
+                                    const file = await tldrawPlugin.createTldrFile(useFileName, {
+                                        foldername: folderName,
+                                        inMarkdown: true,
+                                        tlStore: undefined
+                                    });
+                                    await this.insertLinkToPreviousView(file.path);
+                                    new ModalWindow(this, "", file, "", "tldraw-view").open();
+                                } catch (e) {
+                                    console.error("createTldrFile failed:", e);
+                                    new Notice(t("Failed to create file: ") + e.message);
+                                }
+                            }
                         })
                 );
             }
@@ -950,19 +976,59 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excel")
                         .setIcon("table")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("excel:excel-autocreate", true, false);
+                            const defaultFileName = this.getExcelFilename(excelPlugin.settings);  // 默认文件名
+                            const result = await this.getNewFileName(undefined, defaultFileName);
+                            if (!result) return;
+
+                            const { fileName, isEmbed } = result;
+                            if (excelPlugin && excelPlugin.settings) {
+                                // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
+                                const hasCustomName = fileName !== defaultFileName;
+                                const excelFileName = hasCustomName
+                                    ? fileName + ".sheet.md"
+                                    : fileName;
+
+                                try {
+                                    const file = await excelPlugin.createExcel(excelFileName);
+                                    await this.insertLinkToPreviousView(file.path);
+                                    new ModalWindow(this, "", file, "", "excel-view").open();
+                                } catch (e) {
+                                    console.error("createExcelFile failed:", e);
+                                    new Notice(t("Failed to create file: ") + e.message);
+                                }
+                            }
                         })
                 );
             }
 
-            const SheetPlugin = this.getPlugin("sheet-plus");
-            if (SheetPlugin && this.settings.enabledCommands.sheetPlus) {
+            const sheetPlugin = this.getPlugin("sheet-plus");
+            if (sheetPlugin && this.settings.enabledCommands.sheetPlus) {
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
                         .setTitle("Sheet Plus")
                         .setIcon("grid")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("sheet-plus:spreadsheet-autocreation", true, false);
+                            const defaultFileName = this.getExcelProFilename(sheetPlugin.settings);  // 默认文件名
+                            const result = await this.getNewFileName(undefined, defaultFileName);
+                            if (!result) return;
+
+                            const { fileName, isEmbed } = result;
+                            if (sheetPlugin && sheetPlugin.settings) {
+                                // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
+                                const hasCustomName = fileName !== defaultFileName;
+                                const excelFileName = hasCustomName
+                                    ? fileName + ".univer.md"
+                                    : fileName;
+
+                                try {
+                                    const file = await sheetPlugin.createExcel(excelFileName);
+                                    await this.insertLinkToPreviousView(file.path);
+                                    new ModalWindow(this, "", file, "", "excel-pro-view").open();
+                                } catch (e) {
+                                    console.error("createExcelFile failed:", e);
+                                    new Notice(t("Failed to create file: ") + e.message);
+                                }
+                            }
                         })
                 );
             }
@@ -974,7 +1040,42 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Code File")
                         .setIcon("file-code")
                         .onClick(async () => {
-                            await this.createCodeFileAndOpenInModal();
+                            if (vscodePlugin && vscodePlugin.settings) {
+                                const defaultLocation = vscodePlugin.settings.defaultLocation;
+                                let tFolder: TFolder = this.app.vault.getRoot(); // 设置默认值为 root 文件夹
+
+                                switch (defaultLocation) {
+                                    case "root": {
+                                        tFolder = this.app.vault.getRoot();
+                                        break;
+                                    }
+                                    case "default": {
+                                        const folderPath = (this.app.vault as any).getConfig("attachmentFolderPath");
+                                        const folder = this.app.vault.getAbstractFileByPath(folderPath);
+                                        if (folder instanceof TFolder) {
+                                            tFolder = folder;
+                                        }
+                                        break;
+                                    }
+                                    case "custom": {
+                                        const customPath = vscodePlugin.settings.customPath.replace(/\/$/, '');
+                                        const customFolder = this.app.vault.getAbstractFileByPath(customPath);
+                                        if (customFolder instanceof TFolder) {
+                                            tFolder = customFolder;
+                                        }
+                                        break;
+                                    }
+                                    case "current": {
+                                        const activeFile = this.app.workspace.getActiveFile();
+                                        if (activeFile?.parent instanceof TFolder) {
+                                            tFolder = activeFile.parent;
+                                        }
+                                        break;
+                                    }
+                                }
+                                
+                                await this.getNewCodeFileNameAndCreate(vscodePlugin.settings, tFolder);
+                            }
                         })
                 );
             }
@@ -986,7 +1087,42 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("MarkMind")
                         .setIcon("brain-circuit")
                         .onClick(async () => {
-                            await this.createFileAndInsertLink("obsidian-markmind:Create New MindMap", true, false);
+                            try {
+                                // console.log("Available commands:", Object.keys((this.app as any).commands.commands));
+                                const activeFile = this.app.workspace.getActiveFile();
+                                const filePath = activeFile?.path || "";
+                                const parentFolder = this.app.fileManager.getNewFileParent(filePath);
+                                
+                                const result = await this.getNewFileName(undefined, "Untitled mindmap");
+                                if (!result) return;
+    
+                                const { fileName, isEmbed } = result;
+                                if (parentFolder) {
+                                    const targetFolder = parentFolder || this.app.fileManager.getNewFileParent(
+                                        this.app.workspace.getActiveFile()?.path || ""
+                                    );
+
+                                    const folderPath = targetFolder.path;
+                                    const fullPath = `${folderPath}/${fileName}.md`;
+                                    
+                                    // const file = await (this.app.fileManager as any).createNewMarkdownFile(targetFolder, fileName);
+                                    const file = await this.app.vault.create(fullPath, "");
+
+                                    await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+                                        if (markmindPlugin.settings.mindmapmode === "basic") {
+                                            frontmatter["mindmap-plugin"] = "basic";
+                                        } else {
+                                            frontmatter["mindmap-plugin"] = "rich";
+                                        }
+                                    });
+                                    
+                                    await this.insertLinkToPreviousView(file.path);
+                                    new ModalWindow(this, "", file, "", "mindmapview").open();
+                                }
+                            } catch (e) {
+                                console.error("createMarkmindFile failed:", e);
+                                new Notice(t("Failed to create file: ") + e.message);
+                            }
                         })
                 );
             }
@@ -998,8 +1134,20 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Dataloom")
                         .setIcon("container")
                         .onClick(async () => {
-                            // await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
-                            await this.createFileAndInsertLink("notion-like-tables:create", true, false);
+                            await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
+                            setTimeout(() => {
+                                const editor = this.app.workspace.activeEditor?.editor;
+                                if (!editor) return;
+                                const line = editor.getLine(editor.getCursor().line);
+                                new Notice(line);
+                                const match = line.match(/\[\[([^\]]+)\]\]/);
+                                if (!match) return;
+                                const filename = match[1];
+                                const file = this.app.metadataCache.getFirstLinkpathDest(filename, "");
+                                if (file) {
+                                    new ModalWindow(this, "", file, "", "dataloom").open();
+                                }
+                            }, 100);
                         })
                 );
             }
@@ -1066,103 +1214,61 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private async createFileAndInsertLink(commandId: string, isEmbed: boolean, isAlias: boolean) {
-        // 保存当前活动编辑器的信息
+    private getDrawingFilename(settings: any): string {
+        const prefix = settings.drawingFilenamePrefix || "";
+        const datetime = settings.drawingFilenameDateTime
+            ? window.moment().format(settings.drawingFilenameDateTime)
+            : "";
+        const extension = settings.compatibilityMode
+            ? ".excalidraw"
+            : settings.useExcalidrawExtension
+                ? ".excalidraw.md"
+                : ".md";
+
+        return prefix + datetime + extension;
+    }
+
+    private getExcelFilename(settings: any): string {
+        return (
+            settings.excelFilenamePrefix +
+            (settings.excelFilenameDateTime !== ""
+                ? window.moment().format(settings.excelFilenameDateTime)
+                : "") +
+            ".sheet.md"
+        );
+    }
+
+    private getExcelProFilename(settings: any): string {
+        return (
+            `${settings.excelFilenamePrefix
+            + (settings.excelFilenameDateTime !== ''
+                ? window.moment().format(settings.excelFilenameDateTime)
+                : '')
+            }.univer.md`
+        )
+    }
+
+    private async insertLinkToPreviousView(filepath: string) {
         const previousView = this.app.workspace.getActiveViewOfType(MarkdownView);
+        const previousEditor = previousView?.editor ?? null;
+        const previousCursor = previousEditor?.getCursor() ?? null;
 
-        let previousEditor: Editor | null = null;
-        let previousCursor: EditorPosition | null = null;
-
-        if (previousView) {
-            previousEditor = previousView.editor;
-            previousCursor = previousEditor.getCursor();
-        }
-        (this.app as any).commands.executeCommandById(commandId);
-
-        const newLeaf = this.app.workspace.getLeaf(true);
-        this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
-
-        const activeFile = await this.waitForActiveFile();
-
-        if (activeFile && previousEditor && previousCursor) {
-            const fileName = activeFile.name;
-            const filePath = activeFile.path;
-            const linkText = `${isEmbed ? '!' : ''}[[${filePath}${isAlias ? `|${fileName}` : ''}]]`;
+        if (previousEditor && previousCursor) {
+            const linkText = `![[${filepath}]]`;
 
             if (previousView) {
                 this.app.workspace.setActiveLeaf(previousView.leaf, { focus: true });
                 previousEditor?.replaceRange(linkText, previousCursor);
             }
-
-            // 移动光标到插入的链接之后
             const newCursor = {
                 line: previousCursor.line,
                 ch: previousCursor.ch + linkText.length
             };
             previousEditor.setCursor(newCursor);
-            this.app.workspace.setActiveLeaf(newLeaf, { focus: true });
         }
-
-        setTimeout(() => {
-            this.openContentInModal();
-        }, this.settings.modalOpenDelay);
     }
 
-    private async waitForActiveFile(timeout: number = 5000): Promise<TFile | null> {
-        const startTime = Date.now();
-        while (Date.now() - startTime < timeout) {
-            const activeFile = this.app.workspace.getActiveFile();
-            if (activeFile) {
-                return activeFile;
-            }
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        return null;
-    }
-
-    private async createCodeFileAndOpenInModal() {
-        return new Promise<void>((resolve) => {
-            const observer = new MutationObserver((mutations, obs) => {
-                for (const mutation of mutations) {
-                    for (const node of Array.from(mutation.addedNodes)) {
-                        if (node instanceof HTMLElement && node.classList.contains('modal-container')) {
-                            const confirmButton = node.querySelector('.mod-cta');
-                            const inputElement = node.querySelector('input');
-                            let selectElement = node.querySelector('.modal_select') as HTMLSelectElement;
-                            const codePlugin = this.getPlugin("code-files");
-                            if (codePlugin) {
-                                selectElement = node.querySelector('.dropdown') as HTMLSelectElement;
-                            }
-
-                            if (confirmButton && inputElement && selectElement) {
-                                confirmButton.addEventListener('click', () => {
-                                    const fileName = inputElement.value;
-                                    const fileExtension = selectElement.value;
-
-                                    if (fileName) {
-                                        const fullFileName = `${fileName}.${fileExtension}`;
-                                        this.insertCodeFileLink(fullFileName, "");
-                                        setTimeout(() => {
-                                            this.openContentInModal();
-                                        }, 200);
-                                    }
-
-                                    obs.disconnect();
-                                    resolve();
-                                });
-                            }
-                            return;
-                        }
-                    }
-                }
-            });
-
-            observer.observe(document.body, { childList: true, subtree: true });
-            (this.app as any).commands.executeCommandById("vscode-editor:create");
-        });
-    }
-
-    private async getNewFileName(fileType: string): Promise<{ fileName: string, isEmbed: boolean } | null> {
+    private async getNewFileName(fileType?: string, placeholder: string = ""): Promise<{ fileName: string, isEmbed: boolean } | null> {
         const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
         const selectedText = activeView?.editor?.getSelection() || '';
 
@@ -1171,23 +1277,19 @@ export default class ModalOpenerPlugin extends Plugin {
             modal.titleEl.setText(t("Enter new file name"));
 
             const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
-
             const inputContainer = container.createDiv({ cls: 'new-file-input-container' });
-
             const input = inputContainer.createEl("input", {
                 type: "text",
                 value: selectedText,
-                placeholder: "File name",
+                placeholder: placeholder,
                 cls: 'new-file-input'
             });
             input.focus();
             input.select();
 
-            const select = inputContainer.createEl("select", { cls: 'new-file-select' });
-            if (fileType == "canvas") {
-                select.createEl("option", { text: t("Embed link"), value: "embed" });
-                select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
-            } else {
+            let select: HTMLSelectElement;
+            if (fileType == "md") {
+                select = inputContainer.createEl("select", { cls: 'new-file-select' });
                 select.createEl("option", { text: t("Wiki link"), value: "wikilink" });
                 select.createEl("option", { text: t("Embed link"), value: "embed" });
             }
@@ -1204,11 +1306,11 @@ export default class ModalOpenerPlugin extends Plugin {
             });
 
             const confirmAction = () => {
-                const fileName = input.value.trim();
+                const fileName = input.value.trim() || input.placeholder.trim();  // ← 如果没填，就用 placeholder
                 if (fileName) {
                     resolve({
                         fileName: fileName,
-                        isEmbed: select.value === "embed"
+                        isEmbed: select ? select.value === "embed" : true
                     });
                     modal.close();
                 }
@@ -1231,19 +1333,83 @@ export default class ModalOpenerPlugin extends Plugin {
         });
     }
 
-    private insertCodeFileLink(filePath: string, content: string) {
-        const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
-        if (activeView) {
-            setTimeout(() => {
-                const file = this.app.metadataCache.getFirstLinkpathDest(`${filePath}`, "");
-                if (file && file instanceof TFile) {
-                    const editor = activeView.editor;
-                    const cursor = editor.getCursor();
-                    const linkText = `![[${file.path}]]`;
-                    editor.replaceRange(linkText, cursor);
+    private async getNewCodeFileNameAndCreate(
+        settings: { extensions: string[] },
+        parent: TFolder | TFile
+    ): Promise<TFile | null> {
+        return new Promise((resolve) => {
+            const modal = new Modal(this.app);
+            modal.titleEl.setText("Enter new file name");
+    
+            const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
+            const inputContainer = container.createDiv({ cls: 'new-file-input-container' });
+    
+            const input = inputContainer.createEl("input", {
+                type: "text",
+                value: "",
+                placeholder: "Untitled",
+                cls: "new-file-input"
+            });
+            input.focus();
+            input.select();
+    
+            const select = inputContainer.createEl("select", { cls: "new-file-select" });
+            settings.extensions.forEach(ext => {
+                select.createEl("option", { text: ext, value: ext });
+            });
+            select.value = settings.extensions[0];
+    
+            const buttonContainer = container.createDiv({ cls: "new-file-button-container" });
+    
+            const confirmButton = buttonContainer.createEl("button", {
+                text: "Create",
+                cls: "new-file-button confirm"
+            });
+            const cancelButton = buttonContainer.createEl("button", {
+                text: "Cancel",
+                cls: "new-file-button cancel"
+            });
+    
+            const complete = async () => {
+                const fileName = input.value.trim() || input.placeholder.trim();
+                const fileExtension = select.value;
+                if (!fileName) return;
+    
+                modal.close();
+    
+                const baseFolder = (parent instanceof TFile ? parent.parent : parent) as TFolder;
+                const newPath = normalizePath(`${baseFolder.path}/${fileName}.${fileExtension}`);
+    
+                const existingFile = this.app.vault.getAbstractFileByPath(newPath);
+                if (existingFile && existingFile instanceof TFile) {
+                    new Notice("File already exists");
+                    await this.app.workspace.getLeaf(true).openFile(existingFile);
+                    resolve(existingFile);
+                    return;
                 }
-            }, 200);
-        }
+    
+                const file = await this.app.vault.create(newPath, "", {});
+                await this.insertLinkToPreviousView(file.path);
+                new ModalWindow(this, "", file, "", "vscode-editor").open();
+                resolve(file);
+            };
+    
+            confirmButton.onclick = complete;
+    
+            input.addEventListener("keydown", (e: KeyboardEvent) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    complete();
+                }
+            });
+    
+            cancelButton.onclick = () => {
+                modal.close();
+                resolve(null);
+            };
+    
+            modal.open();
+        });
     }
 
     private insertLinkToActiveFile(filePath: string, displayName: string, isEmbed: boolean, isAlias: boolean) {
@@ -1272,14 +1438,14 @@ export default class ModalOpenerPlugin extends Plugin {
         const newFileName = `${fileName}.${fileType}`
         const folder = this.app.fileManager.getNewFileParent(sourcePath, newFileName);
         const newFilePath = folder.path === "/"
-                            ? newFileName
-                            : `${folder.path}/${newFileName}`;
+            ? newFileName
+            : `${folder.path}/${newFileName}`;
 
         try {
             const newFile = await this.app.vault.create(newFilePath, '');
             const displayName = newFile.basename;
             isAlias ? this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, true) : this.insertLinkToActiveFile(newFilePath, displayName, isEmbed, false);
-            new ModalWindow (
+            new ModalWindow(
                 this,
                 "",
                 newFile,
@@ -1297,18 +1463,18 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.activeLeafChangeTimeout) {
             clearTimeout(this.activeLeafChangeTimeout);
         }
-        
+
         if (activeLeaf?.view?.getViewType() === "webviewer") {
             const activeLeafEl = document.querySelector(".workspace-leaf.mod-active");
             if (activeLeafEl) {
                 const webviewEl = activeLeafEl.querySelector("webview");
-        
+
                 if (webviewEl) {
                     webviewEl.addEventListener("dom-ready", () => {
-                        if(this.settings.enableWebAutoDarkMode) {
+                        if (this.settings.enableWebAutoDarkMode) {
                             this.registerWebAutoDarkMode(webviewEl);
                         }
-                        if(this.settings.enableImmersiveTranslation) {
+                        if (this.settings.enableImmersiveTranslation) {
                             this.registerImmersiveTranslation(webviewEl);
                         }
                     });
@@ -1407,11 +1573,11 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     async registerWebAutoDarkMode(webContents: any) {
-		try {
+        try {
             const isDarkMode = document.body.classList.contains('theme-dark');
-			if (isDarkMode) {
-				try {
-					await webContents.executeJavaScript(`
+            if (isDarkMode) {
+                try {
+                    await webContents.executeJavaScript(`
 						const element = document.createElement('script');
 
 						fetch('https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js')
@@ -1438,10 +1604,10 @@ export default class ModalOpenerPlugin extends Plugin {
 							}
 						};
 					`);
-				} catch (e) {
-					console.error(e);
-				}
-			} else {
+                } catch (e) {
+                    console.error(e);
+                }
+            } else {
                 try {
                     await webContents.executeJavaScript(`
                         if (DarkReader) {
@@ -1453,12 +1619,12 @@ export default class ModalOpenerPlugin extends Plugin {
                     console.error('Error disabling dark mode: ', e);
                 }
             }
-		} catch (err) {
-			console.error("Failed to get background color: ", err);
-		}
+        } catch (err) {
+            console.error("Failed to get background color: ", err);
+        }
 
-		// https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
-		webContents.executeJavaScript(`
+        // https://cdn.jsdelivr.net/npm/darkreader/darkreader.min.js
+        webContents.executeJavaScript(`
 			window.addEventListener('mouseover', (e) => {
 				if(!e.target) return;
 				if(!e.ctrlKey && !e.metaKey) return;
@@ -1488,7 +1654,7 @@ export default class ModalOpenerPlugin extends Plugin {
             script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-latest.js';
             document.head.appendChild(script);
         `);
-	}
+    }
 
     public getPlugin(pluginId: string) {
         const app = this.app as any;

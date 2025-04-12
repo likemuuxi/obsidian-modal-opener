@@ -1,4 +1,4 @@
-import { Modal, TFile, WorkspaceLeaf, MarkdownView, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
+import { Modal, TFile, WorkspaceLeaf, MarkdownView, ViewState, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
 
@@ -8,6 +8,7 @@ export class ModalWindow extends Modal {
     link: string;
     file?: TFile;
     fragment: string;
+    viewType?: string;
     public scope: Scope;
     private modalLeafRef?: WorkspaceLeaf;
     private prevActiveLeaf?: WorkspaceLeaf;
@@ -21,12 +22,13 @@ export class ModalWindow extends Modal {
     private webviewPlugin: boolean;
     private hideTimeout: NodeJS.Timeout;
 
-    constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string) {
+    constructor(plugin: ModalOpenerPlugin, link: string, file?: TFile, fragment?: string, viewType?: string) {
         super(plugin.app);
         this.plugin = plugin;
         this.link = link;
         this.file = file;
         this.fragment = fragment || '';
+        this.viewType = viewType;
         this.scope = new Scope(this.app.scope); // Allow app commands to work inside modal
         this.webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
         this.boundHandleActiveLeafChange = this.handleActiveLeafChange.bind(this);
@@ -180,7 +182,7 @@ export class ModalWindow extends Modal {
             this.app.workspace.setActiveLeaf(this.prevActiveLeaf);
         }
     }
-
+    
     private async displayFileContent(file: TFile, fragment: string) {
         if (!this.contentEl) {
             return;
@@ -202,9 +204,13 @@ export class ModalWindow extends Modal {
                 mode = (this.prevActiveLeaf?.view instanceof MarkdownView) && this.prevActiveLeaf.view.getMode() === 'source' ? 'source' : 'preview';
         }
 
+        const previewTypes = ["excel-view", "tldraw-view", "mindmapview", "dataloom"];
         if (this.modalLeafRef) {
             await this.modalLeafRef.openFile(file, { state: { mode } });
             fileContainer.appendChild(this.modalLeafRef.view.containerEl);
+
+            if(this.viewType && previewTypes.includes(this.viewType)) await (this.app as any).commands.executeCommandById("markdown:toggle-preview");
+            
             if (fragment) {
                 const filePath = `${file.path}#${fragment}`;
                 this.app.workspace.openLinkText(filePath, file.path, false);

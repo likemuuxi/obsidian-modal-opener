@@ -90,7 +90,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	hideScroll: true,
 	preventsDuplicateTabs: false,
 	delayInMs: 100,
-	modalOpenDelay: 0,
+	modalOpenDelay: 100,
 	enableRefreshOnClose: true,
 	showFloatingButton: true,
 	viewOfDisplayButton: 'both',
@@ -602,18 +602,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		// 只有在设置开启时才显示其他选项
 		if (this.plugin.settings.showCommandsContainer) {
-			new Setting(containerEl)
-				.setName(t('Modal window open delay'))
-				.setDesc(t('Set the delay (in milliseconds) before opening modal window after creating new file.'))
-				.addSlider(slider => slider
-					.setLimits(0, 500, 50)
-					.setValue(this.plugin.settings.modalOpenDelay)
-					.setDynamicTooltip()
-					.onChange(async (value) => {
-						this.plugin.settings.modalOpenDelay = value;
-						await this.plugin.saveSettings();
-					}));
-
 			const commandsContainer = containerEl.createDiv('command-toggle-container');
 			// Markdown
 			new Setting(commandsContainer)
