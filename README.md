@@ -46,6 +46,9 @@ Special thanks to these amazing plugins! I use these plugins as a reference for 
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 
 # 🌟 Become a Sponsor
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/8ad1ad6807cf421875fa0d3f74a52463.jpg)
-![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/2728c68008f809ed58af9fbe38898ff0.jpg)
+
+<p align="center">
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/8ad1ad6807cf421875fa0d3f74a52463.jpg" width="45%" />
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/2728c68008f809ed58af9fbe38898ff0.jpg" width="45%" />
+</p>
 
