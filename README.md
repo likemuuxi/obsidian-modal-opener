@@ -22,8 +22,6 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 > Create Diagrams from menu requires modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
 > Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
->
-> Add toc in the modal window requires modified plugin: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
 
 # 🪒How to install
 
@@ -46,3 +44,8 @@ Special thanks to these amazing plugins! I use these plugins as a reference for 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
+
+# 🌟 Become a Sponsor
+![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/8ad1ad6807cf421875fa0d3f74a52463.jpg)
+![](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/2728c68008f809ed58af9fbe38898ff0.jpg)
+
