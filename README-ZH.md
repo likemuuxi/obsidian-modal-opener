@@ -21,9 +21,6 @@
   > 从菜单创建 `Diagrams` 需安装修改版插件：[obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
   > 
   > `alt+click` 进入模态窗口编辑代码块需使用修改版插件: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor)
-  >
-  > 在模态窗口中添加目录，可以使用修改版插件: [another-sticky-headings.zip](https://github.com/user-attachments/files/19037705/another-sticky-headings.zip)
-
 
 # 🪒安装
 
@@ -46,3 +43,10 @@
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
+
+# 🌟 成为赞助者
+
+<p align="center">
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463048990.png" width="25%" />
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463038765.png" width="23.5%" />
+</p>
