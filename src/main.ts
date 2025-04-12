@@ -858,9 +858,10 @@ export default class ModalOpenerPlugin extends Plugin {
             }
 
             // 第二组：Excalidraw、Diagrams 和 Tldraw
-            let excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin");
-            excalidrawPlugin = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
-            if ((excalidrawPlugin) && this.settings.enabledCommands.excalidraw) {
+            const pluginOriginal = this.getPlugin("obsidian-excalidraw-plugin");
+            const pluginYMJR = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
+            const excalidrawPlugin = pluginOriginal || pluginYMJR;
+            if (excalidrawPlugin && this.settings.enabledCommands.excalidraw) {
                 group2Count++;
                 subMenu.addItem((subItem: MenuItem) =>
                     subItem
@@ -1139,7 +1140,6 @@ export default class ModalOpenerPlugin extends Plugin {
                                 const editor = this.app.workspace.activeEditor?.editor;
                                 if (!editor) return;
                                 const line = editor.getLine(editor.getCursor().line);
-                                new Notice(line);
                                 const match = line.match(/\[\[([^\]]+)\]\]/);
                                 if (!match) return;
                                 const filename = match[1];
@@ -1339,7 +1339,7 @@ export default class ModalOpenerPlugin extends Plugin {
     ): Promise<TFile | null> {
         return new Promise((resolve) => {
             const modal = new Modal(this.app);
-            modal.titleEl.setText("Enter new file name");
+            modal.titleEl.setText(t("Enter new file name"));
     
             const container = modal.contentEl.createDiv({ cls: 'new-file-modal-container' });
             const inputContainer = container.createDiv({ cls: 'new-file-input-container' });
@@ -1362,11 +1362,11 @@ export default class ModalOpenerPlugin extends Plugin {
             const buttonContainer = container.createDiv({ cls: "new-file-button-container" });
     
             const confirmButton = buttonContainer.createEl("button", {
-                text: "Create",
+                text: t("Confirm"),
                 cls: "new-file-button confirm"
             });
             const cancelButton = buttonContainer.createEl("button", {
-                text: "Cancel",
+                text: t("Cancel"),
                 cls: "new-file-button cancel"
             });
     
