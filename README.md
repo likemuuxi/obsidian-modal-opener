@@ -49,6 +49,6 @@ Special thanks to these amazing plugins! I use these plugins as a reference for 
 
 <p align="center">
   <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463048990.png" width="25%" />
-  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463038765.png" width="22%" />
+  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463038765.png" width="23%" />
 </p>
 
