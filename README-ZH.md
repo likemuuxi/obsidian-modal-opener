@@ -44,9 +44,3 @@
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 
-# 🌟 成为赞助者
-
-<p align="center">
-  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463048990.png" width="25%" />
-  <img src="https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1744463038765.png" width="23.5%" />
-</p>
