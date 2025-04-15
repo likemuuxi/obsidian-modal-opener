@@ -1,9 +1,10 @@
-import { Plugin, Menu, getLanguage, TAbstractFile, Notice, TFile, TFolder, MenuItem, Editor, MarkdownView, normalizePath, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
+import { Plugin, Menu, TAbstractFile, Notice, TFile, TFolder, MenuItem, Editor, MarkdownView, normalizePath, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
 import { t } from "./lang/helpers"
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { DEFAULT_SETTINGS, ModalOpenerPluginSettings, } from "./settings";
 
+declare function getLanguage(): string;
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -383,13 +384,20 @@ export default class ModalOpenerPlugin extends Plugin {
                 // new Notice("isPreviewModeLink: " + target.tagName);
                 this.handlePreviewModeLink(evt, isAltClick);
             } else if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
-                if (target.closest('.markdown-source-view') || target.classList.contains('cm-link')) {
-                    this.handleSourceModeLink(activeView.editor, evt, isAltClick);
-                }
-                // 处理编辑器中的代码块
-                if (this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
-                    if ((!singleClick) || (singleClick && isAltClick)) {
-                        (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                if (target.closest('.markdown-source-view')) {
+                    // 处理编辑器中的代码块
+                    if (this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
+                        if ((!singleClick) || (singleClick && isAltClick)) {
+                            (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
+                            return;
+                        }
+                    }
+
+                    if (target.classList.contains("cm-underline") || 
+                        target.classList.contains("cm-hmd-internal-link") || 
+                        target.classList.contains("cm-link") || 
+                        target.classList.contains("cm-url")) {
+                        this.handleSourceModeLink(activeView.editor, evt, isAltClick);
                     }
                 }
             }
@@ -634,7 +642,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
         while ((match = linkRegex.exec(line)) !== null) {
             // 检查光标是否在整个链接范围内
-            if (match.index <= position && position <= match.index + match[0].length) {
+            if (match.index < position && position < match.index + match[0].length) {
                 // 如果是内部链接带别名的情况
                 if (match[1] && match[1].includes("|")) {
                     // 只返回别名前的实际链接部分
