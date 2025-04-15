@@ -1,10 +1,9 @@
-import { Plugin, Menu, TAbstractFile, Notice, TFile, TFolder, MenuItem, Editor, MarkdownView, normalizePath, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
+import { Plugin, Menu, getLanguage, TAbstractFile, Notice, TFile, TFolder, MenuItem, Editor, MarkdownView, normalizePath, Modal, EditorPosition, WorkspaceLeaf, Platform } from "obsidian";
 import { t } from "./lang/helpers"
 import { ModalWindow } from "./modal";
 import ModalOpenerSettingTab from "./settings";
 import { DEFAULT_SETTINGS, ModalOpenerPluginSettings, } from "./settings";
 
-declare function getLanguage(): string;
 
 export type RealLifeWorkspaceLeaf = WorkspaceLeaf & {
     activeTime: number;
@@ -1103,7 +1102,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                 const parentFolder = this.app.fileManager.getNewFileParent(filePath);
                                 
                                 const lang = getLanguage();
-                                const baseName = lang.startsWith("zh") ? "未命名思维导图" : "untitled mindmap";
+                                const baseName = lang.startsWith("zh") ? "未命名思维导图" : "Untitled mindmap";
                                 const sourcePath = this.app.workspace.getActiveFile()?.path || "";
                                 const folder = this.app.fileManager.getNewFileParent(sourcePath, `${baseName}.md`);
                                 const availableFileName = await this.getAvailableFileName(baseName, "md", folder.path);
