@@ -875,18 +875,21 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excalidraw")
                         .setIcon("swords")
                         .onClick(async () => {
-                            const defaultFileName = this.getDrawingFilename(excalidrawPlugin.settings);  // 默认文件名
-                            const result = await this.getNewFileName("", defaultFileName);
-                            if (!result) return;
+                            const defaultNameWithExt = this.getDrawingFilename(excalidrawPlugin.settings);  // 默认文件名
+                            const useExcalidrawExtension = excalidrawPlugin.settings.useExcalidrawExtension;
+                            // const ext = useExcalidrawExtension ? ".excalidraw.md" : ".md";
+                            // const defaultName = defaultNameWithExt.slice(0, -ext.length)
 
+                            const result = await this.getNewFileName("", defaultNameWithExt);
+                            if (!result) return;
                             const { fileName, isEmbed } = result;
+
                             if (excalidrawPlugin && excalidrawPlugin.settings) {
-                                const useExcalidrawExtension = excalidrawPlugin.settings.useExcalidrawExtension;
                                 // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
-                                const hasCustomName = fileName !== defaultFileName;
+                                const hasCustomName = fileName != defaultNameWithExt;
                                 const excalidrawFileName = hasCustomName
                                     ? fileName + (useExcalidrawExtension ? ".excalidraw.md" : ".md")
-                                    : fileName;
+                                    : defaultNameWithExt;
 
                                 try {
                                     const file = await excalidrawPlugin.createDrawing(excalidrawFileName);
@@ -923,12 +926,13 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("shapes")
                         .onClick(async () => {
                             const defaultName = tldrawPlugin.createDefaultFilename();  // 没输入时使用
-                            const result = await this.getNewFileName("", defaultName);  // 弹出输入框
-                            if (!result) return;
 
-                            const { fileName: rawFileName, isEmbed } = result;
-                            const isDefault = rawFileName === defaultName;
-                            const useFileName = isDefault ? defaultName : rawFileName;
+                            const result = await this.getNewFileName("", defaultName + ".md");  // 弹出输入框
+                            if (!result) return;
+                            const { fileName, isEmbed } = result;
+
+                            const hasCustomName = (fileName + ".md") != defaultName;
+                            const tldrawFileName = hasCustomName ? fileName : defaultName;
 
                             if (tldrawPlugin && tldrawPlugin.settings) {
                                 const fileDestinations = tldrawPlugin.settings.fileDestinations;
@@ -941,7 +945,7 @@ export default class ModalOpenerPlugin extends Plugin {
                                         break;
                                     }
                                     case "colocate": {
-                                        folderName = './' + tldrawPlugin.settings.fileDestinations.colocationSubfolder;
+                                        folderName = tldrawPlugin.settings.fileDestinations.colocationSubfolder;
                                         break;
                                     }
                                     case "default-folder": {
@@ -953,9 +957,9 @@ export default class ModalOpenerPlugin extends Plugin {
                                         break;
                                     }
                                 }
-
+                                
                                 try {
-                                    const file = await tldrawPlugin.createTldrFile(useFileName, {
+                                    const file = await tldrawPlugin.createTldrFile(tldrawFileName, {
                                         foldername: folderName,
                                         inMarkdown: true,
                                         tlStore: undefined
@@ -984,18 +988,18 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Excel")
                         .setIcon("table")
                         .onClick(async () => {
-                            const defaultFileName = this.getExcelFilename(excelPlugin.settings);  // 默认文件名
-                            const result = await this.getNewFileName("", defaultFileName);
+                            const defaultName = this.getExcelFilename(excelPlugin.settings);  // 默认文件名
+                            const result = await this.getNewFileName("", defaultName);
                             if (!result) return;
-
                             const { fileName, isEmbed } = result;
+
                             if (excelPlugin && excelPlugin.settings) {
                                 // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
-                                const hasCustomName = fileName !== defaultFileName;
+                                const hasCustomName = fileName !== defaultName;
                                 const excelFileName = hasCustomName
                                     ? fileName + ".sheet.md"
                                     : fileName;
-
+    
                                 try {
                                     const file = await excelPlugin.createExcel(excelFileName);
                                     await this.insertLinkToPreviousView(file.path);
@@ -1016,14 +1020,14 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setTitle("Sheet Plus")
                         .setIcon("grid")
                         .onClick(async () => {
-                            const defaultFileName = this.getExcelProFilename(sheetPlugin.settings);  // 默认文件名
-                            const result = await this.getNewFileName("", defaultFileName);
+                            const defaultName = this.getExcelProFilename(sheetPlugin.settings);  // 默认文件名
+                            const result = await this.getNewFileName("", defaultName);
                             if (!result) return;
-
                             const { fileName, isEmbed } = result;
+
                             if (sheetPlugin && sheetPlugin.settings) {
                                 // 如果用户手动输入了名称，使用手动的 + 后缀；否则用默认生成的（默认生成的已含后缀）
-                                const hasCustomName = fileName !== defaultFileName;
+                                const hasCustomName = fileName !== defaultName;
                                 const excelFileName = hasCustomName
                                     ? fileName + ".univer.md"
                                     : fileName;
@@ -1102,22 +1106,28 @@ export default class ModalOpenerPlugin extends Plugin {
                                 const parentFolder = this.app.fileManager.getNewFileParent(filePath);
                                 
                                 const lang = getLanguage();
-                                const baseName = lang.startsWith("zh") ? "未命名思维导图" : "Untitled mindmap";
+                                const baseName = lang.startsWith("zh") ? "未命名思维导图" : "untitled mindmap";
                                 const sourcePath = this.app.workspace.getActiveFile()?.path || "";
                                 const folder = this.app.fileManager.getNewFileParent(sourcePath, `${baseName}.md`);
                                 const availableFileName = await this.getAvailableFileName(baseName, "md", folder.path);
 
                                 const result = await this.getNewFileName("", availableFileName);
                                 if (!result) return;
-    
                                 const { fileName, isEmbed } = result;
+                                
                                 if (parentFolder) {
                                     const targetFolder = parentFolder || this.app.fileManager.getNewFileParent(
                                         this.app.workspace.getActiveFile()?.path || ""
                                     );
 
                                     const folderPath = targetFolder.path;
-                                    const fullPath = `${folderPath}/${fileName}.md`;
+
+                                    const hasCustomName = fileName !== availableFileName;
+                                    const markmindFileName = hasCustomName
+                                        ? fileName + ".md"
+                                        : fileName;
+
+                                    const fullPath = `${folderPath}/${markmindFileName}`;
                                     
                                     // const file = await (this.app.fileManager as any).createNewMarkdownFile(targetFolder, fileName);
                                     const file = await this.app.vault.create(fullPath, "");
@@ -1340,7 +1350,7 @@ export default class ModalOpenerPlugin extends Plugin {
             });
 
             const confirmAction = () => {
-                const fileName = input.value.trim() || input.placeholder.trim().replace(/\.[^/.]+$/, "");  // ← 如果没填，就用 placeholder
+                const fileName = input.value.trim() || input.placeholder.trim();  // ← 如果没填，就用 placeholder
                 if (fileName) {
                     resolve({
                         fileName: fileName,
@@ -1381,7 +1391,7 @@ export default class ModalOpenerPlugin extends Plugin {
             const input = inputContainer.createEl("input", {
                 type: "text",
                 value: "",
-                placeholder: "Untitled",
+                placeholder: "untitled code file",
                 cls: "new-file-input"
             });
             input.focus();
@@ -1469,13 +1479,13 @@ export default class ModalOpenerPlugin extends Plugin {
         const { fileName, isEmbed } = result;
         const activeFile = this.app.workspace.getActiveFile();
         const sourcePath = activeFile ? activeFile.path : "";
-        const newFileName = `${fileName}.${fileType}`
+        // const newFileName = `${fileName}.${fileType}`
 
-        const folder = this.app.fileManager.getNewFileParent(sourcePath, newFileName);
+        const folder = this.app.fileManager.getNewFileParent(sourcePath, fileName);
 
         const newFilePath = folder.path === "/"
-            ? newFileName
-            : `${folder.path}/${newFileName}`;
+            ? fileName
+            : `${folder.path}/${fileName}`;
 
         try {
             const newFile = await this.app.vault.create(newFilePath, '');

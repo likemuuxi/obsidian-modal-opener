@@ -209,8 +209,6 @@ export class ModalWindow extends Modal {
             await this.modalLeafRef.openFile(file, { state: { mode } });
             fileContainer.appendChild(this.modalLeafRef.view.containerEl);
 
-            if(this.viewType && previewTypes.includes(this.viewType)) await (this.app as any).commands.executeCommandById("markdown:toggle-preview");
-            
             if (fragment) {
                 const filePath = `${file.path}#${fragment}`;
                 this.app.workspace.openLinkText(filePath, file.path, false);
@@ -239,6 +237,11 @@ export class ModalWindow extends Modal {
 
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
+        
+        setTimeout(() => {
+            if(this.viewType && previewTypes.includes(this.viewType)) 
+                (this.app as any).commands.executeCommandById("markdown:toggle-preview");
+        }, 100);
     }
 
     private async displayLinkContent(link: string) {
