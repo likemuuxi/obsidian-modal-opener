@@ -19,9 +19,9 @@ English Doc｜[中文文档](https://github.com/likemuuxi/obsidian-modal-plugin/
 - Support right-click menu to create multiple file types and edit them in the modal window. After editing, the link will be automatically embedded to the current cursor position
   ![image](https://muuxi-oss.oss-cn-hangzhou.aliyuncs.com/img/1743083438702.png)
 
-> Create Diagrams from menu requires modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
+> Create diagrams from menu requires modified plugin: [obsidian-diagrams-net](https://github.com/likemuuxi/obsidian-diagrams-net)
 > 
-> Using `alt+click` to Edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
+> Using `alt+click` to edit the code block in modal window requires modified plugin: [vscode-editor](https://github.com/likemuuxi/obsidian-vscode-editor).
 
 # 🪒How to install
 
