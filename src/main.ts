@@ -547,6 +547,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
         // const link = this.getPreviewModeLinkText(target); // .replace(/^📁\s*/, "")
         let link = this.getPreviewModeLinkText(target).replace(/^\[\[(.*?)\]\]$/, "$1");
+        // new Notice("link:" + link);
 
         if (target.closest('.outgoing-link-item')) { // 获取出链链接
             const treeItemIcon = target.closest('.outgoing-link-item')?.querySelector('.tree-item-icon');
@@ -581,6 +582,14 @@ export default class ModalOpenerPlugin extends Plugin {
     private getPreviewModeLinkText(target: HTMLElement): string {
         // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
         const container = target.closest('.ge-grid-item') || target;
+
+        // 处理note toolbar的外部链接元素
+        if (target.closest('.callout-content')) {
+            const externalLink = target.closest('.external-link');
+            if (externalLink) {
+                return externalLink.getAttribute('href') || '';
+            }
+        }
 
         // 如果点击的是别名部分
         if (container.classList.contains('cm-link-alias')) {
