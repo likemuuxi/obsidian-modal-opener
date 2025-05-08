@@ -399,6 +399,8 @@ export default class ModalOpenerPlugin extends Plugin {
                         this.handleSourceModeLink(activeView.editor, evt, isAltClick);
                     }
                 }
+            } else {
+                // new Notice("target: " + target.tagName);
             }
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
@@ -418,6 +420,11 @@ export default class ModalOpenerPlugin extends Plugin {
 
         // 支持反向链接的更多内容
         if (element.tagName === 'SPAN' && element.closest('.search-result-file-match')) {
+            return true;
+        }
+
+        // 支持NoteToolbar的更多内容
+        if (element.tagName === 'SPAN' && element.closest('.callout-content')) {
             return true;
         }
 
