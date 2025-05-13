@@ -353,54 +353,53 @@ export default class ModalOpenerPlugin extends Plugin {
             const activeView = this.app.workspace.getMostRecentLeaf()?.view;
             const editor = this.app.workspace.getActiveViewOfType(MarkdownView)?.editor;
 
-            const singleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
-            const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
             const isAltClick = evt.altKey && evt.button === 0;
+            const isSingleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
+            const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
 
-            // 检查是否应该触发处理
-            if (!isAltClick && !singleClick) return;
-            if (editor && editor.somethingSelected()) return;
-            if (!(evt.button === 0 && (!evt.ctrlKey || evt.altKey))) return;
+            if (evt.button !== 0) return; // 忽略非左键点击
+            if (evt.ctrlKey || evt.shiftKey) return; // 忽略 Ctrl/Shift键
 
-            // 检查特殊元素 diagram.svg
-            if (target.getAttribute("alt")?.endsWith(".svg")) return;
+            if (!isAltClick && !isSingleClick) return;
+            
+            if (editor && editor.somethingSelected()) return; // 忽略选择文字的情况
+            if (target.getAttribute("alt")?.endsWith(".svg")) return; // 检查特殊元素 diagram.svg
 
-            if (singleClick && !isAltClick && singleClickType !== 'external') {
+            // 如果是单击模式但不允许 external 类型触发，则排除在外
+            if (!isAltClick && isSingleClick && singleClickType !== 'external') {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path;
-                // console.log("Exclude Files:", excludeFiles);
-                // console.log("Current File:", this.app.workspace.getActiveFile()?.path);
-
                 if (currentFilePath && this.excludeFiles.length > 0) {
-                    const isExcluded = this.excludeFiles.some(file => currentFilePath === file);
-                    if (isExcluded) {
-                        return;
-                    }
+                    const isExcluded = this.excludeFiles.includes(currentFilePath);
+                    if (isExcluded) return;
                 }
             }
 
-            // 处理链接点击
+            // 处理预览模式下的链接点击
             if (this.isPreviewModeLink(target)) {
-                // new Notice("isPreviewModeLink: " + target.tagName);
                 this.handlePreviewModeLink(evt, isAltClick);
-            } else if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
+                return;
+            }
+
+            // 编辑模式下的点击处理
+            if (activeView instanceof MarkdownView && activeView.getMode() === 'source') {
                 if (target.closest('.markdown-source-view')) {
-                    // 处理编辑器中的代码块
-                    if (this.isInFencedCodeBlock(activeView.editor, activeView.editor.getCursor())) {
-                        if ((!singleClick) || (singleClick && isAltClick)) {
+                    const cursor = activeView.editor.getCursor();
+                    if (this.isInFencedCodeBlock(activeView.editor, cursor)) {
+                        if (!isSingleClick || (isSingleClick && isAltClick)) {
                             (this.app as any).commands.executeCommandById("vscode-editor:edit-fence");
                             return;
                         }
                     }
 
-                    if (target.classList.contains("cm-underline") || 
-                        target.classList.contains("cm-hmd-internal-link") || 
-                        target.classList.contains("cm-link") || 
-                        target.classList.contains("cm-url")) {
+                    if (
+                        target.classList.contains("cm-underline") ||
+                        target.classList.contains("cm-hmd-internal-link") ||
+                        target.classList.contains("cm-link") ||
+                        target.classList.contains("cm-url")
+                    ) {
                         this.handleSourceModeLink(activeView.editor, evt, isAltClick);
                     }
                 }
-            } else {
-                // new Notice("target: " + target.tagName);
             }
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
