@@ -908,7 +908,8 @@ export default class ModalOpenerPlugin extends Plugin {
 
                                 try {
                                     const file = await excalidrawPlugin.createDrawing(excalidrawFileName);
-                                    await this.insertLinkToPreviousView(file.path);
+                                    const fileDirWithoutExt = file.path.replace(/\.excalidraw\.md$/, '').replace(/\.md$/, '');
+                                    await this.insertLinkToPreviousView(useExcalidrawExtension ? fileDirWithoutExt + '.excalidraw' : fileDirWithoutExt + '.md');
                                     new ModalWindow(this, "", file, "").open();
                                 } catch (e) {
                                     console.error("createExcalidrawFile failed:", e);
@@ -1494,13 +1495,13 @@ export default class ModalOpenerPlugin extends Plugin {
         const { fileName, isEmbed } = result;
         const activeFile = this.app.workspace.getActiveFile();
         const sourcePath = activeFile ? activeFile.path : "";
-        // const newFileName = `${fileName}.${fileType}`
+        const newFileName = `${fileName}.${fileType}`
 
         const folder = this.app.fileManager.getNewFileParent(sourcePath, fileName);
 
         const newFilePath = folder.path === "/"
-            ? fileName
-            : `${folder.path}/${fileName}`;
+            ? newFileName
+            : `${folder.path}/${newFileName}`;
 
         try {
             const newFile = await this.app.vault.create(newFilePath, '');

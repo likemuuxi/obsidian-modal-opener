@@ -161,7 +161,7 @@ export class ModalWindow extends Modal {
         if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview")) {
             setTimeout(() => {
                 this.refreshMarkdownViews();
-            }, this.plugin.settings.delayInMs);
+            }, 100);
         }
 
         if (this.observer) {
@@ -732,7 +732,7 @@ export class ModalWindow extends Modal {
         setTimeout(() => {
             const editView = view.currentMode;
             editView.applyScroll(scrollPosition);
-        }, 500);
+        }, 200);
     }
 
     // 适配NoteToolBar
