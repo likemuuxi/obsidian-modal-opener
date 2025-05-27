@@ -548,6 +548,14 @@ export default class ModalOpenerPlugin extends Plugin {
         let link = this.getPreviewModeLinkText(target).replace(/^\[\[(.*?)\]\]$/, "$1");
         // new Notice("link:" + link);
 
+        if (target.closest('.metadata-link')) {
+            const inputElement = target.closest('.metadata-link')?.parentElement?.querySelector('.metadata-input-longtext');
+            const textContent = inputElement?.textContent;
+            if (textContent) {
+                link = textContent.replace(/^\[\[(.*?)\]\]$/, "$1").split('|')[0].trim() || '';
+            }
+        }
+
         if (target.closest('.outgoing-link-item')) { // 获取出链链接
             const treeItemIcon = target.closest('.outgoing-link-item')?.querySelector('.tree-item-icon');
             const subtext = target.closest('.outgoing-link-item')?.querySelector('.tree-item-inner-subtext')?.textContent?.trim() || '';
