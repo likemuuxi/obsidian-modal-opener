@@ -50,15 +50,38 @@ export default class ModalOpenerPlugin extends Plugin {
             const singleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
             const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
 
-            if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
-                if ((altKey && !ctrlKey) ||
-                    (singleClick && !altKey && !ctrlKey && singleClickType !== 'internal')) {
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation();
-                    this.openInModalWindow(target.href);
+            // 编辑模式外部链接
+            if (evt.ctrlKey && !evt.altKey) {
+                if(target.classList.contains("cm-underline") || target.classList.contains("cm-url")) {
+                    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                    if (activeView && activeView.editor) {
+                        const editor = activeView.editor;
+                        const cursor = editor.getCursor();
+                        const line = editor.getLine(cursor.line);
+                        const linkMatch = this.findLinkAtPosition(line, cursor.ch);
+                        if (linkMatch && this.isValidURL(linkMatch)) {
+                            evt.preventDefault();
+                            evt.stopImmediatePropagation();
+                            (window as any).require("electron").shell.openExternal(linkMatch);
+                        }
+                    }
                 }
 
+                return;
+            }
+            // 阅读模式外部链接
+            if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
+                // alt + click / 单击
+                // if ((altKey && !ctrlKey) ||
+                //     (singleClick && !altKey && !ctrlKey && singleClickType !== 'internal')) {
+                //     // console.log("Opening link in external browser:", target.href);
+                //     evt.preventDefault();
+                //     evt.stopImmediatePropagation();
+                //     this.openInModalWindow(target.href);
+                // }
+                // ctrl + click
                 if (ctrlKey && !altKey && this.webviewPlugin) {
+                    // console.log("Opening link in external browser:", target.href);
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
                     (window as any).require("electron").shell.openExternal(target.href);
@@ -371,6 +394,40 @@ export default class ModalOpenerPlugin extends Plugin {
                 if (currentFilePath && this.excludeFiles.length > 0) {
                     const isExcluded = this.excludeFiles.includes(currentFilePath);
                     if (isExcluded) return;
+                }
+            }
+
+            // console.log("Element:", target);
+
+            // 添加 frontmatter 处理逻辑
+            if (target.matches('.multi-select-pill-content > span')) {
+                const spanValue = target.textContent?.trim();
+                const activeFile = this.app.workspace.getActiveFile();
+
+                if (!spanValue || !activeFile) {
+                    return;
+                }
+
+                const fileCache = this.app.metadataCache.getFileCache(activeFile);
+                const frontmatterLinks = fileCache?.frontmatterLinks;
+
+                if (!frontmatterLinks || frontmatterLinks.length === 0) {
+                    return;
+                }
+
+                // 3. 在解析好的链接中查找匹配项
+                const matchedLink = frontmatterLinks.find(link => {
+                    // link.link 是链接路径 (例如 "My Note#heading")
+                    // link.displayText 是链接别名 (例如 "My Alias")
+                    // console.log("Link:", link);
+                    const linkBasename = link.link.split('#')[0]; // 获取不带标题/块引用的基本名称
+                    return link.displayText === spanValue || linkBasename === spanValue;
+                });
+
+                if (matchedLink) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                    this.openInModalWindow(matchedLink.link);
                 }
             }
 

@@ -275,25 +275,135 @@ export class ModalWindow extends Modal {
         this.setContainerHeight(linkContainer, true);
     }
     
+    private findClosestEmbedElement(element: Element): HTMLElement | null {
+        // 先判断是否匹配某些特定的类
+        if (
+            element.classList.contains('canvas-minimap') ||
+            element.classList.contains('file-embed-title') ||
+            element.classList.contains('markdown-embed-link') ||
+            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg')
+        ) {
+            // 向上查找包含 'internal-embed' 类的父元素
+            while (element) {
+                if (element.classList?.contains('internal-embed')) {
+                    return element as HTMLElement;
+                }
+                element = element.parentElement || element.parentNode as Element;
+            }
+        }
+        return null;
+    }
+
+    private getPreviewModeLinkText(target: HTMLElement): string {
+        // 如果 target 不是 ge-grid-item，查找最近的 ge-grid-item 父级
+        const container = target.closest('.ge-grid-item') || target;
+
+        // 处理note toolbar的外部链接元素
+        if (target.closest('.callout-content')) {
+            const externalLink = target.closest('.external-link');
+            if (externalLink) {
+                return externalLink.getAttribute('href') || '';
+            }
+        }
+
+        // 如果点击的是别名部分
+        if (container.classList.contains('cm-link-alias')) {
+            const parentElement = container.parentElement;
+            if (parentElement) {
+                const originalLink = parentElement.querySelector('.cm-link-has-alias');
+                if (originalLink) {
+                    return originalLink.textContent?.trim() || '';
+                }
+            }
+        }
+
+        if (target.closest('.annotated-link')) {
+            return container.textContent?.trim() || '';
+        }
+
+        return container.getAttribute('data-file-path') ||
+            container.getAttribute('filesource') ||
+            container.getAttribute('data-path') ||
+            container.getAttribute('data-href') ||
+            container.getAttribute('href') ||
+            container.getAttribute('src') ||
+            container.textContent?.trim() || '';
+    }
+
+    private findLinkAtPosition(line: string, position: number): string | null {
+        // 更新正则表达式以匹配所有可能的链接格式
+        const linkRegex = /!?\[\[([^\]]+?)(?:\|[^\]]+?)?\]\]|\[([^\]]+)\]\(([^)]+)\)|(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?\b)/g;
+        let match;
+
+        while ((match = linkRegex.exec(line)) !== null) {
+            // 检查光标是否在整个链接范围内
+            if (match.index < position && position < match.index + match[0].length) {
+                // 如果是内部链接带别名的情况
+                if (match[1] && match[1].includes("|")) {
+                    // 只返回别名前的实际链接部分
+                    return match[1].split("|")[0];
+                }
+                // 返回匹配到的第一个非空组(实际链接)
+                return match[1] || match[3] || match[4] || match[5] || match[6] || null;
+            }
+        }
+        return null;
+    }
+
     private handleInternalLinkClick(event: MouseEvent) {
         let target = event.target as HTMLElement;
 
+        const embedElement = this.findClosestEmbedElement(target);
+        if (embedElement) {
+            target = embedElement;
+        }
+
         if (!target.closest('.workspace-leaf-content')) return;
 
-        let linkText = this.getLinkFromTarget(target);
+        let linkText = "";
+        const activeView = this.modalLeafRef?.view;
+        
+        if(activeView instanceof MarkdownView) {
+            if (activeView.getMode() === 'source') { // 编辑模式下的处理逻辑
+                const editor = activeView.editor;
+                const cursor = editor.getCursor();
+                const line = editor.getLine(cursor.line);
+                linkText = this.findLinkAtPosition(line, cursor.ch) || '';
+                if(!linkText) {
+                    linkText = this.getPreviewModeLinkText(target);
+                }
+            } else {
+                linkText = this.getPreviewModeLinkText(target);
+            }
+        } else {
+            linkText = this.getLinkFromTarget(target);
+        }
+
+        // new Notice("Opening link:" + linkText);
 
         // 适配Excalidraw的双链
         const evtElement = target.closest('.excalidraw-hyperlinkContainer');
         if (evtElement) linkText = this.getLinkFromTarget(target).replace(/^\[\[(.*?)\]\]$/, "$1");
 
-        if (!linkText) return;
+        if (!linkText) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
 
         const isCtrlClick = event.ctrlKey && event.button === 0;
         if(isCtrlClick) {
-            ModalWindow.instances.forEach((instance) => {
-                instance.close();
-            });
-            // this.plugin.app.workspace.openLinkText(linkText, "", 'tab');
+            // 外部链接
+            if (this.isValidURL(linkText)) {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                (window as any).require("electron").shell.openExternal(linkText);
+            } else { // 内部链接
+                ModalWindow.instances.forEach((instance) => {
+                    instance.close();
+                });
+                this.plugin.app.workspace.openLinkText(linkText, "", 'tab');
+            }
             return;
         }
 
@@ -317,6 +427,7 @@ export class ModalWindow extends Modal {
                 ModalWindow.activeInstance?.contentEl.setAttribute('data-src', linkText);
 
                 if (this.webviewPlugin && this.modalLeafRef) { // 使用 webviewer 插件
+                    this.clearAllButton(ModalWindow.activeInstance?.contentEl);
                     this.loadSiteByWebViewer(linkText, this.modalLeafRef);
                 } else {
                     const modalContainer = this.containerEl.querySelector('.modal-opener-content') as HTMLElement;
