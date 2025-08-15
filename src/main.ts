@@ -557,6 +557,10 @@ export default class ModalOpenerPlugin extends Plugin {
             return true;
         }
 
+        if (element.tagName === 'A' && element.parentElement && Array.from(element.parentElement.classList).some(cls => cls.startsWith('community-'))) {
+            return true;
+        }
+
         if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
             return true;
         }
