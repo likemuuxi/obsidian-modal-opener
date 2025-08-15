@@ -23,6 +23,7 @@ export default class ModalOpenerPlugin extends Plugin {
     private dragHandler: (() => void) | undefined;
     private altClickHandler: ((evt: MouseEvent) => void) | undefined;
     private documentClickHandler: ((evt: MouseEvent) => void) | undefined;
+    private settingClickHandler: ((evt: MouseEvent) => void) | undefined;
     static activeModalWindow: ModalWindow | null = null;
     private processors: Map<string, Promise<void>> = new Map();
     private activeLeafChangeTimeout: NodeJS.Timeout | null = null;
@@ -44,6 +45,13 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
         this.registerEvent(this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this)));
 
+        let openExternal: boolean | undefined;
+        const webviewPlugin = (this.app as any).internalPlugins.getEnabledPluginById("webviewer");
+        if (webviewPlugin) {
+            openExternal = webviewPlugin.options.openExternalURLs;
+            // new Notice(openExternal ? "将使用外部浏览器打开链接" : "将使用内部浏览器打开链接");
+        }
+
         this.documentClickHandler = (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
             const { altKey, ctrlKey } = evt;
@@ -52,7 +60,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
             // 编辑模式外部链接
             if (evt.ctrlKey && !evt.altKey) {
-                if(target.classList.contains("cm-underline") || target.classList.contains("cm-url")) {
+                if(target.classList.contains("cm-underline") || target.classList.contains("cm-url") || target.classList.contains("cm-link")) {
                     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
                     if (activeView && activeView.editor) {
                         const editor = activeView.editor;
@@ -62,34 +70,62 @@ export default class ModalOpenerPlugin extends Plugin {
                         if (linkMatch && this.isValidURL(linkMatch)) {
                             evt.preventDefault();
                             evt.stopImmediatePropagation();
-                            (window as any).require("electron").shell.openExternal(linkMatch);
+                            if(openExternal) {
+                                (window as any).require("electron").shell.openExternal(linkMatch);
+                            } else {
+                                const leaf = this.app.workspace.getLeaf(true);
+                                this.loadSiteByWebViewer(linkMatch, leaf);
+                            }
                         }
                     }
+                    return;
                 }
 
-                return;
-            }
-            // 阅读模式外部链接
-            if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
-                // alt + click / 单击
-                // if ((altKey && !ctrlKey) ||
-                //     (singleClick && !altKey && !ctrlKey && singleClickType !== 'internal')) {
-                //     // console.log("Opening link in external browser:", target.href);
-                //     evt.preventDefault();
-                //     evt.stopImmediatePropagation();
-                //     this.openInModalWindow(target.href);
-                // }
-                // ctrl + click
-                if (ctrlKey && !altKey && this.webviewPlugin) {
-                    // console.log("Opening link in external browser:", target.href);
-                    evt.preventDefault();
-                    evt.stopImmediatePropagation();
-                    (window as any).require("electron").shell.openExternal(target.href);
+                if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
+                    // alt + click / 单击
+                    // if ((altKey && !ctrlKey) ||
+                    //     (singleClick && !altKey && !ctrlKey && singleClickType !== 'internal')) {
+                    //     // console.log("Opening link in external browser:", target.href);
+                    //     evt.preventDefault();
+                    //     evt.stopImmediatePropagation();
+                    //     this.openInModalWindow(target.href);
+                    // }
+                    // ctrl + click
+                    if (this.webviewPlugin) {
+                        console.log("Opening link in external browser:", target.href);
+                        evt.preventDefault();
+                        evt.stopImmediatePropagation();
+                        if(openExternal === true) {
+                            (window as any).require("electron").shell.openExternal(target.href);
+                        } else {
+                            const leaf = this.app.workspace.getLeaf(true);
+                            this.loadSiteByWebViewer(target.href, leaf);
+                        }
+                    }
                 }
             }
         };
 
+        this.settingClickHandler = (evt: MouseEvent) => {
+            const target = evt.target as HTMLElement;
+            if (evt.ctrlKey && !evt.altKey) {
+                console.log("Ctrl key detected in edit mode");
+                if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
+                    evt.preventDefault();
+                    evt.stopImmediatePropagation();
+                    (window as any).require("electron").shell.openExternal(target.href);
+                }
+                return;
+            }
+        };
+        
         document.addEventListener("click", this.documentClickHandler, true);
+
+        // 添加对设置页容器的点击监听
+        const settingsContainer = document.querySelector('.modal-content.vertical-tabs-container');
+        if (settingsContainer) {
+            settingsContainer.addEventListener('click', this.settingClickHandler, true);
+        }
 
         this.addCommand({
             id: 'toggle-background-blur',
@@ -125,10 +161,16 @@ export default class ModalOpenerPlugin extends Plugin {
 
     onunload() {
         this.app.workspace.off("active-leaf-change", this.onActiveLeafChange.bind(this));
+
+        // 移除设置页容器的点击监听
+        const settingsContainer = document.querySelector('.modal-content.vertical-tabs-container');
+        if (settingsContainer && this.settingClickHandler) {
+            settingsContainer.removeEventListener('click', this.settingClickHandler, true);
+        }
         if (this.documentClickHandler) {
             document.removeEventListener("click", this.documentClickHandler, true);
             this.documentClickHandler = undefined;
-        }
+        }   
         if (this.dragHandler) {
             document.removeEventListener('dragstart', this.dragHandler);
             document.removeEventListener('dragend', this.dragHandler);
@@ -168,6 +210,52 @@ export default class ModalOpenerPlugin extends Plugin {
             .map(s => s.trim())
             .filter(Boolean);
         this.excludeContainers.push('.block-language-table-of-contents');
+    }
+
+    private loadSiteByWebViewer(link: string, leaf: WorkspaceLeaf) {
+        leaf.setViewState({
+            type: "webviewer",
+            active: true,
+            state: {
+                url: link,
+                navigate: true,
+                target: "_self",
+            }
+        });
+
+        const webviewEl = document.querySelector("webview");
+        if (webviewEl) {
+            webviewEl.addEventListener("dom-ready", async (event: any) => {
+                const { remote } = (window as any).require('electron');
+                // @ts-ignore
+                const webContents = remote.webContents.fromId(
+                    (webviewEl as any).getWebContentsId()
+                );
+
+                // Open new browser tab if the web view requests it.
+                webContents.setWindowOpenHandler((event: any) => {
+                    this.app.workspace.getLeaf(true).setViewState({
+                        type: "webviewer",
+                        active: true,
+                        state: {
+                            url: event.url,
+                            navigate: true,
+                            target: "_self",
+                        }
+                    });
+                    return {
+                        action: "allow",
+                    };
+                });
+
+                if (this.settings.enableWebAutoDarkMode) {
+                    await this.registerWebAutoDarkMode(webContents);
+                }
+                if (this.settings.enableImmersiveTranslation) {
+                    await this.registerImmersiveTranslation(webContents);
+                }
+            });
+        }
     }
 
     private openContentInModal() {
@@ -419,7 +507,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 const matchedLink = frontmatterLinks.find(link => {
                     // link.link 是链接路径 (例如 "My Note#heading")
                     // link.displayText 是链接别名 (例如 "My Alias")
-                    // console.log("Link:", link);
+                    console.log("Link:", link);
                     const linkBasename = link.link.split('#')[0]; // 获取不带标题/块引用的基本名称
                     return link.displayText === spanValue || linkBasename === spanValue;
                 });
@@ -464,6 +552,10 @@ export default class ModalOpenerPlugin extends Plugin {
 
     private isPreviewModeLink(target: HTMLElement): boolean {
         const element = target;
+
+        if (element.tagName === 'A' && element.parentElement && Array.from(element.parentElement.classList).some(cls => cls.startsWith('setting-'))) {
+            return true;
+        }
 
         if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
             return true;
@@ -591,7 +683,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     const tooltipLink = target ? target.closest('a[data-tooltip-position]') as HTMLElement : null;
                     if (tooltipLink) {
                         target = tooltipLink;
-                    }
+                      }
                 }
             }
         }
