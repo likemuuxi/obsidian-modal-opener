@@ -507,7 +507,7 @@ export default class ModalOpenerPlugin extends Plugin {
                 const matchedLink = frontmatterLinks.find(link => {
                     // link.link 是链接路径 (例如 "My Note#heading")
                     // link.displayText 是链接别名 (例如 "My Alias")
-                    console.log("Link:", link);
+                    // console.log("Link:", link);
                     const linkBasename = link.link.split('#')[0]; // 获取不带标题/块引用的基本名称
                     return link.displayText === spanValue || linkBasename === spanValue;
                 });
