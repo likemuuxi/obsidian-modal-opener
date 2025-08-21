@@ -357,8 +357,8 @@ export class ModalWindow extends Modal {
         if (embedElement) {
             target = embedElement;
         }
-
-        if (!target.closest('.workspace-leaf-content')) return;
+        
+        if (!target.closest('.workspace-leaf-content') || target.closest('.view-header')) return;
 
         let linkText = "";
         const activeView = this.modalLeafRef?.view;

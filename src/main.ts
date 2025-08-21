@@ -570,6 +570,11 @@ export default class ModalOpenerPlugin extends Plugin {
             return true;
         }
 
+        // 支持Base
+        if (element.closest('.bases-cards-item')) {
+            return true;
+        }
+
         // 支持反向链接的更多内容
         if (element.tagName === 'SPAN' && element.closest('.search-result-file-match')) {
             return true;
@@ -725,6 +730,14 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
 
+        if (target.closest('.bases-cards-item') || target.closest('.bases-cards-cover')) {
+            const cardItem = target.closest('.bases-cards-item');  // 找到父级 item
+            const cardLine = cardItem?.querySelector('.bases-cards-line');
+            if (cardLine) {
+                link = cardLine.textContent?.trim();
+            }
+        }
+
         const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
         if (!isAltClick) {
             if (this.isValidURL(link)) {
@@ -874,9 +887,24 @@ export default class ModalOpenerPlugin extends Plugin {
     public async openInModalWindow(link: string) {
         try {
             // console.log("OpenLink:", link);
-            const [linkWithoutAlias] = link.split('|');
-            const [filePath, fragment] = linkWithoutAlias.split('#');
-            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath, "");
+            let rawLink = link.split('|')[0].trim(); 
+
+            let filePath = rawLink;
+            let fragment = "";
+
+            if (rawLink.includes('#')) {
+                [filePath, fragment] = rawLink.split('#');
+            } else if (/\s>\s/.test(rawLink)) {
+                const parts = rawLink.split(/\s>\s/);
+                filePath = parts.shift()!.trim();
+                const tail = parts.pop()!.trim();        // 取最后一段作为锚点
+                fragment = tail.startsWith('^') ? `^${tail.slice(1)}` : tail;
+            }
+
+            // const fullLink = fragment ? `${filePath}#${fragment}` : filePath;
+            // console.log(fullLink);
+
+            const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath.trim(), "");
 
             let file: TFile | undefined;
             if (abstractFile instanceof TFile) {
