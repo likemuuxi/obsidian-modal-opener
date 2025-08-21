@@ -930,7 +930,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
     }
 
-    private async folderNoteopenInModalWindow(link: string) {
+    private async folderNoteOpenInModalWindow(link: string) {
         try {
             let file: TFile | undefined;
             const fileNameOnly = link.split(/[/\\]/).pop() || link;
@@ -1020,7 +1020,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.addFloatMenuItem(menu, link || '', t("Open in modal window"), () => {
             if (link) {
                 // console.log("folder");
-                this.folderNoteopenInModalWindow(link);
+                this.folderNoteOpenInModalWindow(link);
             }
         });
     }
@@ -1030,6 +1030,7 @@ export default class ModalOpenerPlugin extends Plugin {
             item
                 .setTitle(t('Create and edit in modal'))
                 .setIcon('file-plus')
+                .setSection('selection');
 
             const subMenu = (item as any).setSubmenu();
 
@@ -1046,6 +1047,19 @@ export default class ModalOpenerPlugin extends Plugin {
                         .setIcon("file")
                         .onClick(() => {
                             this.createFileAndEditInModal("md", true);
+                        })
+                );
+            }
+
+            const basesPlugin = (this.app as any).internalPlugins.getEnabledPluginById("bases");
+            if (basesPlugin && this.settings.enabledCommands.bases) {
+                group1Count++;
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Bases")
+                        .setIcon("table")
+                        .onClick(() => {
+                            this.createFileAndEditInModal("base", false);
                         })
                 );
             }

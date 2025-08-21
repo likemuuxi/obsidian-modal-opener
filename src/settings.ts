@@ -40,6 +40,7 @@ export interface ModalOpenerPluginSettings {
 
 	enabledCommands: {
 		markdown: boolean;
+		bases: boolean;
 		canvas: boolean;
 		excalidraw: boolean;
 		diagrams: boolean;
@@ -96,6 +97,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	viewOfDisplayButton: 'both',
 	enabledCommands: {
 		markdown: true,
+		bases: true,
 		canvas: true,
 		excalidraw: true,
 		diagrams: true,
@@ -141,6 +143,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	viewOfDisplayButton: string;
 	enabledCommands: {
 		markdown: boolean;
+		bases: boolean;
 		canvas: boolean;
 		excalidraw: boolean;
 		diagrams: boolean;
@@ -613,6 +616,20 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 						this.plugin.settings.enabledCommands.markdown = value;
 						await this.plugin.saveSettings();
 					}));
+
+			// Base
+			const basesPlugin = (this.app as any).internalPlugins.getEnabledPluginById("bases");
+			if (basesPlugin) {
+				new Setting(commandsContainer)
+					.setClass('command-toggle-item')
+					.setName('Bases')
+					.addToggle(toggle => toggle
+						.setValue(this.plugin.settings.enabledCommands.bases)
+						.onChange(async (value) => {
+							this.plugin.settings.enabledCommands.bases = value;
+							await this.plugin.saveSettings();
+						}));
+			}
 
 			// Canvas
 			const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
