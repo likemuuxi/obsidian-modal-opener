@@ -734,7 +734,7 @@ export default class ModalOpenerPlugin extends Plugin {
             const cardItem = target.closest('.bases-cards-item');  // 找到父级 item
             const cardLine = cardItem?.querySelector('.bases-cards-line');
             if (cardLine) {
-                link = cardLine.textContent?.trim();
+                link = cardLine.textContent?.trim() || '';
             }
         }
 
