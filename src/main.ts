@@ -1696,11 +1696,23 @@ export default class ModalOpenerPlugin extends Plugin {
         const result = await this.getNewFileName(fileType);
         if (!result) return;
         const { fileName, isEmbed } = result;
+        
+        const extensionsToRemove = [".md", ".canvas", ".base"];
+        let cleanFileName = fileName;
+
+        // 检查是否以指定后缀结尾
+        for (const ext of extensionsToRemove) {
+            if (cleanFileName.endsWith(ext)) {
+                cleanFileName = cleanFileName.slice(0, -ext.length);
+                break; // 一旦匹配就去掉，避免重复切割
+            }
+        }
+
         const activeFile = this.app.workspace.getActiveFile();
         const sourcePath = activeFile ? activeFile.path : "";
-        const newFileName = `${fileName}.${fileType}`
+        const newFileName = `${cleanFileName}.${fileType}`
 
-        const folder = this.app.fileManager.getNewFileParent(sourcePath, fileName);
+        const folder = this.app.fileManager.getNewFileParent(sourcePath, cleanFileName);
 
         const newFilePath = folder.path === "/"
             ? newFileName
