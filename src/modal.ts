@@ -359,6 +359,7 @@ export class ModalWindow extends Modal {
         }
         
         if (!target.closest('.workspace-leaf-content') || target.closest('.view-header')) return;
+        if (target.closest('.excalidraw, .excalidraw-container')) return;
 
         let linkText = "";
         const activeView = this.modalLeafRef?.view;
