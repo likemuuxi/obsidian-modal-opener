@@ -586,7 +586,7 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         // 支持Simple Mind Map
-        if (element.textContent.includes("该文件中没有可预览图片")) {
+        if (element.textContent && element.textContent.includes("该文件中没有可预览图片")) {
             return true;
         }
         if (element.tagName === 'IMG' && element.hasAttribute("data-smm-file")) {
@@ -782,8 +782,8 @@ export default class ModalOpenerPlugin extends Plugin {
             return container.textContent?.trim() || '';
         }
 
-        // 支持Simple Mind Map
-        if (target.textContent.includes("该文件中没有可预览图片")) {
+        // 支持 Simple Mind Map
+        if (target.textContent?.includes("该文件中没有可预览图片")) {
             const span = target.closest("span.internal-embed");
             const div = target.closest("div.internal-embed");
             if (span) {
