@@ -49,6 +49,7 @@ export interface ModalOpenerPluginSettings {
 		sheetPlus: boolean;
 		vscode: boolean;
 		markmind: boolean;
+		simplemindmap: boolean;
 		dataloom: boolean;
 	};
 	showCommandsContainer: boolean;
@@ -106,6 +107,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 		sheetPlus: true,
 		vscode: true,
 		markmind: true,
+		simplemindmap: true,
 		dataloom: true
 	},
 	showCommandsContainer: true,
@@ -152,6 +154,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		sheetPlus: boolean;
 		vscode: boolean;
 		markmind: boolean;
+		simplemindmap: boolean;
 		dataloom: boolean;
 	};
 	showCommandsContainer: boolean;
@@ -406,7 +409,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t('Refresh view on close'))
-			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas and Markmind file'))
+			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas、SMM and Markmind file'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableRefreshOnClose)
 				.onChange(async (value) => {
@@ -707,6 +710,14 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				"obsidian-markmind",
 				"MarkMind",
 				"markmind"
+			);
+
+			// Simple Mind Map
+			this.createPluginSetting(
+				commandsContainer,
+				"simple-mind-map",
+				"Simple Mind Map",
+				"simplemindmap"
 			);
 
 			// Dataloom

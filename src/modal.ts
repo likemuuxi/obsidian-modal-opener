@@ -98,14 +98,10 @@ export class ModalWindow extends Modal {
         }
 
         // 恢复 ESC 键的默认行为
-        this.scope.register([], 'Escape', (evt: KeyboardEvent) => {
-            // 检查当前内容是否为 Excalidraw
+        this.scope.register([], 'Escape', async (evt: KeyboardEvent) => {
+            evt.preventDefault(); // 先阻止默认关闭
             const excalidrawView = this.app.workspace.getLeavesOfType("excalidraw").first()?.view;
-            if (this.plugin.settings.disableExcalidrawEsc && excalidrawView) {
-                return; // 仅在设置开启时禁用 Excalidraw 的 ESC 关闭
-            }
-
-            evt.preventDefault();
+            if (this.plugin.settings.disableExcalidrawEsc && excalidrawView) return;
             this.close();
         });
 
@@ -118,6 +114,18 @@ export class ModalWindow extends Modal {
     }
 
     close() {
+        const smmView = this.app.workspace.getLeavesOfType("smm").first()?.view;
+        if (smmView) {
+            (this.app as any).commands.executeCommandById("simple-mind-map:save-smm-mindmap-and-update-image");
+            setTimeout(() => {
+                this.doClose();
+            }, 500);
+        } else {
+            this.doClose();
+        }
+    }
+
+    private doClose() {
         super.close();
         this.app.workspace.off('active-leaf-change', this.boundHandleActiveLeafChange);
         this.containerEl.removeEventListener('click', this.boundHandleInternalLinkClick, true);
@@ -158,7 +166,7 @@ export class ModalWindow extends Modal {
             }, 100);
         }
         
-        if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview")) {
+        if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview" || dataType == "smm")) {
             setTimeout(() => {
                 this.refreshMarkdownViews();
             }, 100);
@@ -204,7 +212,7 @@ export class ModalWindow extends Modal {
                 mode = (this.prevActiveLeaf?.view instanceof MarkdownView) && this.prevActiveLeaf.view.getMode() === 'source' ? 'source' : 'preview';
         }
 
-        const previewTypes = ["excel-view", "tldraw-view", "mindmapview", "dataloom"];
+        const previewTypes = ["excel-view", "tldraw-view", "mindmapview", "smm", "dataloom"];
         if (this.modalLeafRef) {
             await this.modalLeafRef.openFile(file, { state: { mode } });
             fileContainer.appendChild(this.modalLeafRef.view.containerEl);
@@ -216,6 +224,7 @@ export class ModalWindow extends Modal {
                 //     this.app.workspace.openLinkText(filePath, file.path, false);
                 // }, 100);
             }
+
             if (this.plugin.settings.showFloatingButton) {
                 if (this.plugin.settings.viewOfDisplayButton == 'both' || this.plugin.settings.viewOfDisplayButton == 'file') {
                     const viewType = this.modalLeafRef.view.getViewType();
@@ -224,6 +233,22 @@ export class ModalWindow extends Modal {
                     }
                     this.addOpenInNewLeafButton(this.contentEl);
                 }
+            }
+
+            if(this.viewType && previewTypes.includes(this.viewType)) {
+                this.modalLeafRef.setViewState({
+                    type: this.viewType,
+                    state: { file: file },
+                });
+            }
+            // 支持Simple Mind Map
+            const parts = file.path.split(".");
+            const ext = parts.slice(-2).join(".");
+            if(ext === "smm.md") {
+                this.modalLeafRef.setViewState({
+                    type: "smm",
+                    state: { file: file },
+                });
             }
         }
 
@@ -239,8 +264,7 @@ export class ModalWindow extends Modal {
         this.contentEl.focus();
         
         setTimeout(() => {
-            if(this.viewType && previewTypes.includes(this.viewType)) 
-                (this.app as any).commands.executeCommandById("markdown:toggle-preview");
+
         }, 100);
     }
 
@@ -357,9 +381,16 @@ export class ModalWindow extends Modal {
         if (embedElement) {
             target = embedElement;
         }
-        
+
+        // console.log(target);
         if (!target.closest('.workspace-leaf-content') || target.closest('.view-header')) return;
-        if (target.closest('.excalidraw, .excalidraw-container')) return;
+        if (target.closest('.workspace-leaf-content[data-type="excalidraw"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="tldraw-view"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="canvas"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="excel-view"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="excel-pro-view"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="mindmapview"]')) return;
+        if (target.closest('.workspace-leaf-content[data-type="smm"]')) return;
 
         let linkText = "";
         const activeView = this.modalLeafRef?.view;

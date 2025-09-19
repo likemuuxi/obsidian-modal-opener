@@ -585,8 +585,11 @@ export default class ModalOpenerPlugin extends Plugin {
             return true;
         }
 
-        const hasDefDecoration = element.querySelector('.def-decoration') !== null;
-        if (hasDefDecoration || target.closest('.def-decoration')) {
+        // 支持Simple Mind Map
+        if (element.textContent.includes("该文件中没有可预览图片")) {
+            return true;
+        }
+        if (element.tagName === 'IMG' && element.hasAttribute("data-smm-file")) {
             return true;
         }
 
@@ -779,6 +782,21 @@ export default class ModalOpenerPlugin extends Plugin {
             return container.textContent?.trim() || '';
         }
 
+        // 支持Simple Mind Map
+        if (target.textContent.includes("该文件中没有可预览图片")) {
+            const span = target.closest("span.internal-embed");
+            const div = target.closest("div.internal-embed");
+            if (span) {
+                return span.getAttribute('src') || '';
+            }
+            if (div) {
+                return div.getAttribute('src') || '';
+            }
+        }
+        if (target.tagName === 'IMG' && target.hasAttribute("data-smm-file")) {
+            return target.getAttribute("data-smm-file") || '';
+        }
+
         return container.getAttribute('data-file-path') ||
             container.getAttribute('filesource') ||
             container.getAttribute('data-path') ||
@@ -903,6 +921,7 @@ export default class ModalOpenerPlugin extends Plugin {
 
             // const fullLink = fragment ? `${filePath}#${fragment}` : filePath;
             // console.log(fullLink);
+            // console.log(fragment);
 
             const abstractFile = this.app.metadataCache.getFirstLinkpathDest(filePath.trim(), "");
 
@@ -1366,6 +1385,30 @@ export default class ModalOpenerPlugin extends Plugin {
                                 console.error("createMarkmindFile failed:", e);
                                 new Notice(t("Failed to create file: ") + e.message);
                             }
+                        })
+                );
+            }
+
+            const simpleMindMapPlugin = this.getPlugin("simple-mind-map");
+            if (simpleMindMapPlugin && this.settings.enabledCommands.simplemindmap) {
+                subMenu.addItem((subItem: MenuItem) =>
+                    subItem
+                        .setTitle("Simple Mind Map")
+                        .setIcon("brain-circuit")
+                        .onClick(async () => {
+                            await (this.app as any).commands.executeCommandById("simple-mind-map:create-smm-mindmap-insert-markdown");
+                            setTimeout(() => {
+                                const editor = this.app.workspace.activeEditor?.editor;
+                                if (!editor) return;
+                                const line = editor.getLine(editor.getCursor().line);
+                                const match = line.match(/\[\[([^\]]+)\]\]/);
+                                if (!match) return;
+                                const filename = match[1];
+                                const file = this.app.metadataCache.getFirstLinkpathDest(filename, "");
+                                if (file) {
+                                    new ModalWindow(this, "", file, "", "smm").open();
+                                }
+                            }, 100);
                         })
                 );
             }
