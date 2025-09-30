@@ -262,10 +262,6 @@ export class ModalWindow extends Modal {
 
         this.contentEl.tabIndex = -1;
         this.contentEl.focus();
-        
-        setTimeout(() => {
-
-        }, 100);
     }
 
     private async displayLinkContent(link: string) {

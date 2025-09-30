@@ -92,7 +92,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     // }
                     // ctrl + click
                     if (this.webviewPlugin) {
-                        console.log("Opening link in external browser:", target.href);
+                        // console.log("Opening link in external browser:", target.href);
                         evt.preventDefault();
                         evt.stopImmediatePropagation();
                         if(openExternal === true) {
@@ -109,7 +109,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.settingClickHandler = (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
             if (evt.ctrlKey && !evt.altKey) {
-                console.log("Ctrl key detected in edit mode");
+                // console.log("Ctrl key detected in edit mode");
                 if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
@@ -553,6 +553,8 @@ export default class ModalOpenerPlugin extends Plugin {
     private isPreviewModeLink(target: HTMLElement): boolean {
         const element = target;
 
+        if (!element) return false;
+        
         if (element.tagName === 'A' && element.parentElement && Array.from(element.parentElement.classList).some(cls => cls.startsWith('setting-'))) {
             return true;
         }
@@ -1557,7 +1559,6 @@ export default class ModalOpenerPlugin extends Plugin {
         let index = 0;
         let finalName = `${baseName}.${ext}`;
         let fullPath = folderPath === "/" ? finalName : `${folderPath}/${finalName}`;
-    
         while (await this.app.vault.adapter.exists(fullPath)) {
             index += 1;
             finalName = `${baseName} ${index}.${ext}`;
@@ -1688,7 +1689,6 @@ export default class ModalOpenerPlugin extends Plugin {
     
                 const existingFile = this.app.vault.getAbstractFileByPath(newPath);
                 if (existingFile && existingFile instanceof TFile) {
-                    new Notice("File already exists");
                     await this.app.workspace.getLeaf(true).openFile(existingFile);
                     resolve(existingFile);
                     return;
@@ -1752,10 +1752,10 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         const activeFile = this.app.workspace.getActiveFile();
-        const sourcePath = activeFile ? activeFile.path : "";
         const newFileName = `${cleanFileName}.${fileType}`
-
-        const folder = this.app.fileManager.getNewFileParent(sourcePath, cleanFileName);
+        // const folder = this.app.fileManager.getNewFileParent(sourcePath, cleanFileName);
+        const sourcePath = this.app.workspace.getActiveFile()?.path || "";
+        const folder = this.app.fileManager.getNewFileParent(sourcePath, `${cleanFileName}.${fileType}`);
 
         const newFilePath = folder.path === "/"
             ? newFileName
