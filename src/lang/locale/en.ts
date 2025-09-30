@@ -64,6 +64,8 @@ export default {
   'External link': 'External link',
   'If enabled, clicking links will open them in modal window without holding Alt.': 'If enabled, clicking links will open them in modal window without holding Alt.',
   'Disable external click close': 'Disable external click close',
+  'Double-click to enter editing mode': 'Double-click to enter editing mode',
+  'Use double-click to enter editing mode from preview mode.': 'Use double-click to enter editing mode from preview mode.',
   'Only works in read mode': 'Only works in read mode',
   'Only works in read mode📱': 'Only works in read mode📱',
   'Click trigger works only in read mode': 'Click trigger works only in read mode',

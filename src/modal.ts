@@ -106,19 +106,21 @@ export class ModalWindow extends Modal {
         });
 
         this.containerEl.addEventListener('click', this.boundHandleInternalLinkClick, true);
-        this.containerEl.addEventListener('dblclick', (evt) => {
-            if(this.modalLeafRef) {
-                const view = this.modalLeafRef.view;
-                if (view instanceof MarkdownView && view.getMode() === "preview") {
-                    // Prevent default behavior
-                    evt.preventDefault();
-                    evt.stopPropagation();
+        if (this.plugin.settings.doubleClickToEdit) {
+            this.containerEl.addEventListener('dblclick', (evt) => {
+                if(this.modalLeafRef) {
+                    const view = this.modalLeafRef.view;
+                    if (view instanceof MarkdownView && view.getMode() === "preview") {
+                        // Prevent default behavior
+                        evt.preventDefault();
+                        evt.stopPropagation();
 
-                    // Execute the toggle edit/preview mode command
-                    (this.app as any).commands.executeCommandById("markdown:toggle-preview");
+                        // Execute the toggle edit/preview mode command
+                        (this.app as any).commands.executeCommandById("markdown:toggle-preview");
+                    }
                 }
-            }
-		});
+            });
+        }
         setTimeout(() => {
             if (ModalWindow.activeInstance === this) {
                 this.app.workspace.on('active-leaf-change', this.boundHandleActiveLeafChange);

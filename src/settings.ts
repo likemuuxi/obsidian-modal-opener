@@ -23,6 +23,7 @@ export interface ModalOpenerPluginSettings {
 	customExcludeContainers: string;
 	customExcludeFiles: string;
 	onlyCloseButton: boolean;
+	doubleClickToEdit: boolean;
 	disableExcalidrawEsc: boolean;
 	enableWebAutoDarkMode: boolean;
 	enableImmersiveTranslation: boolean;
@@ -82,6 +83,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	customExcludeContainers: '',
 	customExcludeFiles: '',
 	onlyCloseButton: false,
+	doubleClickToEdit: true,
 	disableExcalidrawEsc: true,
 	enableWebAutoDarkMode: true,
 	enableImmersiveTranslation: true,
@@ -131,6 +133,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	customExcludeContainers: string;
 	customExcludeFiles: string;
 	onlyCloseButton: boolean;
+	doubleClickToEdit: boolean;
 	disableExcalidrawEsc: boolean;
 	customCommands: CustomCommand[];
 	showFileViewHeader: boolean;
@@ -404,6 +407,16 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				.setValue(this.plugin.settings.onlyCloseButton)
 				.onChange(async (value) => {
 					this.plugin.settings.onlyCloseButton = value;
+					await this.plugin.saveSettings();
+				}));
+		
+		new Setting(containerEl)
+			.setName(t('Double-click to enter editing mode'))
+			.setDesc(t('Use double-click to enter editing mode from preview mode.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.doubleClickToEdit)
+				.onChange(async (value) => {
+					this.plugin.settings.doubleClickToEdit = value;
 					await this.plugin.saveSettings();
 				}));
 

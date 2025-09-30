@@ -77,6 +77,8 @@ export default {
     'Enter files to disable click triggering, links in these files will be ignored. (comma separated)': '输入要禁用单击触发的文件，这些文件中的链接将被忽略，不会触发单击事件（以逗号分隔）',
     'Enter file path to exclude, e.g., untitled.md, folder/subfolder/untitled.md': '输入要排除的文件，例如，untitled.md， folder/subfolder/untitled.md',
     'Disable external click close': '禁用外部点击关闭',
+    'Double-click to enter editing mode': '双击进入编辑模式',
+    'Use double-click to enter editing mode from preview mode.': '使用双击从预览模式进入编辑模式。',
     'Use only the Close button and Esc to close.': '仅使用 “关闭” 按钮和 Esc 键关闭',
     'Excalidraw Disables the Esc key': 'Excalidraw 禁用 Esc 键',
     'Disable Esc key to close modal when editing Excalidraw': '在编辑 Excalidraw 时禁用 Esc 键关闭模态窗口',
