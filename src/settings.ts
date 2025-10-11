@@ -422,7 +422,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName(t('Refresh view on close'))
-			.setDesc(t('Refresh views when closing modal window, currently only refreshing after editing Canvas、SMM and Markmind file'))
+			.setDesc(t('Refresh embedded file thumbnails when closing modal windows, currently only refreshing after editing Canvas、SMM and Markmind file'))
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableRefreshOnClose)
 				.onChange(async (value) => {

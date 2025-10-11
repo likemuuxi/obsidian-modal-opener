@@ -44,3 +44,5 @@
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 
+# ☕支持一下
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31JZHLJ)

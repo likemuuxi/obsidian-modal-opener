@@ -83,7 +83,7 @@ export default {
   'Disable Esc key to close modal when editing Excalidraw': 'Disable Esc key to close modal when editing Excalidraw',
 
   'Refresh view on close': 'Refresh view on close',
-  'Refresh views when closing modal window, currently only refreshing after editing Canvas、SMM and Markmind file': 'Refresh views when closing modal, currently only refreshing after editing Canvas、SMM and Markmind file',
+  'Refresh embedded file thumbnails when closing modal windows, currently only refreshing after editing Canvas、SMM and Markmind file': 'Refresh embedded file thumbnails when closing modal windows, currently only refreshing after editing Canvas、SMM and Markmind file',
   'Prevents duplicate tabs': 'Prevents duplicate tabs',
   'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)': 'In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin',
   'Delay time': 'Delay time',

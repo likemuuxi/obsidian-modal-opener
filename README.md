@@ -45,3 +45,5 @@ Special thanks to these amazing plugins! I use these plugins as a reference for 
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
 - [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 
+# ☕Go to sponsor
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Z8Z31JZHLJ)

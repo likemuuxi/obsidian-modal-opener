@@ -1,6 +1,7 @@
 import { Modal, TFile, WorkspaceLeaf, MarkdownView, ViewState, Scope, requestUrl, RequestUrlResponse, setIcon, Platform, Notice, MarkdownRenderer } from "obsidian";
 import ModalOpenerPlugin from "./main";
 import { t } from "./lang/helpers"
+import { app } from "electron";
 
 export class ModalWindow extends Modal {
     plugin: ModalOpenerPlugin;
@@ -180,11 +181,31 @@ export class ModalWindow extends Modal {
                 this.exitMultiCursorMode();
             }, 100);
         }
-        
+
         if (this.plugin.settings.enableRefreshOnClose && (dataType == "canvas" || dataType == "mindmapview" || dataType == "smm")) {
-            setTimeout(() => {
-                this.refreshMarkdownViews();
-            }, 100);
+            const targetPath = ModalWindow.activeInstance?.file?.path;
+            const backlinks: TFile[] = [];
+            // console.log("targetPath: " + targetPath);
+            // 遍历全局 resolvedLinks，找所有链接到 target 的笔记
+            if (targetPath) {
+                for (const [sourcePath, targets] of Object.entries(this.app.metadataCache.resolvedLinks)) {
+                    if (targets[targetPath]) {
+                        const file = this.app.vault.getAbstractFileByPath(sourcePath);
+                        if (file && file instanceof TFile) {
+                            backlinks.push(file);
+                        }
+                    }
+                }
+            }
+            // console.log(backlinks);
+            const prevFile = (this.prevActiveLeaf?.view instanceof MarkdownView) ? this.prevActiveLeaf.view.file : null;
+
+            if (prevFile && backlinks.some(file => file.path === prevFile.path)) {
+                // console.log("prevFile in backlinks：" + prevFile.path);
+                setTimeout(() => {
+                    this.refreshMarkdownViews();
+                }, 100);
+            }
         }
 
         if (this.observer) {
