@@ -1095,8 +1095,7 @@ export class ModalWindow extends Modal {
     }
     
     private toggleTableOfContents(buttonContainer: HTMLElement, path: string, isHover: boolean = false) {
-        let tocContainer = this.contentEl.querySelector('.modal-toc-container') as HTMLElement;
-        
+        let tocContainer = this.contentEl.querySelector('.modal-opener-toc-container') as HTMLElement;
         if (tocContainer) {
             if (!isHover) {
                 tocContainer.remove();
@@ -1105,7 +1104,7 @@ export class ModalWindow extends Modal {
         }
     
         // 创建目录容器
-        tocContainer = this.contentEl.createEl('div', { cls: 'modal-toc-container' });
+        tocContainer = this.contentEl.createEl('div', { cls: 'modal-opener-toc-container' });
         
         // 获取当前文件的元数据
         const file = this.app.vault.getAbstractFileByPath(path);

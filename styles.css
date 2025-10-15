@@ -2,10 +2,7 @@
     display: none !important;
 } */
 .popover.hover-popover{
-    z-index: 100 !important;
-}
-.menu {
-    z-index: 200 !important;
+    z-index: 9999 !important;
 }
 
 .modal-bg.modal-opener-bg.closable {
@@ -37,7 +34,6 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    z-index: 1000;
 }
 
 .modal-opener .modal-content {
@@ -169,14 +165,12 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
     position: absolute;
     bottom: 25px;
     right: 35px;
-    z-index: 1000;
 }
 
 .modal-opener .floating-button-container.toc-button {
     position: absolute;
     bottom: 80px;
     right: 32px;
-    z-index: 1000;
 }
 
 .modal-opener .floating-button {
@@ -356,7 +350,7 @@ webview[style*="background-color: white"] {
 
 
 /* 目录容器样式 */
-.modal-toc-container {
+.modal-opener-toc-container {
     position: fixed;
     width: auto;
     min-width: 280px; /* 设置最小宽度 */
@@ -372,13 +366,13 @@ webview[style*="background-color: white"] {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.modal-toc-container::-webkit-scrollbar:vertical {
+.modal-opener-toc-container::-webkit-scrollbar:vertical {
     width: 0 !important; /* 隐藏竖向滚动条 */
     display: none !important;
 }
 
 /* 目录标题 */
-.modal-toc-container .toc-header {
+.modal-opener-toc-container .toc-header {
     font-weight: bold;
     font-size: 16px;
     margin-bottom: 10px;
@@ -387,13 +381,13 @@ webview[style*="background-color: white"] {
 }
 
 /* 目录项内容容器 */
-.modal-toc-container .toc-item-content {
+.modal-opener-toc-container .toc-item-content {
     display: flex;
     align-items: center;
 }
 
 /* 目录项样式 */
-.modal-toc-container .toc-item {
+.modal-opener-toc-container .toc-item {
     padding: 2px 8px;
     cursor: pointer;
     border-radius: 4px;
@@ -411,7 +405,7 @@ webview[style*="background-color: white"] {
 }
 
 /* 目录项圆点 */
-.modal-toc-container .toc-bullet {
+.modal-opener-toc-container .toc-bullet {
     display: inline-block;
     width: 6px;
     height: 6px;
@@ -422,23 +416,23 @@ webview[style*="background-color: white"] {
 }
 
 /* 目录项文本 */
-.modal-toc-container .toc-item-text {
+.modal-opener-toc-container .toc-item-text {
     flex: 0 1 auto;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.modal-toc-container .toc-item:hover {
+.modal-opener-toc-container .toc-item:hover {
     background-color: var(--background-modifier-hover);
 }
 
 /* 当前选中的目录项 */
-.modal-toc-container .toc-item.active {
+.modal-opener-toc-container .toc-item.active {
     background-color: var(--interactive-accent-hover);
     color: var(--text-on-accent);
 }
 
-.modal-toc-container .toc-item.active .toc-bullet {
+.modal-opener-toc-container .toc-item.active .toc-bullet {
     background-color: var(--text-on-accent);
     width: 8px;
     height: 8px;
