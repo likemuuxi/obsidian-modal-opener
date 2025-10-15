@@ -63,7 +63,7 @@ export default {
     'Select trigger type': '选择触发类型',
     'Internal link': '内部链接',
     'External link': '外部链接',
-    'If enabled, clicking links will open them in modal window without holding Alt.': '如果启用，点击链接将在模态窗口中打开链接，而不需要按住Alt键。',
+    'If enabled, clicking links will open them in modal window without holding Alt.': '如果启用，点击链接将在模态窗口中打开链接，而不需要按住Alt键',
     'Only works in read mode': '仅在阅读模式下生效',
     'Only works in read mode📱': '仅在阅读模式下生效📱',
     'Click trigger works only in read mode': '单击触发仅在阅读模式下生效',
