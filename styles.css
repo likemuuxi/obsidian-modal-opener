@@ -98,9 +98,9 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
     border-radius: 20px;
 }
 
-.modal-animation-enabled .modal-container:has(.modal-opener-content),
-.modal-animation-enabled .modal-container:has(.monaco-editor),
-.modal-animation-enabled .modal-container:has(.diagrams-modal) {
+.modal-blur-enabled .modal-container:has(.modal-opener-content),
+.modal-blur-enabled .modal-container:has(.monaco-editor),
+.modal-blur-enabled .modal-container:has(.diagrams-modal) {
     backdrop-filter: blur(10px);
     border: 1px solid var(--background-modifier-border);
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -160,17 +160,32 @@ body:not(.hider-scroll) .modal-opener-content ::-webkit-scrollbar {
 }
 
 /* float button */
-.modal-opener .floating-button-container.new-leaf-button,
 .modal-opener .floating-menu-container {
     position: absolute;
     bottom: 25px;
     right: 35px;
 }
 
-.modal-opener .floating-button-container.toc-button {
+.modal-opener .floating-utility-container {
     position: absolute;
-    bottom: 80px;
-    right: 32px;
+    bottom: 25px;
+    right: 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.modal-opener .floating-utility-container .floating-button-container.new-leaf-button,
+.modal-opener .floating-utility-container .floating-button-container.toc-button {
+    position: static;
+    display: inline-flex;
+    align-self: flex-end;
+    margin: 0;
+}
+
+.modal-opener .floating-utility-container .floating-button {
+    margin: 0;
 }
 
 .modal-opener .floating-button {
@@ -351,7 +366,7 @@ webview[style*="background-color: white"] {
 
 /* 目录容器样式 */
 .modal-opener-toc-container {
-    position: fixed;
+    position: absolute;
     width: auto;
     min-width: 280px; /* 设置最小宽度 */
     max-width: 40vw; /* 保留最大宽度限制 */

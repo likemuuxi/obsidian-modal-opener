@@ -11,7 +11,7 @@ export interface ModalOpenerPluginSettings {
 	modalWidthOnMobile: string;
 	modalHeightOnMobile: string;
 	dragThreshold: number;
-	enableAnimation: boolean;
+	enableBlur: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
 	typeOfClickTrigger: string;
@@ -71,7 +71,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	modalWidthOnMobile: "86vw",
 	modalHeightOnMobile: "86vh",
 	dragThreshold: 200,
-	enableAnimation: true,
+	enableBlur: true,
 	enableRounding: false,
 	clickWithoutAlt: false,
 	typeOfClickTrigger: 'both',
@@ -125,7 +125,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	modalWidthOnMobile: string;
 	modalHeightOnMobile: string;
 	dragThreshold: number;
-	enableAnimation: boolean;
+	enableBlur: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
 	clickWithoutAltOnMobile: boolean;
@@ -539,9 +539,9 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 			.setName(t('Enable animation and blur'))
 			.setDesc(t('Toggle to enable or disable animation and blur effects'))
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enableAnimation)
+				.setValue(this.plugin.settings.enableBlur)
 				.onChange(async (value) => {
-					this.plugin.settings.enableAnimation = value;
+					this.plugin.settings.enableBlur = value;
 					await this.plugin.saveSettings();
 					this.plugin.applyStyles();
 				}));

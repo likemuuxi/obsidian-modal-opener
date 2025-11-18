@@ -151,7 +151,7 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     applyStyles() {
-        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+        document.body.classList.toggle('modal-blur-enabled', this.settings.enableBlur);
         document.body.classList.toggle('modal-rounding-enabled', this.settings.enableRounding);
         document.body.classList.toggle('show-file-view-header', this.settings.showFileViewHeader);
         document.body.classList.toggle('show-link-view-header', this.settings.showLinkViewHeader);
@@ -281,8 +281,8 @@ export default class ModalOpenerPlugin extends Plugin {
     }
 
     private toggleBackgroundBlur() {
-        this.settings.enableAnimation = !this.settings.enableAnimation;
-        document.body.classList.toggle('modal-animation-enabled', this.settings.enableAnimation);
+        this.settings.enableBlur = !this.settings.enableBlur;
+        document.body.classList.toggle('modal-blur-enabled', this.settings.enableBlur);
         this.saveSettings();
     }
 

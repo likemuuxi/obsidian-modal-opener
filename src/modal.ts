@@ -1002,7 +1002,7 @@ export class ModalWindow extends Modal {
     }
 
     private clearAllButton(container: HTMLElement) {
-        const buttons = container.querySelectorAll('.floating-menu-container, .floating-button-container.toc-button, .floating-button-container.new-leaf-button');
+        const buttons = container.querySelectorAll('.floating-menu-container, .floating-button-container.toc-button, .floating-button-container.new-leaf-button, .floating-utility-container');
         buttons.forEach(button => button.remove());
     }
 
@@ -1018,9 +1018,18 @@ export class ModalWindow extends Modal {
         return button;
     }
 
+    private getFloatingUtilityContainer(container: HTMLElement): HTMLElement {
+        let wrapper = container.querySelector('.floating-utility-container') as HTMLElement | null;
+        if (!wrapper) {
+            wrapper = container.createEl('div', { cls: 'floating-utility-container' });
+        }
+        return wrapper;
+    }
+
     // 添加悬浮按钮
     private addOpenInNewLeafButton(container: HTMLElement) {
-        const buttonContainer = container.createEl('div', { cls: 'floating-button-container new-leaf-button' });
+        const wrapper = this.getFloatingUtilityContainer(container);
+        const buttonContainer = wrapper.createEl('div', { cls: 'floating-button-container new-leaf-button' });
         const openButton = buttonContainer.createEl('button', { cls: 'floating-button' });
 
         setIcon(openButton, 'lucide-panel-top');
@@ -1081,7 +1090,8 @@ export class ModalWindow extends Modal {
 
         if (!headings || headings.length === 0) return;
     
-        const buttonContainer = container.createEl('div', { cls: 'floating-button-container toc-button' });
+        const wrapper = this.getFloatingUtilityContainer(container);
+        const buttonContainer = wrapper.createEl('div', { cls: 'floating-button-container toc-button' });
         const tocButton = this.createMenuItem(buttonContainer, 'list', t('Toggle table of contents'), () => {
             this.toggleTableOfContents(buttonContainer, path);
         });
@@ -1119,10 +1129,13 @@ export class ModalWindow extends Modal {
         // 生成目录内容
         this.renderTocContent(tocContainer, headings);
         
-        // 定位目录容器到按钮左上方
+        // 定位目录容器到按钮左上方，基于 modal 内容区域的位置
         const buttonRect = buttonContainer.getBoundingClientRect();
-        tocContainer.style.bottom = `${window.innerHeight - buttonRect.bottom + 50}px`;
-        tocContainer.style.right = `${window.innerWidth - buttonRect.right + 30}px`;
+        const contentRect = this.contentEl.getBoundingClientRect();
+        const bottomOffset = contentRect.bottom - buttonRect.bottom + 50;
+        const rightOffset = contentRect.right - buttonRect.right + 30;
+        tocContainer.style.bottom = `${Math.max(0, bottomOffset)}px`;
+        tocContainer.style.right = `${Math.max(0, rightOffset)}px`;
     
         // 添加鼠标离开事件
         const handleMouseLeave = () => {
