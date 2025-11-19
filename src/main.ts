@@ -122,7 +122,7 @@ export default class ModalOpenerPlugin extends Plugin {
         document.addEventListener("click", this.documentClickHandler, true);
 
         // 添加对设置页容器的点击监听
-        const settingsContainer = document.querySelector('.modal-content.vertical-tabs-container');
+        const settingsContainer = document.querySelector('.modal.mod-settings');
         if (settingsContainer) {
             settingsContainer.addEventListener('click', this.settingClickHandler, true);
         }
@@ -485,8 +485,6 @@ export default class ModalOpenerPlugin extends Plugin {
                 }
             }
 
-            // console.log("Element:", target);
-
             // 添加 frontmatter 处理逻辑
             if (target.matches('.multi-select-pill-content > span')) {
                 const spanValue = target.textContent?.trim();
@@ -555,11 +553,13 @@ export default class ModalOpenerPlugin extends Plugin {
 
         if (!element) return false;
         
-        if (element.tagName === 'A' && element.parentElement && Array.from(element.parentElement.classList).some(cls => cls.startsWith('setting-'))) {
+        // 支持设置面板
+        if (element.closest('.vertical-tab-content')) {
             return true;
         }
 
-        if (element.tagName === 'A' && element.parentElement && Array.from(element.parentElement.classList).some(cls => cls.startsWith('community-'))) {
+        // 支持社区面板
+        if (element.closest('.community-modal-details')) {
             return true;
         }
 
