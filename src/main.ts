@@ -109,7 +109,6 @@ export default class ModalOpenerPlugin extends Plugin {
         this.settingClickHandler = (evt: MouseEvent) => {
             const target = evt.target as HTMLElement;
             if (evt.ctrlKey && !evt.altKey) {
-                // console.log("Ctrl key detected in edit mode");
                 if (target instanceof HTMLAnchorElement && target.href && this.isValidURL(target.href)) {
                     evt.preventDefault();
                     evt.stopImmediatePropagation();
@@ -477,7 +476,7 @@ export default class ModalOpenerPlugin extends Plugin {
             if (target.getAttribute("alt")?.endsWith(".svg")) return; // 检查特殊元素 diagram.svg
 
             // 如果是单击模式但不允许 external 类型触发，则排除在外
-            if (!isAltClick && isSingleClick && singleClickType !== 'external') {
+            if (!isAltClick && isSingleClick && singleClickType !== 'external' && target.closest('.workspace-leaf-content[data-type="markdown"]')) {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path;
                 if (currentFilePath && this.excludeFiles.length > 0) {
                     const isExcluded = this.excludeFiles.includes(currentFilePath);
@@ -516,7 +515,7 @@ export default class ModalOpenerPlugin extends Plugin {
                     this.openInModalWindow(matchedLink.link);
                 }
             }
-
+            
             // 处理预览模式下的链接点击
             if (this.isPreviewModeLink(target)) {
                 this.handlePreviewModeLink(evt, isAltClick);
@@ -554,12 +553,12 @@ export default class ModalOpenerPlugin extends Plugin {
         if (!element) return false;
         
         // 支持设置面板
-        if (element.closest('.vertical-tab-content')) {
+        if (element.tagName === 'A' && element.closest('.vertical-tab-content')) {
             return true;
         }
 
         // 支持社区面板
-        if (element.closest('.community-modal-details')) {
+        if (element.tagName === 'A' && element.closest('.community-modal-details')) {
             return true;
         }
 
