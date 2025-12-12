@@ -51,7 +51,6 @@ export interface ModalOpenerPluginSettings {
 		vscode: boolean;
 		markmind: boolean;
 		simplemindmap: boolean;
-		dataloom: boolean;
 	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
@@ -110,7 +109,6 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 		vscode: true,
 		markmind: true,
 		simplemindmap: true,
-		dataloom: true
 	},
 	showCommandsContainer: true,
 	showDeleteCommands: true,
@@ -158,7 +156,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		vscode: boolean;
 		markmind: boolean;
 		simplemindmap: boolean;
-		dataloom: boolean;
 	};
 	showCommandsContainer: boolean;
 	showDeleteCommands: boolean;
@@ -731,14 +728,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				"simple-mind-map",
 				"Simple Mind Map",
 				"simplemindmap"
-			);
-
-			// Dataloom
-			this.createPluginSetting(
-				commandsContainer,
-				"notion-like-tables",
-				"Dataloom",
-				"dataloom"
 			);
 		}
 	}

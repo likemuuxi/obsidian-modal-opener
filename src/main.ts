@@ -869,7 +869,7 @@ export default class ModalOpenerPlugin extends Plugin {
             element.classList.contains('canvas-minimap') ||
             element.classList.contains('file-embed-title') ||
             element.classList.contains('markdown-embed-link') ||
-            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg')
+            element.closest('.ptl-tldraw-image-container, [data-viewport-type="element"], svg')
         ) {
             // 向上查找包含 'internal-embed' 类的父元素
             while (element) {
@@ -1409,30 +1409,6 @@ export default class ModalOpenerPlugin extends Plugin {
                                 const file = this.app.metadataCache.getFirstLinkpathDest(filename, "");
                                 if (file) {
                                     new ModalWindow(this, "", file, "", "smm").open();
-                                }
-                            }, 100);
-                        })
-                );
-            }
-
-            const dataloomPlugin = this.getPlugin("notion-like-tables");
-            if (dataloomPlugin && this.settings.enabledCommands.dataloom) {
-                subMenu.addItem((subItem: MenuItem) =>
-                    subItem
-                        .setTitle("Dataloom")
-                        .setIcon("container")
-                        .onClick(async () => {
-                            await (this.app as any).commands.executeCommandById("notion-like-tables:create-and-embed");
-                            setTimeout(() => {
-                                const editor = this.app.workspace.activeEditor?.editor;
-                                if (!editor) return;
-                                const line = editor.getLine(editor.getCursor().line);
-                                const match = line.match(/\[\[([^\]]+)\]\]/);
-                                if (!match) return;
-                                const filename = match[1];
-                                const file = this.app.metadataCache.getFirstLinkpathDest(filename, "");
-                                if (file) {
-                                    new ModalWindow(this, "", file, "", "dataloom").open();
                                 }
                             }, 100);
                         })

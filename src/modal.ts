@@ -248,7 +248,7 @@ export class ModalWindow extends Modal {
                 mode = (this.prevActiveLeaf?.view instanceof MarkdownView) && this.prevActiveLeaf.view.getMode() === 'source' ? 'source' : 'preview';
         }
 
-        const previewTypes = ["excel-view", "tldraw-view", "mindmapview", "smm", "dataloom"];
+        const previewTypes = ["excel-view", "tldraw-view", "mindmapview", "smm"];
         if (this.modalLeafRef) {
             await this.modalLeafRef.openFile(file, { state: { mode } });
             fileContainer.appendChild(this.modalLeafRef.view.containerEl);
@@ -337,7 +337,7 @@ export class ModalWindow extends Modal {
             element.classList.contains('canvas-minimap') ||
             element.classList.contains('file-embed-title') ||
             element.classList.contains('markdown-embed-link') ||
-            element.closest('.ptl-tldraw-image-container, .dataloom-padding, .dataloom-bottom-bar, [data-viewport-type="element"], svg')
+            element.closest('.ptl-tldraw-image-container, [data-viewport-type="element"], svg')
         ) {
             // 向上查找包含 'internal-embed' 类的父元素
             while (element) {
