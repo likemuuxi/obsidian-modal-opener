@@ -38,11 +38,10 @@
 
 # 🥰特别感谢
 
-特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了模态窗口文件显示和阻止重复标签页功能，插件列表如下。
+特别感谢这些惊人的插件!我使用这些插件作为开发我的第一个公共插件的参考。该插件的基本结构主要基于[obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener)。我参考了其他插件，完成了Modal Opener插件，参考插件列表如下。
 
 - [obsidian-link-opener](https://github.com/zorazrr/obsidian-link-opener) by zorazrr
 - [Obsidian-Surfing](https://github.com/PKM-er/Obsidian-Surfing) by PKM-er
-- [obsidian-mononote](https://github.com/czottmann/obsidian-mononote/tree/main) by czottmann
 
 # ☕支持一下
 

@@ -247,12 +247,13 @@ export default class ModalOpenerPlugin extends Plugin {
                     };
                 });
 
-                if (this.settings.enableWebAutoDarkMode) {
-                    await this.registerWebAutoDarkMode(webContents);
-                }
-                if (this.settings.enableImmersiveTranslation) {
-                    await this.registerImmersiveTranslation(webContents);
-                }
+                await this.registerWebAutoDarkMode(webContents);
+                // if (this.settings.enableWebAutoDarkMode) {
+                //     await this.registerWebAutoDarkMode(webContents);
+                // }
+                // if (this.settings.enableImmersiveTranslation) {
+                //     await this.registerImmersiveTranslation(webContents);
+                // }
             });
         }
     }
@@ -1778,9 +1779,9 @@ export default class ModalOpenerPlugin extends Plugin {
     // no dupe leaf
     private async onActiveLeafChange(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
         // 防抖处理：避免快速切换叶子时多次触发
-        if (this.activeLeafChangeTimeout) {
-            clearTimeout(this.activeLeafChangeTimeout);
-        }
+        // if (this.activeLeafChangeTimeout) {
+        //     clearTimeout(this.activeLeafChangeTimeout);
+        // }
 
         if (activeLeaf?.view?.getViewType() === "webviewer") {
             const activeLeafEl = document.querySelector(".workspace-leaf.mod-active");
@@ -1789,106 +1790,107 @@ export default class ModalOpenerPlugin extends Plugin {
 
                 if (webviewEl) {
                     webviewEl.addEventListener("dom-ready", () => {
-                        if (this.settings.enableWebAutoDarkMode) {
-                            this.registerWebAutoDarkMode(webviewEl);
-                        }
-                        if (this.settings.enableImmersiveTranslation) {
-                            this.registerImmersiveTranslation(webviewEl);
-                        }
+                        this.registerWebAutoDarkMode(webviewEl);
+                        // if (this.settings.enableWebAutoDarkMode) {
+                        //     this.registerWebAutoDarkMode(webviewEl);
+                        // }
+                        // if (this.settings.enableImmersiveTranslation) {
+                        //     this.registerImmersiveTranslation(webviewEl);
+                        // }
                     });
                 }
             }
         }
 
-        this.activeLeafChangeTimeout = setTimeout(async () => {
-            // 状态锁定：确保同一时间只有一个处理流程
-            if (!this.settings.preventsDuplicateTabs) {
-                return;
-            }
-            if (this.isProcessing) {
-                // console.log("正在处理其他叶子，跳过本次调用");
-                if (!activeLeaf.view.containerEl.closest('.modal-opener')) {
-                    this.isProcessing = false;
-                }
-                return;
-            }
+        // this.activeLeafChangeTimeout = setTimeout(async () => {
+        //     // 状态锁定：确保同一时间只有一个处理流程
+        //     if (!this.settings.preventsDuplicateTabs) {
+        //         return;
+        //     }
+        //     if (this.isProcessing) {
+        //         // console.log("正在处理其他叶子，跳过本次调用");
+        //         if (!activeLeaf.view.containerEl.closest('.modal-opener')) {
+        //             this.isProcessing = false;
+        //         }
+        //         return;
+        //     }
 
-            this.isProcessing = true; // 锁定状态
+        //     this.isProcessing = true; // 锁定状态
 
-            try {
-                const { id } = activeLeaf;
-                if (this.processors.has(id)) {
-                    // console.log(`已经在处理叶子 ${id}`);
-                    return;
-                }
-                const processor = this.processActiveLeaf(activeLeaf);
-                this.processors.set(id, processor);
+        //     try {
+        //         const { id } = activeLeaf;
+        //         if (this.processors.has(id)) {
+        //             // console.log(`已经在处理叶子 ${id}`);
+        //             return;
+        //         }
+        //         const processor = this.processActiveLeaf(activeLeaf);
+        //         this.processors.set(id, processor);
 
-                try {
-                    await processor;
-                } finally {
-                    this.processors.delete(id);
-                    // console.log(`完成处理叶子 ${id}`);
-                }
-            } finally {
-                this.isProcessing = false; // 释放状态锁定
-            }
-        }, 100);
+        //         try {
+        //             await processor;
+        //         } finally {
+        //             this.processors.delete(id);
+        //             // console.log(`完成处理叶子 ${id}`);
+        //         }
+        //     } finally {
+        //         this.isProcessing = false; // 释放状态锁定
+        //     }
+        // }, 100);
     }
 
-    private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
-        // 延迟处理，给予新页面加载的时间
-        await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
+    // private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
+    //     // 延迟处理，给予新页面加载的时间
+    //     await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
 
-        const filePath = activeLeaf.view.getState().file;
-        if (!filePath) return;
+    //     const filePath = activeLeaf.view.getState().file;
+    //     if (!filePath) return;
 
-        const viewType = activeLeaf.view.getViewType();
-        const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
-            .filter(l =>
-                l !== activeLeaf &&
-                l.view.getState().file === filePath &&
-                (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
-            );
+    //     const viewType = activeLeaf.view.getViewType();
+    //     const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
+    //         .filter(l =>
+    //             l !== activeLeaf &&
+    //             l.view.getState().file === filePath &&
+    //             (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
+    //         );
 
-        if (duplicateLeaves.length === 0) return;
+    //     if (duplicateLeaves.length === 0) return;
 
-        // 根据活跃时间排序，最近活跃的在前
-        const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) =>
-            (b as any).activeTime - (a as any).activeTime
-        );
+    //     // 根据活跃时间排序，最近活跃的在前
+    //     const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) =>
+    //         (b as any).activeTime - (a as any).activeTime
+    //     );
 
-        const mostRecentLeaf = sortedLeaves[0];
-        const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
+    //     const mostRecentLeaf = sortedLeaves[0];
+    //     const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
 
-        // 如果当前叶子不是最近活跃的，我们需要进一步处理
-        if (activeLeaf !== mostRecentLeaf) {
-            // 如果当前叶子是最老的，我们应该保留它并关闭其他的
-            if (activeLeaf === oldestLeaf) {
-                for (const leaf of duplicateLeaves) {
-                    if (!(leaf as any).pinned) {
-                        leaf.detach();
-                    }
-                }
-                this.app.workspace.setActiveLeaf(activeLeaf, { focus: true });
-            } else {
-                // 否则，我们应该关闭当前叶子
-                if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
-                    activeLeaf.history.back();
-                } else if (!(activeLeaf as any).pinned) {
-                    activeLeaf.detach();
-                }
-                this.app.workspace.setActiveLeaf(mostRecentLeaf, { focus: true });
-            }
-        } else {
-            // 当前叶子是最近活跃的，我们应该保留它并关闭其他的
-            for (const leaf of duplicateLeaves) {
-                if (!(leaf as any).pinned) {
-                    leaf.detach();
-                }
-            }
-        }
-    }
+    //     // 如果当前叶子不是最近活跃的，我们需要进一步处理
+    //     if (activeLeaf !== mostRecentLeaf) {
+    //         // 如果当前叶子是最老的，我们应该保留它并关闭其他的
+    //         if (activeLeaf === oldestLeaf) {
+    //             for (const leaf of duplicateLeaves) {
+    //                 if (!(leaf as any).pinned) {
+    //                     leaf.detach();
+    //                 }
+    //             }
+    //             this.app.workspace.setActiveLeaf(activeLeaf, { focus: true });
+    //         } else {
+    //             // 否则，我们应该关闭当前叶子
+    //             if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
+    //                 activeLeaf.history.back();
+    //             } else if (!(activeLeaf as any).pinned) {
+    //                 activeLeaf.detach();
+    //             }
+    //             this.app.workspace.setActiveLeaf(mostRecentLeaf, { focus: true });
+    //         }
+    //     } else {
+    //         // 当前叶子是最近活跃的，我们应该保留它并关闭其他的
+    //         for (const leaf of duplicateLeaves) {
+    //             if (!(leaf as any).pinned) {
+    //                 leaf.detach();
+    //             }
+    //         }
+    //     }
+    // }
 
     async registerWebAutoDarkMode(webContents: any) {
         try {
@@ -1954,25 +1956,25 @@ export default class ModalOpenerPlugin extends Plugin {
 		`);
     }
 
-    async registerImmersiveTranslation(webContents: any) {
-        // 注入沉浸式翻译 SDK
-        await webContents.executeJavaScript(`
-            // 1. 设置初始化参数
-            window.immersiveTranslateConfig = {
-                isAutoTranslate: false,
-                pageRule: {
-                    // 排除不需要翻译的元素
-                    excludeSelectors: ["pre", "code", "nav", "footer"],
-                }
-            };
+    // async registerImmersiveTranslation(webContents: any) {
+    //     // 注入沉浸式翻译 SDK
+    //     await webContents.executeJavaScript(`
+    //         // 1. 设置初始化参数
+    //         window.immersiveTranslateConfig = {
+    //             isAutoTranslate: false,
+    //             pageRule: {
+    //                 // 排除不需要翻译的元素
+    //                 excludeSelectors: ["pre", "code", "nav", "footer"],
+    //             }
+    //         };
 
-            // 2. 加载沉浸式翻译 SDK
-            const script = document.createElement('script');
-            script.async = true;
-            script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-latest.js';
-            document.head.appendChild(script);
-        `);
-    }
+    //         // 2. 加载沉浸式翻译 SDK
+    //         const script = document.createElement('script');
+    //         script.async = true;
+    //         script.src = 'https://download.immersivetranslate.com/immersive-translate-sdk-lite-latest.js';
+    //         document.head.appendChild(script);
+    //     `);
+    // }
 
     public getPlugin(pluginId: string) {
         const app = this.app as any;
