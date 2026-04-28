@@ -32,7 +32,7 @@ export interface ModalOpenerPluginSettings {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideScroll: boolean;
-	// preventsDuplicateTabs: boolean;
+	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	modalOpenDelay: number;
 	enableRefreshOnClose: boolean;
@@ -91,7 +91,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	showLinkViewHeader: false,
 	showMetadata: false,
 	hideScroll: true,
-	// preventsDuplicateTabs: false,
+	preventsDuplicateTabs: false,
 	delayInMs: 100,
 	modalOpenDelay: 100,
 	enableRefreshOnClose: true,
@@ -138,7 +138,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	showLinkViewHeader: boolean;
 	showMetadata: boolean;
 	hideScroll: boolean;
-	// preventsDuplicateTabs: boolean;
+	preventsDuplicateTabs: boolean;
 	delayInMs: number;
 	modalOpenDelay: number;
 	enableRefreshOnClose: boolean;
@@ -440,30 +440,30 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 				}));
 		}
 
-		// new Setting(containerEl)
-		// 	.setName(t('Prevents duplicate tabs'))
-		// 	.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)'))
-		// 	.addToggle(toggle => toggle
-		// 		.setValue(this.plugin.settings.preventsDuplicateTabs)
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.preventsDuplicateTabs = value;
-		// 			await this.plugin.saveSettings();
-		// 			this.display();
-		// 		}));
+		new Setting(containerEl)
+			.setName(t('Prevents duplicate tabs'))
+			.setDesc(t('In a new leaf opened the note to prevent duplicate (compatible with Modal-Opener, function from Mononote plugin)'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.preventsDuplicateTabs)
+				.onChange(async (value) => {
+					this.plugin.settings.preventsDuplicateTabs = value;
+					await this.plugin.saveSettings();
+					this.display();
+				}));
 
-		// if(this.plugin.settings.preventsDuplicateTabs) {
-		// 	new Setting(containerEl)
-		// 	.setName(t('Delay time'))
-		// 	.setDesc(t('Delay in milliseconds before performing operations'))
-		// 	.addSlider(slider => slider
-		// 		.setLimits(100, 500, 100)
-		// 		.setValue(this.plugin.settings.delayInMs)
-		// 		.setDynamicTooltip()
-		// 		.onChange(async (value) => {
-		// 			this.plugin.settings.delayInMs = value;
-		// 			await this.plugin.saveSettings();
-		// 		}));
-		// }
+		if(this.plugin.settings.preventsDuplicateTabs) {
+			new Setting(containerEl)
+			.setName(t('Delay time'))
+			.setDesc(t('Delay in milliseconds before performing operations'))
+			.addSlider(slider => slider
+				.setLimits(100, 500, 100)
+				.setValue(this.plugin.settings.delayInMs)
+				.setDynamicTooltip()
+				.onChange(async (value) => {
+					this.plugin.settings.delayInMs = value;
+					await this.plugin.saveSettings();
+				}));
+		}
 
 		// if(!Platform.isMobile) {
 		// 	new Setting(containerEl).setName(t('Extend')).setHeading();

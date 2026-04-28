@@ -43,6 +43,7 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerOpenHandler();
         this.registerContextMenuHandler();
         this.registerCustomCommands();
+        this.registerCreateFileCommands();
         this.registerEvent(this.app.workspace.on("active-leaf-change", this.onActiveLeafChange.bind(this)));
 
         let openExternal: boolean | undefined;
@@ -293,6 +294,385 @@ export default class ModalOpenerPlugin extends Plugin {
                 name: command.name,
                 callback: () => this.executeCustomCommand(command.command)
             });
+        });
+    }
+
+    private registerCreateFileCommands() {
+        this.addCommand({
+            id: 'create-markdown-in-modal',
+            name: 'Create and edit Markdown in modal',
+            callback: () => {
+                if (this.settings.enabledCommands.markdown) {
+                    this.createFileAndEditInModal("md", true);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-bases-in-modal',
+            name: 'Create and edit Bases in modal',
+            callback: () => {
+                const basesPlugin = (this.app as any).internalPlugins.getEnabledPluginById("bases");
+                if (basesPlugin && this.settings.enabledCommands.bases) {
+                    this.createFileAndEditInModal("base", false);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-canvas-in-modal',
+            name: 'Create and edit Canvas in modal',
+            callback: () => {
+                const canvasPlugin = (this.app as any).internalPlugins.getEnabledPluginById("canvas");
+                if (canvasPlugin && this.settings.enabledCommands.canvas) {
+                    this.createFileAndEditInModal("canvas", false);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-excalidraw-in-modal',
+            name: 'Create and edit Excalidraw in modal',
+            callback: async () => {
+                const pluginOriginal = this.getPlugin("obsidian-excalidraw-plugin");
+                const pluginYMJR = this.getPlugin("obsidian-excalidraw-plugin-ymjr");
+                const excalidrawPlugin = pluginOriginal || pluginYMJR;
+                if (!excalidrawPlugin || !this.settings.enabledCommands.excalidraw) return;
+
+                const defaultNameWithExt = this.getDrawingFilename(excalidrawPlugin.settings);
+                const useExcalidrawExtension = excalidrawPlugin.settings.useExcalidrawExtension;
+                const result = await this.getNewFileName("", defaultNameWithExt);
+                if (!result) return;
+                const { fileName, isEmbed } = result;
+
+                if (excalidrawPlugin && excalidrawPlugin.settings) {
+                    const hasCustomName = fileName != defaultNameWithExt;
+                    const excalidrawFileName = hasCustomName
+                        ? fileName + (useExcalidrawExtension ? ".excalidraw.md" : ".md")
+                        : defaultNameWithExt;
+
+                    try {
+                        const file = await excalidrawPlugin.createDrawing(excalidrawFileName);
+                        const fileDirWithoutExt = file.path.replace(/\.excalidraw\.md$/, '').replace(/\.md$/, '');
+                        await this.insertLinkToPreviousView(useExcalidrawExtension ? fileDirWithoutExt + '.excalidraw' : fileDirWithoutExt + '.md');
+                        new ModalWindow(this, "", file, "").open();
+                    } catch (e) {
+                        console.error("createExcalidrawFile failed:", e);
+                        new Notice(t("Failed to create file: ") + e.message);
+                    }
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-diagrams-in-modal',
+            name: 'Create and edit Diagrams in modal',
+            callback: () => {
+                const diagramsPlugin = this.getPlugin("obsidian-diagrams-net");
+                if (diagramsPlugin && this.settings.enabledCommands.diagrams) {
+                    diagramsPlugin.attemptNewDiagram();
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-tldraw-in-modal',
+            name: 'Create and edit Tldraw in modal',
+            callback: async () => {
+                const tldrawPlugin = this.getPlugin("tldraw");
+                if (!tldrawPlugin || !this.settings.enabledCommands.tldraw) return;
+
+                const defaultName = tldrawPlugin.createDefaultFilename();
+                const result = await this.getNewFileName("", defaultName + ".md");
+                if (!result) return;
+                const { fileName, isEmbed } = result;
+
+                const hasCustomName = (fileName + ".md") != defaultName;
+                const tldrawFileName = hasCustomName ? fileName : defaultName;
+
+                if (tldrawPlugin && tldrawPlugin.settings) {
+                    const fileDestinations = tldrawPlugin.settings.fileDestinations;
+                    const destinationMethod = fileDestinations.destinationMethod;
+
+                    let folderName: string;
+                    switch (destinationMethod) {
+                        case "attachments-folder": {
+                            folderName = (this.app.vault as any).config.attachmentFolderPath ?? '/';
+                            break;
+                        }
+                        case "colocate": {
+                            folderName = tldrawPlugin.settings.fileDestinations.colocationSubfolder;
+                            break;
+                        }
+                        case "default-folder": {
+                            folderName = tldrawPlugin.settings.fileDestinations.defaultFolder;
+                            break;
+                        }
+                        default: {
+                            folderName = '';
+                            break;
+                        }
+                    }
+
+                    try {
+                        const file = await tldrawPlugin.createTldrFile(tldrawFileName, {
+                            foldername: folderName,
+                            inMarkdown: true,
+                            tlStore: undefined
+                        });
+                        await this.insertLinkToPreviousView(file.path);
+                        new ModalWindow(this, "", file, "", "tldraw-view").open();
+                    } catch (e) {
+                        console.error("createTldrFile failed:", e);
+                        new Notice(t("Failed to create file: ") + e.message);
+                    }
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-excel-in-modal',
+            name: 'Create and edit Excel in modal',
+            callback: async () => {
+                const excelPlugin = this.getPlugin("excel");
+                if (!excelPlugin || !this.settings.enabledCommands.excel) return;
+
+                const defaultName = this.getExcelFilename(excelPlugin.settings);
+                const result = await this.getNewFileName("", defaultName);
+                if (!result) return;
+                const { fileName, isEmbed } = result;
+
+                if (excelPlugin && excelPlugin.settings) {
+                    const hasCustomName = fileName !== defaultName;
+                    const excelFileName = hasCustomName
+                        ? fileName + ".sheet.md"
+                        : fileName;
+
+                    try {
+                        const file = await excelPlugin.createExcel(excelFileName);
+                        await this.insertLinkToPreviousView(file.path);
+                        new ModalWindow(this, "", file, "", "excel-view").open();
+                    } catch (e) {
+                        console.error("createExcelFile failed:", e);
+                        new Notice(t("Failed to create file: ") + e.message);
+                    }
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-sheet-plus-in-modal',
+            name: 'Create and edit Sheet Plus in modal',
+            callback: async () => {
+                const sheetPlugin = this.getPlugin("sheet-plus");
+                if (!sheetPlugin || !this.settings.enabledCommands.sheetPlus) return;
+
+                const defaultName = this.getExcelProFilename(sheetPlugin.settings);
+                const result = await this.getNewFileName("", defaultName);
+                if (!result) return;
+                const { fileName, isEmbed } = result;
+
+                if (sheetPlugin && sheetPlugin.settings) {
+                    const hasCustomName = fileName !== defaultName;
+                    const excelFileName = hasCustomName
+                        ? fileName + ".univer.md"
+                        : fileName;
+
+                    try {
+                        const file = await sheetPlugin.createExcel(excelFileName);
+                        await this.insertLinkToPreviousView(file.path);
+                        new ModalWindow(this, "", file, "", "excel-pro-view").open();
+                    } catch (e) {
+                        console.error("createExcelFile failed:", e);
+                        new Notice(t("Failed to create file: ") + e.message);
+                    }
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-code-file-in-modal',
+            name: 'Create and edit Code File in modal',
+            callback: async () => {
+                const vscodePlugin = this.getPlugin("vscode-editor");
+                if (!vscodePlugin || !this.settings.enabledCommands.vscode) return;
+
+                if (vscodePlugin && vscodePlugin.settings) {
+                    const defaultLocation = vscodePlugin.settings.defaultLocation;
+                    let tFolder: TFolder = this.app.vault.getRoot();
+
+                    switch (defaultLocation) {
+                        case "root": {
+                            tFolder = this.app.vault.getRoot();
+                            break;
+                        }
+                        case "default": {
+                            const folderPath = (this.app.vault as any).getConfig("attachmentFolderPath");
+                            const folder = this.app.vault.getAbstractFileByPath(folderPath);
+                            if (folder instanceof TFolder) {
+                                tFolder = folder;
+                            }
+                            break;
+                        }
+                        case "custom": {
+                            const customPath = vscodePlugin.settings.customPath.replace(/\/$/, '');
+                            const customFolder = this.app.vault.getAbstractFileByPath(customPath);
+                            if (customFolder instanceof TFolder) {
+                                tFolder = customFolder;
+                            }
+                            break;
+                        }
+                        case "current": {
+                            const activeFile = this.app.workspace.getActiveFile();
+                            if (activeFile?.parent instanceof TFolder) {
+                                tFolder = activeFile.parent;
+                            }
+                            break;
+                        }
+                    }
+
+                    await this.getNewCodeFileNameAndCreate(vscodePlugin.settings, tFolder);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-markmind-in-modal',
+            name: 'Create and edit MarkMind in modal',
+            callback: async () => {
+                const markmindPlugin = this.getPlugin("obsidian-markmind");
+                if (!markmindPlugin || !this.settings.enabledCommands.markmind) return;
+
+                try {
+                    const activeFile = this.app.workspace.getActiveFile();
+                    const filePath = activeFile?.path || "";
+                    const parentFolder = this.app.fileManager.getNewFileParent(filePath);
+
+                    const lang = getLanguage();
+                    const baseName = lang.startsWith("zh") ? "未命名思维导图" : "untitled mindmap";
+                    const sourcePath = this.app.workspace.getActiveFile()?.path || "";
+                    const folder = this.app.fileManager.getNewFileParent(sourcePath, `${baseName}.md`);
+                    const availableFileName = await this.getAvailableFileName(baseName, "md", folder.path);
+
+                    const result = await this.getNewFileName("", availableFileName);
+                    if (!result) return;
+                    const { fileName, isEmbed } = result;
+
+                    if (parentFolder) {
+                        const targetFolder = parentFolder || this.app.fileManager.getNewFileParent(
+                            this.app.workspace.getActiveFile()?.path || ""
+                        );
+
+                        const folderPath = targetFolder.path;
+
+                        const hasCustomName = fileName !== availableFileName;
+                        const markmindFileName = hasCustomName
+                            ? fileName + ".md"
+                            : fileName;
+
+                        const fullPath = `${folderPath}/${markmindFileName}`;
+
+                        const file = await this.app.vault.create(fullPath, "");
+
+                        await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+                            if (markmindPlugin.settings.mindmapmode === "basic") {
+                                frontmatter["mindmap-plugin"] = "basic";
+                            } else {
+                                frontmatter["mindmap-plugin"] = "rich";
+                            }
+                        });
+
+                        await this.insertLinkToPreviousView(file.path);
+                        new ModalWindow(this, "", file, "", "mindmapview").open();
+                    }
+                } catch (e) {
+                    console.error("createMarkmindFile failed:", e);
+                    new Notice(t("Failed to create file: ") + e.message);
+                }
+            }
+        });
+
+        this.addCommand({
+            id: 'create-simple-mind-map-in-modal',
+            name: 'Create and edit Simple Mind Map in modal',
+            callback: async () => {
+                const simpleMindMapPlugin = this.getPlugin("simple-mind-map");
+                if (!simpleMindMapPlugin || !this.settings.enabledCommands.simplemindmap) return;
+
+                await (this.app as any).commands.executeCommandById("simple-mind-map:create-smm-mindmap-insert-markdown");
+                setTimeout(() => {
+                    const editor = this.app.workspace.activeEditor?.editor;
+                    if (!editor) return;
+                    const line = editor.getLine(editor.getCursor().line);
+                    const match = line.match(/\[\[([^\]]+)\]\]/);
+                    if (!match) return;
+                    const filename = match[1];
+                    const file = this.app.metadataCache.getFirstLinkpathDest(filename, "");
+                    if (file) {
+                        new ModalWindow(this, "", file, "", "smm").open();
+                    }
+                }, 100);
+            }
+        });
+
+        this.addCommand({
+            id: 'delete-linked-attachment',
+            name: 'Delete linked attachment',
+            callback: () => {
+                if (!this.settings.showDeleteCommands) return;
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (!activeView) return;
+                const editor = activeView.editor;
+
+                const cursor = editor.getCursor();
+                const line = editor.getLine(cursor.line);
+                const linkMatch = this.findLinkAtPosition(line, cursor.ch);
+
+                if (linkMatch) {
+                    const [filePath] = linkMatch.split('|');
+                    const [filePathWithoutAnchor] = filePath.split('#');
+                    const file = this.app.metadataCache.getFirstLinkpathDest(filePathWithoutAnchor, "");
+
+                    if (file && file instanceof TFile) {
+                        const modal = new Modal(this.app);
+                        modal.titleEl.setText(t("Confirm deletion?"));
+
+                        const content = modal.contentEl.createDiv();
+                        content.setText(file.path);
+
+                        const buttonContainer = content.createDiv({ cls: 'modal-button-container' });
+
+                        buttonContainer.createEl('button', { text: t("Cancel") })
+                            .onclick = () => modal.close();
+
+                        buttonContainer.createEl('button',
+                            { text: t("Delete"), cls: 'mod-warning' })
+                            .onclick = async () => {
+                                try {
+                                    await this.app.fileManager.trashFile(file);
+                                    const startIndex = line.indexOf("![[");
+                                    const isEmbed = startIndex !== -1;
+
+                                    const from = {
+                                        line: cursor.line,
+                                        ch: isEmbed ? startIndex : line.indexOf("[[")
+                                    };
+                                    const to = {
+                                        line: cursor.line,
+                                        ch: line.indexOf("]]") + 2
+                                    };
+                                    editor.replaceRange("", from, to);
+                                    new Notice(t("File moved to trash"));
+                                    modal.close();
+                                } catch (error) {
+                                    new Notice(t("Failed to delete file"));
+                                }
+                            };
+
+                        modal.open();
+                    }
+                }
+            }
         });
     }
 
@@ -564,6 +944,10 @@ export default class ModalOpenerPlugin extends Plugin {
         }
 
         if (element.tagName === 'A' && (element.classList.contains('external-link') || element.classList.contains('internal-link'))) {
+            return true;
+        }
+
+        if (element.tagName === 'SPAN' && element.classList.contains('internal-link')) {
             return true;
         }
 
@@ -1778,95 +2162,95 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         }
 
-        // this.activeLeafChangeTimeout = setTimeout(async () => {
-        //     // 状态锁定：确保同一时间只有一个处理流程
-        //     if (!this.settings.preventsDuplicateTabs) {
-        //         return;
-        //     }
-        //     if (this.isProcessing) {
-        //         // console.log("正在处理其他叶子，跳过本次调用");
-        //         if (!activeLeaf.view.containerEl.closest('.modal-opener')) {
-        //             this.isProcessing = false;
-        //         }
-        //         return;
-        //     }
+        this.activeLeafChangeTimeout = setTimeout(async () => {
+            // 状态锁定：确保同一时间只有一个处理流程
+            if (!this.settings.preventsDuplicateTabs) {
+                return;
+            }
+            if (this.isProcessing) {
+                // console.log("正在处理其他叶子，跳过本次调用");
+                if (!activeLeaf.view.containerEl.closest('.modal-opener')) {
+                    this.isProcessing = false;
+                }
+                return;
+            }
 
-        //     this.isProcessing = true; // 锁定状态
+            this.isProcessing = true; // 锁定状态
 
-        //     try {
-        //         const { id } = activeLeaf;
-        //         if (this.processors.has(id)) {
-        //             // console.log(`已经在处理叶子 ${id}`);
-        //             return;
-        //         }
-        //         const processor = this.processActiveLeaf(activeLeaf);
-        //         this.processors.set(id, processor);
+            try {
+                const { id } = activeLeaf;
+                if (this.processors.has(id)) {
+                    // console.log(`已经在处理叶子 ${id}`);
+                    return;
+                }
+                const processor = this.processActiveLeaf(activeLeaf);
+                this.processors.set(id, processor);
 
-        //         try {
-        //             await processor;
-        //         } finally {
-        //             this.processors.delete(id);
-        //             // console.log(`完成处理叶子 ${id}`);
-        //         }
-        //     } finally {
-        //         this.isProcessing = false; // 释放状态锁定
-        //     }
-        // }, 100);
+                try {
+                    await processor;
+                } finally {
+                    this.processors.delete(id);
+                    // console.log(`完成处理叶子 ${id}`);
+                }
+            } finally {
+                this.isProcessing = false; // 释放状态锁定
+            }
+        }, 100);
     }
 
-    // private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
-    //     // 延迟处理，给予新页面加载的时间
-    //     await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
+    private async processActiveLeaf(activeLeaf: RealLifeWorkspaceLeaf): Promise<void> {
+        // 延迟处理，给予新页面加载的时间
+        await new Promise(resolve => setTimeout(resolve, this.settings.delayInMs));
 
-    //     const filePath = activeLeaf.view.getState().file;
-    //     if (!filePath) return;
+        const filePath = activeLeaf.view.getState().file;
+        if (!filePath) return;
 
-    //     const viewType = activeLeaf.view.getViewType();
-    //     const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
-    //         .filter(l =>
-    //             l !== activeLeaf &&
-    //             l.view.getState().file === filePath &&
-    //             (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
-    //         );
+        const viewType = activeLeaf.view.getViewType();
+        const duplicateLeaves = this.app.workspace.getLeavesOfType(viewType)
+            .filter(l =>
+                l !== activeLeaf &&
+                l.view.getState().file === filePath &&
+                (l as RealLifeWorkspaceLeaf).parent.id === activeLeaf.parent.id
+            );
 
-    //     if (duplicateLeaves.length === 0) return;
+        if (duplicateLeaves.length === 0) return;
 
-    //     // 根据活跃时间排序，最近活跃的在前
-    //     const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) =>
-    //         (b as any).activeTime - (a as any).activeTime
-    //     );
+        // 根据活跃时间排序，最近活跃的在前
+        const sortedLeaves = [activeLeaf, ...duplicateLeaves].sort((a, b) =>
+            (b as any).activeTime - (a as any).activeTime
+        );
 
-    //     const mostRecentLeaf = sortedLeaves[0];
-    //     const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
+        const mostRecentLeaf = sortedLeaves[0];
+        const oldestLeaf = sortedLeaves[sortedLeaves.length - 1];
 
-    //     // 如果当前叶子不是最近活跃的，我们需要进一步处理
-    //     if (activeLeaf !== mostRecentLeaf) {
-    //         // 如果当前叶子是最老的，我们应该保留它并关闭其他的
-    //         if (activeLeaf === oldestLeaf) {
-    //             for (const leaf of duplicateLeaves) {
-    //                 if (!(leaf as any).pinned) {
-    //                     leaf.detach();
-    //                 }
-    //             }
-    //             this.app.workspace.setActiveLeaf(activeLeaf, { focus: true });
-    //         } else {
-    //             // 否则，我们应该关闭当前叶子
-    //             if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
-    //                 activeLeaf.history.back();
-    //             } else if (!(activeLeaf as any).pinned) {
-    //                 activeLeaf.detach();
-    //             }
-    //             this.app.workspace.setActiveLeaf(mostRecentLeaf, { focus: true });
-    //         }
-    //     } else {
-    //         // 当前叶子是最近活跃的，我们应该保留它并关闭其他的
-    //         for (const leaf of duplicateLeaves) {
-    //             if (!(leaf as any).pinned) {
-    //                 leaf.detach();
-    //             }
-    //         }
-    //     }
-    // }
+        // 如果当前叶子不是最近活跃的，我们需要进一步处理
+        if (activeLeaf !== mostRecentLeaf) {
+            // 如果当前叶子是最老的，我们应该保留它并关闭其他的
+            if (activeLeaf === oldestLeaf) {
+                for (const leaf of duplicateLeaves) {
+                    if (!(leaf as any).pinned) {
+                        leaf.detach();
+                    }
+                }
+                this.app.workspace.setActiveLeaf(activeLeaf, { focus: true });
+            } else {
+                // 否则，我们应该关闭当前叶子
+                if (activeLeaf.view.navigation && activeLeaf.history.backHistory.length > 0) {
+                    activeLeaf.history.back();
+                } else if (!(activeLeaf as any).pinned) {
+                    activeLeaf.detach();
+                }
+                this.app.workspace.setActiveLeaf(mostRecentLeaf, { focus: true });
+            }
+        } else {
+            // 当前叶子是最近活跃的，我们应该保留它并关闭其他的
+            for (const leaf of duplicateLeaves) {
+                if (!(leaf as any).pinned) {
+                    leaf.detach();
+                }
+            }
+        }
+    }
 
     async registerWebAutoDarkMode(webContents: any) {
         try {
