@@ -746,7 +746,7 @@ export default class ModalOpenerPlugin extends Plugin {
         if (this.settings.openMethod === "drag" || this.settings.openMethod === "both") {
             this.registerDragHandler();
         }
-        if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both") {
+        if (this.settings.openMethod === "altclick" || this.settings.openMethod === "both" || this.settings.openEmbeddedImagesOnSingleClick) {
             this.registerAltClickHandler();
             if (Platform.isMobile) this.registerTouchClickHandler();
         }
@@ -846,23 +846,28 @@ export default class ModalOpenerPlugin extends Plugin {
 
             const isAltClick = evt.altKey && evt.button === 0;
             const isSingleClick = !Platform.isMobile ? this.settings.clickWithoutAlt : this.settings.clickWithoutAltOnMobile;
+            const isImageEmbedSingleClick = this.settings.openEmbeddedImagesOnSingleClick && !evt.altKey;
             const singleClickType = !Platform.isMobile ? this.settings.typeOfClickTrigger : this.settings.typeOfClickTriggerOnMobile;
 
             if (evt.button !== 0) return; // 忽略非左键点击
             if (evt.ctrlKey || evt.shiftKey) return; // 忽略 Ctrl/Shift键
 
-            if (!isAltClick && !isSingleClick) return;
+            if (!isAltClick && !isSingleClick && !isImageEmbedSingleClick) return;
             
             if (editor && editor.somethingSelected()) return; // 忽略选择文字的情况
             if (target.getAttribute("alt")?.endsWith(".svg")) return; // 检查特殊元素 diagram.svg
 
             // 如果是单击模式但不允许 external 类型触发，则排除在外
-            if (!isAltClick && isSingleClick && singleClickType !== 'external' && target.closest('.workspace-leaf-content[data-type="markdown"]')) {
+            if (!isAltClick && !isImageEmbedSingleClick && isSingleClick && singleClickType !== 'external' && target.closest('.workspace-leaf-content[data-type="markdown"]')) {
                 const currentFilePath = this.app.workspace.getActiveFile()?.path;
                 if (currentFilePath && this.excludeFiles.length > 0) {
                     const isExcluded = this.excludeFiles.includes(currentFilePath);
                     if (isExcluded) return;
                 }
+            }
+
+            if ((isAltClick || isImageEmbedSingleClick) && this.handleImageEmbedClick(evt, target)) {
+                return;
             }
 
             // 添加 frontmatter 处理逻辑
@@ -926,6 +931,111 @@ export default class ModalOpenerPlugin extends Plugin {
             }
         };
         document.addEventListener('click', this.altClickHandler, { capture: true });
+    }
+
+    private handleImageEmbedClick(evt: MouseEvent, target: HTMLElement): boolean {
+        const file = this.resolveImageEmbedFile(target);
+        if (!file) {
+            return false;
+        }
+
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        this.openInModalWindow(file.path);
+        return true;
+    }
+
+    private resolveImageEmbedFile(target: HTMLElement): TFile | null {
+        const imageEmbedElement = target.closest('img, .internal-embed, .media-embed, .image-embed') as HTMLElement | null;
+        if (!imageEmbedElement) {
+            return null;
+        }
+
+        const metadataElements = [imageEmbedElement];
+        const embedContainer = imageEmbedElement.closest('.internal-embed, .media-embed, .image-embed') as HTMLElement | null;
+        if (embedContainer && embedContainer !== imageEmbedElement) {
+            metadataElements.push(embedContainer);
+        }
+
+        const activeFilePath = this.app.workspace.getActiveFile()?.path || "";
+        const candidateLinks = this.getImageEmbedLinkCandidates(metadataElements);
+
+        for (const linkText of candidateLinks) {
+            const file = this.resolveImageLinkText(linkText, activeFilePath);
+            if (file) {
+                return file;
+            }
+        }
+
+        return null;
+    }
+
+    private getImageEmbedLinkCandidates(elements: HTMLElement[]): string[] {
+        const attributes = ['src', 'alt', 'data-src', 'data-href', 'aria-label'];
+        const candidates: string[] = [];
+        const fallbackCandidates: string[] = [];
+
+        for (const attribute of attributes) {
+            for (const element of elements) {
+                const value = element.getAttribute(attribute);
+                if (value) {
+                    candidates.push(value);
+                    const fallbackPath = this.getImagePathFromResourceUrl(value);
+                    if (fallbackPath) {
+                        fallbackCandidates.push(fallbackPath);
+                    }
+                }
+            }
+        }
+
+        return Array.from(new Set([...candidates, ...fallbackCandidates]));
+    }
+
+    private resolveImageLinkText(linkText: string, activeFilePath: string): TFile | null {
+        for (const candidate of this.normalizeImageLinkCandidates(linkText)) {
+            const file = this.app.metadataCache.getFirstLinkpathDest(candidate, activeFilePath);
+            if (file instanceof TFile && this.isImageFile(file)) {
+                return file;
+            }
+        }
+
+        return null;
+    }
+
+    private normalizeImageLinkCandidates(linkText: string): string[] {
+        const normalized = this.safeDecodeURIComponent(linkText)
+            .trim()
+            .replace(/^!?\[\[(.*?)\]\]$/, "$1")
+            .replace(/^!?\[.*?\]\((.*?)\)$/, "$1")
+            .split('#')[0]
+            .split('|')[0]
+            .trim();
+
+        if (!normalized || this.isValidURL(normalized)) {
+            return [];
+        }
+
+        return [normalized];
+    }
+
+    private getImagePathFromResourceUrl(linkText: string): string | null {
+        const resourcePathMatch = this.safeDecodeURIComponent(linkText)
+            .trim()
+            .match(/(?:^|[/\\])([^/\\]+\.(?:avif|bmp|gif|jpe?g|png|svg|webp))(?:[?#].*)?$/i);
+
+        return resourcePathMatch?.[1] || null;
+    }
+
+    private safeDecodeURIComponent(value: string): string {
+        try {
+            return decodeURIComponent(value);
+        } catch {
+            return value;
+        }
+    }
+
+    private isImageFile(file: TFile): boolean {
+        return /^(avif|bmp|gif|jpe?g|png|svg|webp)$/i.test(file.extension);
     }
 
     private isPreviewModeLink(target: HTMLElement): boolean {

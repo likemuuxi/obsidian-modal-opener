@@ -57,6 +57,8 @@ export default {
   'Copied to clipboard': 'Link copied to clipboard',
 
   'Behavior': 'Behavior',
+  'Open embedded images on single click': 'Open embedded images on single click',
+  'If enabled, clicking rendered image embeds will open them in modal window without holding Alt.': 'If enabled, clicking rendered image embeds will open them in modal window without holding Alt',
   'Single-click trigger': 'Single-click trigger',
   'Single-click trigger📱': 'Single-click trigger📱',
   'Select trigger type': 'Select trigger type',
