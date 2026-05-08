@@ -854,7 +854,19 @@ export default class ModalOpenerPlugin extends Plugin {
             if (!isAltClick && !isSingleClick) return;
             
             if (editor && editor.somethingSelected()) return; // 忽略选择文字的情况
-            if (target.getAttribute("alt")?.endsWith(".svg")) return; // 检查特殊元素 diagram.svg
+            // 适配新版 obsidian 图片点击事件和修改版diagrams插件
+            if (target.getAttribute("alt")?.endsWith(".svg") && !target.closest('.image-wrapper')) return;
+            if (target.closest('.image-wrapper')) {
+                const imgSrc = (target as HTMLImageElement).src || '';
+                console.log("image-wrapper imgSrc:", imgSrc);
+                if (imgSrc.includes('.svg')) {
+                    const diagramsManifest = (this.app as any).plugins?.manifests?.["obsidian-diagrams-net"];
+                    if (diagramsManifest && diagramsManifest.author?.includes("Muuxi")) {
+                        // console.log("svg in image-wrapper, Muuxi diagrams plugin -> return");
+                        return;
+                    }
+                }
+            }
 
             // 如果是单击模式但不允许 external 类型触发，则排除在外
             if (!isAltClick && isSingleClick && singleClickType !== 'external' && target.closest('.workspace-leaf-content[data-type="markdown"]')) {
@@ -997,9 +1009,13 @@ export default class ModalOpenerPlugin extends Plugin {
             }
             return false;
         }
+        // 适配新版 obsidian 图片点击事件
+        if (element.tagName === 'IMG' && element.closest('.image-wrapper')) {
+            return true;
+        }
 
         let current: Node | null = element;
-        const selectorList = ['rect', 'img', 'svg'];
+        const selectorList = ['rect', 'img', 'svg', 'video'];
         if (selectorList.some(selector => target.matches(selector))) {
             // target 匹配列表中的某个选择器
             while (current) {
@@ -1181,6 +1197,22 @@ export default class ModalOpenerPlugin extends Plugin {
         }
         if (target.tagName === 'IMG' && target.hasAttribute("data-smm-file")) {
             return target.getAttribute("data-smm-file") || '';
+        }
+
+        // 适配新版 obsidian 图片点击事件
+        if (target.tagName === 'IMG' && target.closest('.image-wrapper')) {
+            const internalEmbed = target.closest('.internal-embed');
+            if (internalEmbed) {
+                return internalEmbed.getAttribute('src') || '';
+            }
+        }
+        
+        // 适配 obsidian 视频点击事件
+        if (target.tagName === 'VIDEO') {
+            const internalEmbed = target.closest('.internal-embed');
+            if (internalEmbed) {
+                return internalEmbed.getAttribute('src') || '';
+            }
         }
 
         return container.getAttribute('data-file-path') ||
