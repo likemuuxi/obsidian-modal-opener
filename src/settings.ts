@@ -821,7 +821,6 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 	deleteCustomCommand(index: number): void {
 		this.plugin.settings.customCommands.splice(index, 1);
-		this.plugin.saveSettings();
 		this.reloadPlugin();
 		this.display();
 		new Notice(t("Command deleted successfully."));
@@ -829,10 +828,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 
 	async reloadPlugin() {
 		await this.plugin.saveSettings();
-		const app = this.plugin.app as any;
-		await app.plugins.disablePlugin("modal-opener");
-		await app.plugins.enablePlugin("modal-opener");
-		app.setting.openTabById("modal-opener").display();
+		await this.plugin.reloadHandlers();
 	}
 
 	// 添加一个通用的创建插件设置的函数

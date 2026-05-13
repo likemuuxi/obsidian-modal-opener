@@ -193,6 +193,14 @@ export default class ModalOpenerPlugin extends Plugin {
         this.registerCustomCommands();
     }
 
+    async reloadHandlers() {
+        await this.loadSettings();
+        this.applyStyles();
+        this.updateExcludeData();
+        this.registerOpenHandler();
+        this.registerCustomCommands();
+    }
+
     private updateExcludeData() {
         this.excludeFiles = this.settings.customExcludeFiles
             .split(',')
