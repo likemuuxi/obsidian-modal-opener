@@ -14,6 +14,7 @@ export interface ModalOpenerPluginSettings {
 	enableBlur: boolean;
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
+	openEmbeddedImagesOnSingleClick: boolean;
 	typeOfClickTrigger: string;
 	onlyWorksInReadMode: boolean
 	clickWithoutAltOnMobile: boolean;
@@ -73,6 +74,7 @@ export const DEFAULT_SETTINGS: ModalOpenerPluginSettings = {
 	enableBlur: true,
 	enableRounding: false,
 	clickWithoutAlt: false,
+	openEmbeddedImagesOnSingleClick: false,
 	typeOfClickTrigger: 'both',
 	onlyWorksInReadMode: false,
 	clickWithoutAltOnMobile: true,
@@ -127,6 +129,7 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 	enableRounding: boolean;
 	clickWithoutAlt: boolean;
 	clickWithoutAltOnMobile: boolean;
+	openEmbeddedImagesOnSingleClick: boolean;
 	customExcludeElements: string;
 	customExcludeContainers: string;
 	customExcludeFiles: string;
@@ -307,6 +310,17 @@ export default class ModalOpenerSettingTab extends PluginSettingTab {
 		});
 
 		new Setting(containerEl).setName(t('Behavior')).setHeading();
+
+		new Setting(containerEl)
+			.setName(t('Open embedded images on single click'))
+			.setDesc(t('If enabled, clicking rendered image embeds will open them in modal window without holding Alt.'))
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.openEmbeddedImagesOnSingleClick)
+				.onChange(async (value) => {
+					this.plugin.settings.openEmbeddedImagesOnSingleClick = value;
+					await this.plugin.saveSettings();
+					await this.reloadPlugin();
+				}));
 
 		new Setting(containerEl)
 			.setName(t(!Platform.isMobile ? "Single-click trigger" : "Single-click trigger📱"))
